@@ -1,0 +1,34 @@
+# Entornos y cachés
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.DS_Store
+*.log
+
+# Credenciales y configuración local
+.env
+.env.*
+.streamlit/secrets.toml
+*.pem
+*.key
+*.p12
+*.pfx
+config/
+deploy/
+
+# Bases operativas y descargas de trabajo
+*.duckdb
+*.duckdb.*
+*.db
+*.sqlite*
+*.parquet
+*.csv
+*.json.gz
+data/*
+!data/README.md
+!data/public/
+data/public/*
+# Añadir solo archivos públicos revisados mediante excepciones explícitas por nombre.
+!data/public/.gitkeep
