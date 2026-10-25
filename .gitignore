@@ -26,9 +26,15 @@ deploy/
 *.parquet
 *.csv
 *.json.gz
-data/*
+# Solo el pipeline de Claude / pml-bot escribe y versiona estos derivados.
+# Las excepciones permiten el particionado aprobado, sin permitir otros Parquet.
+data/**
 !data/README.md
 !data/public/
-data/public/*
-# Añadir solo archivos públicos revisados mediante excepciones explícitas por nombre.
 !data/public/.gitkeep
+!data/hourly/
+!data/hourly/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9].parquet
+!data/daily/
+!data/daily/[0-9][0-9][0-9][0-9]-[0-9][0-9].parquet
+!data/nodes.parquet
+!data/metadata.json

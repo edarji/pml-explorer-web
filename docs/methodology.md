@@ -1,44 +1,57 @@
-# Metodología pública — PML Explorer v0.1
+# Metodología — PML Explorer v0.1
 
-Última actualización de este documento: **2026-10-25**.
-Última actualización de los datos públicos: **pendiente; no hay un paquete público publicado**. La fecha del documento no es la fecha de corte de los precios. Al incorporar datos se registrarán fecha de extracción y último día de operación disponible en `data/public/manifest.json` y se actualizará este apartado.
+Documento actualizado: **2026-10-25**. El paquete derivado público y su fecha de extracción están pendientes. La fecha de este documento no es un corte de precios.
 
 ## Fuente y alcance
 
-Fuente oficial: Centro Nacional de Control de Energía (CENACE), [Precios de Energía y Servicios Conexos MDA](https://www.cenace.gob.mx/Paginas/SIM/Reportes/PreEnerServConMDA.aspx), a través del servicio público SW-PML. Referencia técnica: [Manual SW-PML](https://www.cenace.gob.mx/DocsMEM/2020-01-14%20Manual%20T%C3%A9cnico%20SW-PML.pdf).
+Fuente: Centro Nacional de Control de Energía (CENACE), [Precios de Energía y Servicios Conexos MDA](https://www.cenace.gob.mx/Paginas/SIM/Reportes/PreEnerServConMDA.aspx), mediante el [servicio SW-PML](https://www.cenace.gob.mx/DocsMEM/2020-01-14%20Manual%20T%C3%A9cnico%20SW-PML.pdf). El manual describe precios por hora, día de operación y NodoP, y distingue MDA de MTR. La versión pública de este visor cubre exclusivamente **MDA del SIN**, en **MXN/MWh**; no incluye MTR, BCA, BCS, demanda ni agrupaciones regionales.
 
-Se analizan los **PML del Mercado del Día en Adelanto (MDA) del Sistema Interconectado Nacional (SIN)**, en MXN/MWh, con cobertura histórica prevista desde enero de 2023. No se incluyen MTR, BCA ni BCS. Cada consulta corresponde a un nodo; no representa un promedio de todos los nodos del SIN. La plataforma es un análisis independiente de información de CENACE.
+El análisis es independiente de CENACE. Se publican derivados de sus observaciones, no precios ficticios ni una base operativa. CENACE puede revisar o republicar información; la versión disponible es la instantánea del pipeline, sin garantía de incorporar una revisión posterior hasta la siguiente actualización.
 
-La cobertura efectiva depende del paquete público y de la existencia histórica del nodo. No se afirma que todos los nodos tengan observaciones desde 2023. CENACE puede recalcular o republicar reportes: un paquete es una instantánea de las observaciones disponibles cuando se extrajo, no una garantía de última revisión permanente.
+## Dos resoluciones de almacenamiento
 
-## Observación horaria y resoluciones
+- **Horario:** ventana móvil de hasta 365 días; un Parquet por fecha de operación.
+- **Diario:** acumuladores por nodo/día de todo el histórico previsto desde 2023-01-01; un Parquet por mes.
 
-La unidad de observación es `(fecha de operación, hora, nodo)`. El código actual ubica la hora como `fecha + (hora - 1) horas`; requiere etiquetas de hora enteras de 1 a 24. Esta coordenada de gráfica no constituye una conversión a UTC. Las fechas Desde/Hasta son inclusivas.
+La cobertura efectiva depende del paquete recibido y de la existencia histórica del nodo. El histórico diario no permite recuperar la trayectoria de las horas anteriores a la ventana móvil. El rango de consulta es inclusivo y siempre usa una sola fuente: horario si cabe completo en la ventana declarada, diario en caso contrario. No se suman fuentes solapadas ni se combinan cuantiles de ventanas parciales.
 
-- **Horaria:** una observación válida por nodo y hora. El agrupamiento horario conserva su PML, redondeado a dos decimales.
-- **Diaria:** promedio simple de las observaciones horarias válidas del día incluido en el rango.
-- **Mensual:** promedio simple de las observaciones horarias válidas de cada mes, limitado al rango elegido. Si el rango corta un mes, el punto representa solo la parte seleccionada.
+La coordenada de gráfica horaria heredada es `fecha + (hora - 1) horas`, para etiquetas de 1 a 24. No implica conversión a UTC. El denominador heredado de cobertura es 24 horas por día calendario. Si una etiqueta oficial exigiera otra interpretación, requiere validación en el laboratorio y no se corrige silenciosamente.
 
-Para un conjunto de horas válidas H, el promedio es `sum(PML_h) / count(H)`. No se pondera por demanda, volumen ni duración distinta de una hora. El promedio mensual se calcula directamente sobre horas; no es un promedio no ponderado de promedios diarios. El promedio del rango también se calcula sobre sus horas. Un periodo incompleto no se rellena para promediar.
+## Promedios y gráfica
 
-## Estadísticas y restricciones
+Para N observaciones horarias válidas, `promedio = S/N`, con `S = suma(PML_h)`. Cada hora tiene el mismo peso; no hay ponderación por demanda o volumen. Se conservan ceros y precios negativos.
 
-La mediana y los percentiles P10/P90 se calculan sobre **PML horarios originales del rango y nodo seleccionados**, incluso cuando la gráfica es diaria o mensual. DuckDB usa `MEDIAN` y `QUANTILE_CONT` (interpolación continua). No describen la distribución de los puntos diarios/mensuales de la gráfica.
+Dentro de la ventana, las consultas horarias originales usan `AVG(pml)`. En el histórico diario, el equivalente para cualquier rango es `SUM(suma_pml)/SUM(horas_validas)`. **Nunca se calcula un promedio simple de promedios diarios.** Los meses incompletos se calculan solo con los días elegidos. La gráfica diaria/mensual representa esos promedios; la horaria requiere el rango completo en la ventana disponible.
 
-No se pueden obtener medianas o percentiles exactos de un rango arbitrario promediando medianas o percentiles diarios/mensuales. Tampoco pueden reconstruirse únicamente a partir de promedio y número de horas. El contrato actual necesita datos horarios. Un paquete solo agregado requeriría acordar otra interfaz de cálculo; no es compatible con esta vista sin cambios explícitos.
+El SQL redondea el resultado a dos decimales. El indicador principal de promedio se muestra sin decimales, como en la vista validada; los acumuladores del pipeline no deben redondearse antes de la consulta.
 
-Se muestran mínimo, máximo, promedio y número de horas con PML negativo. La tabla ampliada incluye desviación estándar muestral (`STDDEV`), mediana y percentiles. Con una sola observación la desviación muestral no está definida. Promedio, mediana, desviación y percentiles se redondean a dos decimales en SQL; el indicador principal Promedio se presenta sin decimales, tal como en la vista existente.
+## Estadísticas de los precios horarios
 
-## Faltantes y cobertura
+| Indicador | Rango íntegramente horario | Rango que excede la ventana |
+| --- | --- | --- |
+| Promedio | `AVG(pml)` | `SUM(suma_pml)/SUM(horas_validas)` |
+| Mínimo y máximo | Extremos de las horas | Menor mínimo/mayor máximo horario diario |
+| Horas negativas | Conteo de `pml < 0` | Suma de `horas_negativas` |
+| Desviación estándar muestral | `STDDEV(pml)` | Reconstrucción con N, S y Q |
+| Mediana | `MEDIAN(pml)` | No disponible |
+| P10/P90 | `QUANTILE_CONT(pml, 0.10/0.90)` | No disponibles |
 
-No se imputan precios, no se arrastran observaciones y no se convierten faltantes en cero. Los ceros y precios negativos que sí publique la fuente se conservan. Un periodo sin filas no produce un punto agregado; no debe interpretarse una línea entre puntos como evidencia de observaciones intermedias.
+Para `Q = suma(PML_h²)`, la desviación muestral es `sqrt((Q - S²/N)/(N-1))`, con N > 1. Con cero o una observación no está definida; no se reemplaza por cero. El lector protege de pequeños residuos negativos de coma flotante; el validador rechaza acumuladores materialmente inconsistentes. La precisión numérica de los tipos físicos y el redondeo a dos decimales deben contrastarse con la entrega final; equivalencia matemática no promete identidad binaria entre métodos de acumulación.
 
-El código heredado calcula `horas_con_dato = COUNT(*)` y el denominador como `24 × días calendario del rango`. Por tanto, el paquete público debe tener **una sola fila por nodo/fecha/hora y PML numérico, finito y no nulo**. DuckDB omite nulos al promediar, pero `COUNT(*)` los contaría: admitirlos haría incoherente la cobertura. Rechazar duplicados y filas inválidas es un requisito del paquete, no una limpieza que ya realice esta aplicación.
+La mediana y los percentiles describen la distribución de **todas las horas del rango**, aunque la gráfica sea diaria o mensual. `QUANTILE_CONT` interpola continuamente. No se obtienen cuantiles horarios exactos con promedios, medianas o percentiles diarios agregados. Por eso se muestran como **“No disponible”** si el rango no cae completo dentro de `horario_desde..horario_hasta`, sin estimarlos ni calcularlos sobre una parte del rango.
 
-El denominador de 24 horas diarias es una convención del prototipo. Si las etiquetas oficiales de un día requieren una interpretación distinta, el paquete y el cálculo deben revisarse antes de publicarlo; no se corrigen silenciosamente horas para aparentar cobertura completa. Cuando no hay observaciones en el rango, la vista muestra un aviso.
+Los acumuladores permiten conservar los estadísticos reconstruibles de las observaciones válidas; la prueba final debe confirmar los mismos resultados que la vista original, incluidos rangos parciales, signos y redondeo.
 
-## Catálogo histórico de nodos
+## Faltantes, cobertura y catálogo
 
-El catálogo varía con el tiempo. El selector web se obtiene de los identificadores efectivamente presentes en los derivados públicos, sin depender de un archivo local de configuración. No se infiere continuidad entre claves diferentes ni se fusionan nodos por semejanza de nombre.
+No se imputan horas, no se arrastran precios y un faltante nunca se convierte en cero. Se rechazan precios nulos/no finitos y claves duplicadas en el paquete; son requisitos para que los conteos y las sumas sean coherentes. Si un nodo no tiene datos en el rango, el visor muestra un aviso, sin cifras sustitutivas. Una línea entre puntos no acredita que existan todas las horas intermedias.
 
-La ausencia anterior al alta de un nodo o posterior a su baja no equivale automáticamente a un fallo de descarga. Primera/última observación no prueban por sí solas la vigencia oficial. La vista heredada conserva su cobertura sobre todo el rango calendario: **todavía no distingue en pantalla horas fuera de vigencia y horas faltantes dentro de vigencia**. No debe presentarse ese porcentaje como tasa de integridad del nodo. El paquete deberá documentar vigencias verificadas o su ausencia; corregir esta limitación queda pendiente de validación técnica, sin rediseñar aquí la vista.
+`horas_con_dato` es el conteo horario válido o la suma de `horas_validas`. `horas_del_rango = 24 × días calendario inclusivos`. La cobertura es `100 × horas_con_dato/horas_del_rango`, a un decimal; no se reduce el denominador para ocultar faltantes.
+
+El catálogo cambia con el tiempo. Un nodo puede incorporarse después de enero de 2023 y no se inventan observaciones anteriores a su alta. La vista conserva el porcentaje sobre el rango calendario completo y lo advierte en pantalla: **no es una tasa de integridad dentro de la vigencia del nodo**. Primera/última observación tampoco prueban una alta/baja oficial. El selector usa `nodes.parquet`; no fusiona claves similares ni inventa regiones o zonas. Las vigencias oficiales requieren evidencia del catálogo NodosP, pendiente de entrega.
+
+## Trazabilidad y límites pendientes
+
+La pantalla muestra el rango efectivo diario y la ventana horaria de metadata. La fecha de extracción debe provenir del contrato final del pipeline; todavía no se ha recibido y no se infiere del reloj del servidor ni de la fecha de Git. El [contrato de integración](data-contract.md) distingue las decisiones acordadas de los nombres físicos pendientes.
+
+Antes del lanzamiento: validar los derivados finales, cotejar tres nodos (uno de alta posterior), revisar las advertencias en pantalla y medir tiempo/RAM en Community Cloud. No se ha validado todavía el paquete público ni el servicio desplegado. Los cambios de cálculo se aprueban y validan primero en `power-market-lab`; esta preparación no lo modifica.
