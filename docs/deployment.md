@@ -20,10 +20,10 @@ La [guía oficial](https://docs.streamlit.io/deploy/streamlit-community-cloud/de
 
 La [configuración TOML](https://docs.streamlit.io/develop/api-reference/configuration/config.toml) mantiene las protecciones CORS/XSRF y desactiva estadísticas de uso. No fija dirección ni puertos de una máquina de desarrollo. Para pruebas locales usar `--server.address 127.0.0.1`; las pruebas automatizadas AppTest no levantan servidor.
 
-## Qué queda antes de pedir aprobación de despliegue
+## Preparación y estado antes de pedir aprobación de despliegue
 
-1. Recibir el paquete temporal de Claude conforme al [contrato v1](data-contract.md), ya implementado. Los campos físicos y la conversión de la fecha de generación están definidos.
-2. Ejecutar `python scripts/validar_datos.py --data-dir /ruta/al/paquete` y cuadrar con Claude tres nodos, uno de incorporación posterior. Probar rangos largos, límites inclusivos de la ventana, rango vacío de un nodo, fechas invertidas y las tres resoluciones. Mediana/P10/P90 deben estar ausentes fuera de la ventana.
+1. **Completado:** paquete real recibido y validado conforme al [contrato v1](data-contract.md); ver [informe de entrega](validation-delivery-2026-10-25.md).
+2. **Completado para esa entrega:** validador aprobado y nueve casos de referencia de tres nodos cuadrados. Para futuras versiones, ejecutar `python scripts/validar_datos.py --data-dir /ruta/al/paquete` y repetir el cuadre. Probar rangos largos, límites inclusivos de la ventana, rango vacío de un nodo, fechas invertidas y las tres resoluciones. Mediana/P10/P90 deben estar ausentes fuera de la ventana.
 3. Claude verifica la seguridad del paquete, prueba el rechazo de una copia dañada y obtiene la aprobación acordada para su primer push manual. Work no exporta datos ni configura deploy keys.
 4. Revisar el commit final, repetir la validación del paquete versionado y presentar a Lalo los resultados y los pendientes. Solicitar su aprobación para la primera publicación de la aplicación.
 

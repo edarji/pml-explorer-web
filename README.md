@@ -2,7 +2,7 @@
 
 Vista 1 de **Electricity Markets Monitor**: evolución histórica del Precio Marginal Local de un nodo, Mercado del Día en Adelanto (MDA), Sistema Interconectado Nacional (SIN) de México. Fuente: CENACE. Unidades: MXN/MWh.
 
-**Estado al 25 de octubre de 2026:** repositorio público preparado para integrar el paquete de Claude. Se conserva la vista validada y se añade lectura del particionado aprobado. El lector ya implementa el contrato v1 recibido; falta probar los archivos reales del pipeline. **No se ha realizado el primer despliegue en Streamlit Community Cloud; requiere aprobación de Lalo.** Sin paquete, la aplicación muestra un aviso y no publica cifras.
+**Estado al 25 de octubre de 2026:** repositorio público preparado para integrar el paquete de Claude. Se conserva la vista validada y se añade lectura del particionado aprobado. El lector implementa el contrato v1 y el paquete real recibido pasó la [validación de entrega](docs/validation-delivery-2026-10-25.md). Falta el primer push de datos por el pipeline y el despliegue aprobado. **No se ha realizado el primer despliegue en Streamlit Community Cloud; requiere aprobación de Lalo.** Sin paquete, la aplicación muestra un aviso y no publica cifras.
 
 ## Estructura aprobada
 

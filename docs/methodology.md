@@ -1,6 +1,6 @@
 # Metodología — PML Explorer v0.1
 
-Documento actualizado: **2026-10-25**. El contrato v1 está recibido; el paquete derivado público todavía está pendiente. La fecha de este documento no es un corte de precios.
+Documento actualizado: **2026-10-25**. El contrato v1 y el paquete derivado están recibidos y validados; su incorporación al repositorio por el pipeline está pendiente. La fecha de este documento no es un corte de precios.
 
 ## Fuente y alcance
 
@@ -54,4 +54,4 @@ El catálogo cambia con el tiempo. Un nodo puede incorporarse después de enero 
 
 La pantalla obtiene los límites diarios y horarios de `metadata.json`. Muestra `generado_utc`, instante de generación del paquete, convertido a `America/Mexico_City`; no lo infiere del reloj del servidor ni de Git, ni lo confunde con la extracción original de CENACE. El [contrato v1](data-contract.md) fija el esquema, las unidades, la convención horaria y el manifiesto con conteos y SHA-256. El lector comprueba ese manifiesto antes de mostrar cifras.
 
-Antes del lanzamiento: validar los derivados finales, cotejar tres nodos (uno de alta posterior), revisar las advertencias en pantalla y medir tiempo/RAM en Community Cloud. No se ha validado todavía el paquete público ni el servicio desplegado. Los cambios de cálculo se aprueban y validan primero en `power-market-lab`; esta preparación no lo modifica.
+Los derivados recibidos, el cuadre de tres nodos (uno de alta posterior) y la interfaz pasaron la [validación de entrega](validation-delivery-2026-10-25.md). Antes del lanzamiento queda comprobar la versión que publique el pipeline, obtener aprobación de despliegue y medir tiempo/RAM en Community Cloud. No se ha ejecutado todavía el servicio desplegado. Los cambios de cálculo se aprueban y validan primero en `power-market-lab`; esta preparación no lo modifica.

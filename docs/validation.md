@@ -1,6 +1,6 @@
 # Validaciones y aceptación pendiente
 
-Fecha de revisión: **2026-10-25**. No se han escrito archivos en `data/` ni modificado el laboratorio privado. No se ha desplegado el visor.
+Fecha de revisión: **2026-10-25**. **Actualización: el paquete real recibido pasó la [validación de entrega](validation-delivery-2026-10-25.md), incluidos nueve casos de referencia y nueve recorridos de interfaz.** Las comprobaciones de preparación siguientes se conservan como antecedente. No se han escrito archivos en `data/` ni modificado el laboratorio privado. No se ha desplegado el visor.
 
 ## Comprobaciones realizadas
 
@@ -45,12 +45,12 @@ python scripts/validar_datos.py --data-dir /ruta/al/paquete-temporal
 
 La biblioteca permite pasar `data_dir` a las consultas para leer esa carpeta temporal sin copiarla al repositorio. La app pública usará la carpeta `data/` versionada por `pml-bot`.
 
-## Pendientes que bloquean aceptar la integración
+## Estado de los pendientes de integración
 
-1. Contrato físico v1 recibido e implementado: `pml_min`/`pml_max`, fechas de catálogo, rangos desde metadata y `generado_utc` convertido a Ciudad de México. Este pendiente queda cerrado; la aceptación del paquete real sigue pendiente.
-2. Paquete temporal real exportado por Claude y sus cifras de referencia para tres nodos, uno de alta posterior. Comparar desde el lector `data_dir` contra la vista validada, no solo contra CTE en memoria.
-3. Ejecutar el validador sobre ese paquete, resolver cualquier fallo y demostrar el rechazo de una copia deliberadamente dañada preparada por Claude. La prueba de paquete ausente no acredita por sí sola el manejo de todos los daños.
-4. Validar la interfaz con el paquete real: tres resoluciones, rango que cruza la ventana, límites exactos, rangos parciales de mes, nodo sin observaciones, fechas invertidas y fecha real de generación/actualización.
+1. Contrato físico v1 recibido e implementado: `pml_min`/`pml_max`, fechas de catálogo, rangos desde metadata y `generado_utc` convertido a Ciudad de México. Este pendiente queda cerrado; la aceptación del paquete real se completó según el informe enlazado.
+2. **Cerrado para la entrega identificada en el informe:** paquete real y nueve casos de referencia, incluidos tres nodos y uno de alta posterior.
+3. **Cerrado para esta entrega:** validación completa aprobada; copia dañada de Claude rechazada por SHA-256.
+4. **Cerrado para esta entrega:** nueve recorridos de interfaz con Parquet reales y fecha de actualización correcta.
 5. Revisión de seguridad de Claude y aprobación para el primer push de datos conforme al reparto acordado.
 
 ## Pendientes para publicar
