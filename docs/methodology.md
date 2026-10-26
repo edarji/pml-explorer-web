@@ -1,6 +1,6 @@
 # Metodología — PML Explorer v0.1
 
-Documento actualizado: **2026-10-25**. El paquete derivado público y su fecha de extracción están pendientes. La fecha de este documento no es un corte de precios.
+Documento actualizado: **2026-10-25**. El contrato v1 está recibido; el paquete derivado público todavía está pendiente. La fecha de este documento no es un corte de precios.
 
 ## Fuente y alcance
 
@@ -15,7 +15,7 @@ El análisis es independiente de CENACE. Se publican derivados de sus observacio
 
 La cobertura efectiva depende del paquete recibido y de la existencia histórica del nodo. El histórico diario no permite recuperar la trayectoria de las horas anteriores a la ventana móvil. El rango de consulta es inclusivo y siempre usa una sola fuente: horario si cabe completo en la ventana declarada, diario en caso contrario. No se suman fuentes solapadas ni se combinan cuantiles de ventanas parciales.
 
-La coordenada de gráfica horaria heredada es `fecha + (hora - 1) horas`, para etiquetas de 1 a 24. No implica conversión a UTC. El denominador heredado de cobertura es 24 horas por día calendario. Si una etiqueta oficial exigiera otra interpretación, requiere validación en el laboratorio y no se corrige silenciosamente.
+La hora es final: la etiqueta 1 corresponde a 00:00–01:00. La coordenada de gráfica horaria heredada, que marca el inicio del intervalo, es `fecha + (hora - 1) horas`, para etiquetas de 1 a 24. No implica conversión a UTC. El denominador heredado de cobertura es 24 horas por día calendario. Si una etiqueta oficial exigiera otra interpretación, requiere validación en el laboratorio y no se corrige silenciosamente.
 
 ## Promedios y gráfica
 
@@ -44,14 +44,14 @@ Los acumuladores permiten conservar los estadísticos reconstruibles de las obse
 
 ## Faltantes, cobertura y catálogo
 
-No se imputan horas, no se arrastran precios y un faltante nunca se convierte en cero. Se rechazan precios nulos/no finitos y claves duplicadas en el paquete; son requisitos para que los conteos y las sumas sean coherentes. Si un nodo no tiene datos en el rango, el visor muestra un aviso, sin cifras sustitutivas. Una línea entre puntos no acredita que existan todas las horas intermedias.
+No se imputan horas, no se arrastran precios y un faltante nunca se convierte en cero. Se rechazan precios horarios nulos/no finitos y claves duplicadas en el paquete; son requisitos para que los conteos y las sumas sean coherentes. Las filas diarias con cero horas válidas no aportan precios ni extremos. Si un nodo no tiene datos en el rango, el visor muestra un aviso, sin cifras sustitutivas. Una línea entre puntos no acredita que existan todas las horas intermedias.
 
 `horas_con_dato` es el conteo horario válido o la suma de `horas_validas`. `horas_del_rango = 24 × días calendario inclusivos`. La cobertura es `100 × horas_con_dato/horas_del_rango`, a un decimal; no se reduce el denominador para ocultar faltantes.
 
-El catálogo cambia con el tiempo. Un nodo puede incorporarse después de enero de 2023 y no se inventan observaciones anteriores a su alta. La vista conserva el porcentaje sobre el rango calendario completo y lo advierte en pantalla: **no es una tasa de integridad dentro de la vigencia del nodo**. Primera/última observación tampoco prueban una alta/baja oficial. El selector usa `nodes.parquet`; no fusiona claves similares ni inventa regiones o zonas. Las vigencias oficiales requieren evidencia del catálogo NodosP, pendiente de entrega.
+El catálogo cambia con el tiempo. Un nodo puede incorporarse después de enero de 2023 y no se inventan observaciones anteriores a su alta. La vista conserva el porcentaje sobre el rango calendario completo y lo advierte en pantalla: **no es una tasa de integridad dentro de la vigencia del nodo**. Primera/última observación tampoco prueban una alta/baja oficial. El selector usa `nodes.parquet`, que incluye `primera_fecha` y `ultima_fecha` observadas; no fusiona claves similares ni inventa regiones o zonas. Esas fechas no acreditan vigencias oficiales del catálogo NodosP.
 
 ## Trazabilidad y límites pendientes
 
-La pantalla muestra el rango efectivo diario y la ventana horaria de metadata. La fecha de extracción debe provenir del contrato final del pipeline; todavía no se ha recibido y no se infiere del reloj del servidor ni de la fecha de Git. El [contrato de integración](data-contract.md) distingue las decisiones acordadas de los nombres físicos pendientes.
+La pantalla obtiene los límites diarios y horarios de `metadata.json`. Muestra `generado_utc`, instante de generación del paquete, convertido a `America/Mexico_City`; no lo infiere del reloj del servidor ni de Git, ni lo confunde con la extracción original de CENACE. El [contrato v1](data-contract.md) fija el esquema, las unidades, la convención horaria y el manifiesto con conteos y SHA-256. El lector comprueba ese manifiesto antes de mostrar cifras.
 
 Antes del lanzamiento: validar los derivados finales, cotejar tres nodos (uno de alta posterior), revisar las advertencias en pantalla y medir tiempo/RAM en Community Cloud. No se ha validado todavía el paquete público ni el servicio desplegado. Los cambios de cálculo se aprueban y validan primero en `power-market-lab`; esta preparación no lo modifica.

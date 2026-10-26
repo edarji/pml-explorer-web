@@ -4,6 +4,10 @@ La comparación numérica se omite hasta indicar PML_REFERENCE_GLOB con una
 fuente horaria real autorizada. Todos los derivados de prueba son CTE en RAM.
 """
 from datetime import date
+import copy
+import hashlib
+import io
+from types import SimpleNamespace
 import glob
 import os
 from pathlib import Path
@@ -34,6 +38,55 @@ class Preparacion(unittest.TestCase):
             self.assertTrue(v.cobertura_horaria("2026-01-01", "2026-01-31"))
             self.assertFalse(v.cobertura_horaria("2025-12-31", "2026-01-31"))
             self.assertFalse(v.cobertura_horaria("2026-01-01", "2026-02-01"))
+
+
+class ContratoV1(unittest.TestCase):
+    def setUp(self):
+        # Metadatos de prueba; no se guardan archivos ni se crean precios.
+        self.m = {
+            "version_esquema": "1", "generado_utc": "2026-10-26T05:00:12Z",
+            "fuente": "CENACE SW-PML, MDA, SIN", "unidades": "MXN/MWh",
+            "convencion_hora": "1-24 hora final", "horario_desde": "2026-10-26",
+            "horario_hasta": "2026-10-26", "diario_desde": "2026-10-26",
+            "diario_hasta": "2026-10-26", "nodos": 1,
+            "archivos": {p: {"filas": 1, "sha256": "0" * 64} for p in
+                         ("hourly/2026-10-26.parquet", "daily/2026-10.parquet", "nodes.parquet")},
+        }
+
+    def test_metadata_y_actualizacion_cdmx(self):
+        self.assertEqual(v.validar_metadata(self.m), self.m)
+        self.assertEqual(v.actualizado_cdmx(self.m['generado_utc']), '2026-10-25 23:00:12 CST')
+
+    def test_rechaza_metadata_incompatible(self):
+        for campo, valor in (("version_esquema", "2"), ("generado_utc", "2026-10-26T05:00:12"),
+                             ("unidades", "USD/MWh"), ("diario_hasta", "2026-10-25")):
+            with self.subTest(campo=campo):
+                m = copy.deepcopy(self.m)
+                m[campo] = valor
+                with self.assertRaises(v.DatosNoDisponibles):
+                    v.validar_metadata(m)
+        m = copy.deepcopy(self.m)
+        m['archivos']['../privado.parquet'] = m['archivos'].pop('nodes.parquet')
+        with self.assertRaises(v.DatosNoDisponibles):
+            v.validar_metadata(m)
+
+    def test_rechaza_checksum_o_conteo_alterado(self):
+        root = Path('/paquete-de-prueba')
+        payload = b'Prueba de integridad, sin precios ni Parquet'
+        def particiones(tipo, *args):
+            return [str(root / n) for n in self.m['archivos'] if n.startswith(tipo + '/')]
+        with patch.object(v, 'metadata', return_value=self.m), \
+             patch.object(v, '_archivos', side_effect=particiones), \
+             patch.object(Path, 'rglob', return_value=[root/n for n in self.m['archivos']]), \
+             patch.object(Path, 'open', side_effect=lambda *a, **kw: io.BytesIO(payload)):
+            with self.assertRaisesRegex(v.DatosNoDisponibles, 'SHA-256'):
+                v.inspeccionar_paquete(root)
+            for info in self.m['archivos'].values():
+                info['sha256'] = hashlib.sha256(payload).hexdigest()
+            footer = SimpleNamespace(metadata=SimpleNamespace(num_rows=2))
+            with patch.object(v.pq, 'ParquetFile', return_value=footer):
+                with self.assertRaisesRegex(v.DatosNoDisponibles, 'Conteo de filas'):
+                    v.inspeccionar_paquete(root)
 
 
 @unittest.skipUnless(os.environ.get("PML_REFERENCE_GLOB"), "Pendiente fuente horaria real autorizada")
@@ -96,6 +149,35 @@ class ReferenciaReal(unittest.TestCase):
                     with patch.object(v, "cobertura_horaria", return_value=False):
                         with self.assertRaises(v.DatosNoDisponibles):
                             v.serie(nodo,self.desde,self.hasta,"horaria")
+
+    def test_interfaz_con_series_reales_en_memoria(self):
+        from streamlit.testing.v1 import AppTest
+        # Se sustituye solo el transporte del paquete pendiente, usando las
+        # mismas observaciones reales de la prueba numérica, sin escribir datos.
+        self.tabla = "diarios"
+        nodo = self.nodos[0]
+        with patch.object(v, '_archivos', return_value=[]), patch.object(v, '_consulta', side_effect=self.consulta_memoria):
+            estadistica = v.estadisticas_diarias(nodo, self.desde, self.hasta)
+            serie = v.serie_diaria(nodo, self.desde, self.hasta, 'diaria')
+        limites = {'desde': self.desde, 'hasta': self.hasta,
+                   'horario_desde': self.hasta, 'horario_hasta': self.hasta,
+                   'generado_utc': '2026-10-26T05:00:12Z'}
+        is_file_real = Path.is_file
+        def existe(path):
+            return True if path == v.DATA_DIR / 'metadata.json' else is_file_real(path)
+        with patch.object(Path, 'is_file', existe), \
+             patch.object(v, 'huella_paquete', return_value='prueba-ui-con-fuente-real'), \
+             patch.object(v, 'inspeccionar_paquete', return_value=limites), \
+             patch.object(v, 'catalogo', return_value=[nodo]), \
+             patch.object(v, 'cobertura_horaria', return_value=False), \
+             patch.object(v, 'estadisticas', return_value=estadistica), \
+             patch.object(v, 'serie', return_value=serie):
+            app = AppTest.from_file(str(Path(v.__file__).with_name('app.py'))).run()
+            self.assertFalse(app.exception)
+            self.assertEqual(app.date_input[0].value, self.desde)
+            self.assertEqual(app.date_input[1].value, self.hasta)
+            self.assertEqual(app.metric[1].value, 'Requiere datos horarios')
+            self.assertTrue(any('2026-10-25 23:00:12 CST' in c.value for c in app.caption))
 
 
 if __name__ == "__main__":

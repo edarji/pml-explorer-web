@@ -3,11 +3,12 @@
 Las consultas horarias conservan las estadísticas originales. El resumen diario
 usa los acumuladores acordados; ver docs/data-contract.md antes de integrar.
 """
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 import hashlib
 import json
 from pathlib import Path
 import re
+from zoneinfo import ZoneInfo
 
 import duckdb
 import pyarrow as pa
@@ -15,9 +16,9 @@ import pyarrow.parquet as pq
 
 DATA_DIR = Path(__file__).resolve().parent / "data"
 RESOLUCIONES = {"horaria": "hour", "diaria": "day", "mensual": "month"}
-# Únicos nombres inferidos: cotejar con el esquema final de Claude.
-MIN_DIARIO = "min_pml"
-MAX_DIARIO = "max_pml"
+# Contrato público v1.
+MIN_DIARIO = "pml_min"
+MAX_DIARIO = "pml_max"
 
 
 class DatosNoDisponibles(ValueError):
@@ -52,21 +53,55 @@ def huella_paquete(data_dir=DATA_DIR):
     return h.hexdigest()
 
 
+def validar_metadata(m):
+    """Valida el contrato v1 sin escribir archivos ni inferir fechas."""
+    if not isinstance(m, dict) or m.get("version_esquema") != "1":
+        raise DatosNoDisponibles("Se requiere metadata del esquema 1.")
+    try:
+        for campo, esperado in (("fuente", "CENACE SW-PML, MDA, SIN"),
+                                ("unidades", "MXN/MWh"),
+                                ("convencion_hora", "1-24 hora final")):
+            if m[campo] != esperado:
+                raise ValueError(f"{campo} incompatible")
+        fechas = {k: date.fromisoformat(m[k]) for k in
+                  ("diario_desde", "diario_hasta", "horario_desde", "horario_hasta")}
+        if not (fechas["diario_desde"] <= fechas["horario_desde"] <=
+                fechas["horario_hasta"] <= fechas["diario_hasta"]):
+            raise ValueError("rangos inconsistentes")
+        if (fechas["horario_hasta"] - fechas["horario_desde"]).days >= 365:
+            raise ValueError("ventana horaria mayor que 365 días")
+        generado = datetime.fromisoformat(m["generado_utc"].replace("Z", "+00:00"))
+        if generado.utcoffset() != timedelta(0):
+            raise ValueError("generado_utc debe incluir zona UTC")
+        if type(m["nodos"]) is not int or m["nodos"] < 1:
+            raise ValueError("conteo de nodos inválido")
+        archivos = m["archivos"]
+        if not isinstance(archivos, dict) or not archivos:
+            raise ValueError("manifiesto vacío")
+        for nombre, info in archivos.items():
+            if not re.fullmatch(r"(?:hourly/\d{4}-\d{2}-\d{2}\.parquet|daily/\d{4}-\d{2}\.parquet|nodes\.parquet)", nombre):
+                raise ValueError("ruta fuera del contrato")
+            if not isinstance(info, dict) or type(info.get("filas")) is not int or info["filas"] < 0:
+                raise ValueError("conteo de filas inválido")
+            if not isinstance(info.get("sha256"), str) or not re.fullmatch(r"[0-9a-fA-F]{64}", info["sha256"]):
+                raise ValueError("sha256 inválido")
+    except (ValueError, KeyError, TypeError, AttributeError) as exc:
+        raise DatosNoDisponibles("metadata.json no cumple el contrato v1.") from exc
+    return m
+
+
 def metadata(data_dir=DATA_DIR):
     try:
-        m = json.loads((Path(data_dir) / "metadata.json").read_text())
-        if not isinstance(m, dict):
-            raise ValueError("metadata debe ser un objeto")
-        for clave in ("horario_desde", "horario_hasta"):
-            date.fromisoformat(m[clave])
-        desde, hasta = _rango(m["horario_desde"], m["horario_hasta"])
-        if (hasta - desde).days >= 365:
-            raise ValueError("la ventana horaria excede 365 días")
-        return m
-    except (OSError, ValueError, KeyError, TypeError) as exc:
-        raise DatosNoDisponibles(
-            "Falta metadata.json válido con horario_desde y horario_hasta."
-        ) from exc
+        return validar_metadata(json.loads((Path(data_dir) / "metadata.json").read_text()))
+    except (OSError, ValueError) as exc:
+        raise DatosNoDisponibles("Falta metadata.json válido del esquema 1.") from exc
+
+
+def actualizado_cdmx(generado_utc):
+    instante = datetime.fromisoformat(generado_utc.replace("Z", "+00:00"))
+    if instante.utcoffset() != timedelta(0):
+        raise DatosNoDisponibles("La fecha de generación debe incluir zona UTC.")
+    return instante.astimezone(ZoneInfo("America/Mexico_City")).strftime("%Y-%m-%d %H:%M:%S %Z")
 
 
 def cobertura_horaria(inicio, fin, data_dir=DATA_DIR):
@@ -101,48 +136,52 @@ def _consulta(sql, parametros):
 
 
 def inspeccionar_paquete(data_dir=DATA_DIR):
-    """Comprueba estructura y esquema; la validación de filas está en scripts/."""
+    """Verifica manifiesto, SHA-256, filas y esquema; las filas se auditan en scripts/."""
     root = Path(data_dir)
     m = metadata(root)
-    _archivos("hourly", m["horario_desde"], m["horario_hasta"], root)
+    esperados = {"nodes.parquet"}
+    for tipo, prefijo in (("hourly", "horario"), ("daily", "diario")):
+        esperados.update(str(Path(p).relative_to(root)) for p in
+                         _archivos(tipo, m[f"{prefijo}_desde"], m[f"{prefijo}_hasta"], root))
+    presentes = {str(p.relative_to(root)) for p in root.rglob("*.parquet")}
+    if set(m["archivos"]) != esperados or presentes != esperados:
+        raise DatosNoDisponibles("Las particiones no coinciden con el manifiesto y sus rangos.")
     requeridas = {
-        "hourly": {"nodo": "texto", "fecha": "fecha", "hora": "entero", "pml": "numero"},
-        "daily": {"nodo": "texto", "fecha": "fecha", "horas_validas": "entero",
-                  "suma_pml": "numero", "suma_pml_cuadrado": "numero",
-                  "horas_negativas": "entero", MIN_DIARIO: "numero", MAX_DIARIO: "numero"},
-        "nodes": {"nodo": "texto"},
+        "hourly": {"nodo": pa.string(), "fecha": pa.date32(), "hora": pa.int32(), "pml": pa.float64()},
+        "daily": {"nodo": pa.string(), "fecha": pa.date32(), "horas_validas": pa.int32(),
+                  "suma_pml": pa.float64(), "suma_pml_cuadrado": pa.float64(),
+                  "horas_negativas": pa.int32(), MIN_DIARIO: pa.float64(), MAX_DIARIO: pa.float64()},
+        "nodes": {"nodo": pa.string(), "primera_fecha": pa.date32(), "ultima_fecha": pa.date32()},
     }
-    tipos = {
-        "texto": lambda t: pa.types.is_string(t) or pa.types.is_large_string(t),
-        "fecha": lambda t: pa.types.is_date(t) or (pa.types.is_timestamp(t) and t.tz is None),
-        "entero": pa.types.is_integer,
-        "numero": lambda t: pa.types.is_integer(t) or pa.types.is_floating(t) or pa.types.is_decimal(t),
-    }
-    for grupo in requeridas:
-        paths = [root / "nodes.parquet"] if grupo == "nodes" else sorted(root.glob(f"{grupo}/*.parquet"))
-        if not paths:
-            raise DatosNoDisponibles(f"Falta el paquete {grupo}.")
-        for path in paths:
-            patron = r"\d{4}-\d{2}-\d{2}" if grupo == "hourly" else r"\d{4}-\d{2}"
-            if grupo != "nodes" and not re.fullmatch(patron, path.stem):
-                raise DatosNoDisponibles(f"Nombre de partición incompatible en {grupo}.")
-            try:
-                esquema = pq.read_schema(path)
-                for nombre, tipo in requeridas[grupo].items():
-                    if nombre not in esquema.names or not tipos[tipo](esquema.field(nombre).type):
-                        raise DatosNoDisponibles(f"Esquema incompatible: {grupo}.{nombre}. Ver docs/data-contract.md.")
-            except (OSError, pa.ArrowException) as exc:
-                raise DatosNoDisponibles(f"No se puede leer un Parquet de {grupo}.") from exc
-    limites = _consulta("SELECT MIN(fecha)::DATE AS desde, MAX(fecha)::DATE AS hasta FROM read_parquet(?)",
-                        [[str(p) for p in sorted(root.glob("daily/*.parquet"))]]).iloc[0]
-    if limites.isna().any():
-        raise DatosNoDisponibles("El resumen diario está vacío.")
-    desde, hasta = _rango(limites["desde"], limites["hasta"])
-    if not desde <= _fecha(m["horario_desde"]) <= _fecha(m["horario_hasta"]) <= hasta:
-        raise DatosNoDisponibles("La ventana horaria queda fuera del histórico diario.")
-    _archivos("daily", desde, hasta, root)
-    return {"desde": desde, "hasta": hasta, "horario_desde": _fecha(m["horario_desde"]),
-            "horario_hasta": _fecha(m["horario_hasta"])}
+    for nombre in sorted(esperados):
+        path = root / nombre
+        grupo = "nodes" if nombre == "nodes.parquet" else path.parent.name
+        try:
+            with path.open("rb") as archivo:
+                digest = hashlib.file_digest(archivo, "sha256").hexdigest()
+            if digest != m["archivos"][nombre]["sha256"].lower():
+                raise DatosNoDisponibles(f"SHA-256 no coincide: {nombre}.")
+            parquet = pq.ParquetFile(path)
+            if parquet.metadata.num_rows != m["archivos"][nombre]["filas"]:
+                raise DatosNoDisponibles(f"Conteo de filas no coincide: {nombre}.")
+            esquema = parquet.schema_arrow
+            if set(esquema.names) != set(requeridas[grupo]):
+                raise DatosNoDisponibles(f"Columnas incompatibles en {nombre}.")
+            for columna, tipo in requeridas[grupo].items():
+                if esquema.field(columna).type != tipo:
+                    raise DatosNoDisponibles(f"Tipo incompatible: {grupo}.{columna}.")
+            if grupo == "nodes" and parquet.metadata.num_rows != m["nodos"]:
+                raise DatosNoDisponibles("Conteo de nodos incompatible con metadata.")
+            for i in range(parquet.metadata.num_row_groups):
+                row_group = parquet.metadata.row_group(i)
+                if any(row_group.column(j).compression != "ZSTD" for j in range(row_group.num_columns)):
+                    raise DatosNoDisponibles(f"Compresión distinta de zstd en {nombre}.")
+        except (OSError, pa.ArrowException) as exc:
+            raise DatosNoDisponibles(f"No se puede leer {nombre}.") from exc
+    # La fuente de fechas de la interfaz es siempre metadata.json.
+    return {"desde": _fecha(m["diario_desde"]), "hasta": _fecha(m["diario_hasta"]),
+            "horario_desde": _fecha(m["horario_desde"]), "horario_hasta": _fecha(m["horario_hasta"]),
+            "generado_utc": m["generado_utc"]}
 
 
 def serie(nodo, inicio, fin, resolucion, data_dir=DATA_DIR):
@@ -199,7 +238,7 @@ def serie_diaria(nodo, inicio, fin, resolucion, data_dir=DATA_DIR):
                ROUND(SUM(suma_pml) / NULLIF(SUM(horas_validas), 0), 2) AS pml_promedio,
                SUM(horas_validas)::BIGINT AS horas
         FROM read_parquet(?)
-        WHERE nodo = ? AND fecha BETWEEN ? AND ?
+        WHERE nodo = ? AND fecha BETWEEN ? AND ? AND horas_validas > 0
         GROUP BY periodo ORDER BY periodo
     """, [_archivos("daily", inicio, fin, data_dir), nodo, inicio, fin])
 
@@ -212,7 +251,7 @@ def estadisticas_diarias(nodo, inicio, fin, data_dir=DATA_DIR):
                    SUM(suma_pml) AS s, SUM(suma_pml_cuadrado) AS q,
                    MIN({MIN_DIARIO}) AS minimo, MAX({MAX_DIARIO}) AS maximo,
                    COALESCE(SUM(horas_negativas), 0)::BIGINT AS negativas
-            FROM read_parquet(?) WHERE nodo = ? AND fecha BETWEEN ? AND ?
+            FROM read_parquet(?) WHERE nodo = ? AND fecha BETWEEN ? AND ? AND horas_validas > 0
         )
         SELECT n AS horas_con_dato,
                (CAST(? AS DATE) - CAST(? AS DATE) + 1) * 24 AS horas_del_rango,

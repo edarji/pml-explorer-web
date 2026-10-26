@@ -2,7 +2,7 @@
 
 Vista 1 de **Electricity Markets Monitor**: evolución histórica del Precio Marginal Local de un nodo, Mercado del Día en Adelanto (MDA), Sistema Interconectado Nacional (SIN) de México. Fuente: CENACE. Unidades: MXN/MWh.
 
-**Estado al 25 de octubre de 2026:** repositorio público preparado para integrar el paquete de Claude. Se conserva la vista validada y se añade lectura del particionado aprobado. Falta cotejar el esquema final del exportador y probar sus archivos reales. **No se ha realizado el primer despliegue en Streamlit Community Cloud; requiere aprobación de Lalo.** Sin paquete, la aplicación muestra un aviso y no publica cifras.
+**Estado al 25 de octubre de 2026:** repositorio público preparado para integrar el paquete de Claude. Se conserva la vista validada y se añade lectura del particionado aprobado. El lector ya implementa el contrato v1 recibido; falta probar los archivos reales del pipeline. **No se ha realizado el primer despliegue en Streamlit Community Cloud; requiere aprobación de Lalo.** Sin paquete, la aplicación muestra un aviso y no publica cifras.
 
 ## Estructura aprobada
 
@@ -40,7 +40,7 @@ Las cuatro versiones fijadas corresponden al entorno validado. No se requiere ba
 
 ## Integrar la entrega de Claude
 
-1. Cotejar el [contrato](docs/data-contract.md), en particular nombres de columnas de extremos diarios y metadatos de extracción. Ajustar el lector al contrato final, sin cambiar el exportador ni los cálculos aprobados.
+1. Recibir la carpeta temporal del pipeline conforme al [contrato v1](docs/data-contract.md). El lector verifica esquemas, conteos y SHA-256; toma los rangos de metadata y muestra su actualización en hora de Ciudad de México.
 2. Validar la carpeta temporal **sin copiarla al repositorio**:
 
    ```bash

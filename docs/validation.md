@@ -9,10 +9,13 @@ Fecha de revisión: **2026-10-25**. No se han escrito archivos en `data/` ni mod
 | Existencia/visibilidad GitHub | `edarji/pml-explorer-web`, público, rama `main`, comprobado con API pública |
 | Sintaxis Python y configuración TOML | Correctas |
 | SQL horario de `serie`/`estadisticas` | Misma consulta original, normalizando únicamente la ruta parametrizada |
-| Pruebas automatizadas con fuente horaria real | 4 pruebas pasan; incluyen comparación en tres nodos seleccionados por primera observación, uno de historia posterior |
+| Pruebas automatizadas con fuente horaria real | 8 pruebas pasan; incluyen comparación en tres nodos seleccionados por primera observación, uno de historia posterior |
 | Agregado diario en memoria frente a horario | Promedio, mínimo, máximo, horas válidas/negativas, desviación muestral, cobertura y series diaria/mensual coinciden al redondeo de la vista |
 | Cuantiles fuera de ventana | Valores ausentes en la consulta diaria; resolución horaria rechazada fuera de ventana; límites inclusivos comprobados |
+| Interfaz diaria con observaciones reales en memoria | Fechas desde los límites declarados, aviso de cuantiles y actualización en Ciudad de México; transporte del paquete sustituido para la prueba, pendiente el paquete exportado |
 | Arranque Streamlit AppTest sin paquete | Aviso sin excepciones ni métricas, desde un directorio distinto al del código; sin servidor |
+| Contrato v1 y fecha de actualización | Aceptación de metadata v1; rechazo de versión, unidades, zona UTC, rangos o rutas incompatibles; conversión del ejemplo a 23:00:12 del día anterior en Ciudad de México |
+| SHA-256 y conteos alterados | Rechazados en pruebas aisladas con flujos de bytes y encabezados simulados, sin guardar archivos ni crear precios; falta probar el paquete real |
 | Validador con paquete ausente | Rechazo con salida 1 y mensaje `NO APTO para publicación` |
 | Reglas Git de derivados | Admiten solo particiones con nombres previstos, `nodes.parquet` y `metadata.json`; rechazan otras rutas y secretos |
 | Revisión de archivos de publicación | Sin coincidencias de tokens, claves privadas o rutas personales en la revisión por patrones |
@@ -44,10 +47,10 @@ La biblioteca permite pasar `data_dir` a las consultas para leer esa carpeta tem
 
 ## Pendientes que bloquean aceptar la integración
 
-1. Contrato físico final: nombres de extremos diarios, esquema de nodos, metadatos de extracción/actualización y tipos de acumuladores. El [contrato](data-contract.md) identifica las suposiciones provisionales del lector.
+1. Contrato físico v1 recibido e implementado: `pml_min`/`pml_max`, fechas de catálogo, rangos desde metadata y `generado_utc` convertido a Ciudad de México. Este pendiente queda cerrado; la aceptación del paquete real sigue pendiente.
 2. Paquete temporal real exportado por Claude y sus cifras de referencia para tres nodos, uno de alta posterior. Comparar desde el lector `data_dir` contra la vista validada, no solo contra CTE en memoria.
 3. Ejecutar el validador sobre ese paquete, resolver cualquier fallo y demostrar el rechazo de una copia deliberadamente dañada preparada por Claude. La prueba de paquete ausente no acredita por sí sola el manejo de todos los daños.
-4. Validar la interfaz con el paquete real: tres resoluciones, rango que cruza la ventana, límites exactos, rangos parciales de mes, nodo sin observaciones, fechas invertidas y fecha real de actualización.
+4. Validar la interfaz con el paquete real: tres resoluciones, rango que cruza la ventana, límites exactos, rangos parciales de mes, nodo sin observaciones, fechas invertidas y fecha real de generación/actualización.
 5. Revisión de seguridad de Claude y aprobación para el primer push de datos conforme al reparto acordado.
 
 ## Pendientes para publicar

@@ -22,7 +22,7 @@ La [configuración TOML](https://docs.streamlit.io/develop/api-reference/configu
 
 ## Qué queda antes de pedir aprobación de despliegue
 
-1. Recibir el contrato físico completo y el paquete temporal de Claude. Confirmar los campos provisionales que señala [data-contract.md](data-contract.md) e integrar la fecha real de actualización.
+1. Recibir el paquete temporal de Claude conforme al [contrato v1](data-contract.md), ya implementado. Los campos físicos y la conversión de la fecha de generación están definidos.
 2. Ejecutar `python scripts/validar_datos.py --data-dir /ruta/al/paquete` y cuadrar con Claude tres nodos, uno de incorporación posterior. Probar rangos largos, límites inclusivos de la ventana, rango vacío de un nodo, fechas invertidas y las tres resoluciones. Mediana/P10/P90 deben estar ausentes fuera de la ventana.
 3. Claude verifica la seguridad del paquete, prueba el rechazo de una copia dañada y obtiene la aprobación acordada para su primer push manual. Work no exporta datos ni configura deploy keys.
 4. Revisar el commit final, repetir la validación del paquete versionado y presentar a Lalo los resultados y los pendientes. Solicitar su aprobación para la primera publicación de la aplicación.
@@ -36,8 +36,8 @@ La [configuración TOML](https://docs.streamlit.io/develop/api-reference/configu
 
 ## Operación del visor
 
-Las rutas parten de `vista1.py`. No hay dependencia de una ruta personal, base de datos persistente ni descarga desde CENACE al atender consultas. Un paquete ausente/incompatible detiene la vista. El validador de filas se ejecuta como paso previo a aceptar datos; la aplicación hace la inspección de estructura/esquema, no una auditoría completa en cada interacción.
+Las rutas parten de `vista1.py`. No hay dependencia de una ruta personal, base de datos persistente ni descarga desde CENACE al atender consultas. Un paquete ausente/incompatible detiene la vista. El validador de filas se ejecuta como paso previo a aceptar datos; la aplicación verifica inventario, SHA-256, conteos, esquema y compresión al cargar una nueva versión, mientras que el validador realiza la auditoría completa de filas.
 
-La caché incluye la huella de los archivos y metadata, con límites de entradas. Cambiar el paquete invalida las consultas sin servir indefinidamente resultados anteriores. El pipeline debe publicar archivos y metadata consistentes en un solo commit. La comprobación de integridad completa y la procedencia corresponden al proceso de aceptación del paquete.
+La caché incluye la huella de los archivos y metadata, con límites de entradas. Cambiar el paquete invalida las consultas sin servir indefinidamente resultados anteriores. El pipeline debe publicar archivos y metadata consistentes en un solo commit. La revisión de procedencia y el cuadre de todas las filas corresponden al proceso de aceptación del paquete.
 
 El Mac mini no abre puertos, túneles ni conexiones entrantes. La nube sirve su propia copia. Las credenciales de escritura de `pml-bot` permanecen fuera del repositorio y del visor.

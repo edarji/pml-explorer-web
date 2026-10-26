@@ -2,7 +2,7 @@
 import duckdb
 import streamlit as st
 
-from vista1 import (DATA_DIR, RESOLUCIONES, DatosNoDisponibles, catalogo,
+from vista1 import (DATA_DIR, RESOLUCIONES, DatosNoDisponibles, actualizado_cdmx, catalogo,
                     cobertura_horaria, estadisticas, huella_paquete,
                     inspeccionar_paquete, serie)
 
@@ -44,6 +44,8 @@ if not nodos:
 st.caption(f"Datos diarios: {limites['desde']} a {limites['hasta']}. "
            f"Histórico horario disponible: {limites['horario_desde']} a {limites['horario_hasta']}.")
 
+st.caption(f"Actualización: {actualizado_cdmx(limites['generado_utc'])} · Ciudad de México")
+
 with st.sidebar:
     nodo = st.selectbox("Nodo", nodos, index=nodos.index("01AAN-85") if "01AAN-85" in nodos else 0)
     inicio = st.date_input("Desde", limites["desde"], min_value=limites["desde"], max_value=limites["hasta"])
@@ -79,7 +81,7 @@ if not horario_completo:
 
 c1, c2, c3, c4, c5 = st.columns(5)
 c1.metric("Promedio", f"{e['promedio']:,.0f}")
-c2.metric("Mediana", f"{e['mediana']:,.2f}" if horario_completo else "No disponible")
+c2.metric("Mediana", f"{e['mediana']:,.2f}" if horario_completo else "Requiere datos horarios")
 c3.metric("Mínimo", f"{e['minimo']:,.2f}")
 c4.metric("Máximo", f"{e['maximo']:,.2f}")
 c5.metric("Horas negativas", f"{int(e['horas_negativas']):,}")
@@ -90,5 +92,7 @@ with st.expander("Todas las estadísticas"):
     tabla = e.to_frame("valor").astype(object)
     for nombre in ("mediana", "p10", "p90"):
         if not horario_completo:
-            tabla.loc[nombre, "valor"] = "No disponible: requiere histórico horario completo"
+            tabla.loc[nombre, "valor"] = "Requiere datos horarios"
+    if not horario_completo:
+        tabla = tabla.astype(str)
     st.dataframe(tabla)

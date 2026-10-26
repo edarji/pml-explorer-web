@@ -1,56 +1,81 @@
-# Integración con el pipeline de Claude
+# Contrato de datos públicos — esquema v1
 
-Revisión: 2026-10-25. Este documento reemplaza la propuesta anterior de `data/public/`. **La estructura y las reglas económicas están acordadas; el esquema físico completo todavía no se ha recibido.** No se debe interpretar la preparación del lector como aceptación de un paquete no entregado.
+Contrato recibido de Claude por Lalo, fechado **2026-10-25**. Reemplaza la propuesta anterior de `data/public/`. El lector implementa este esquema; falta recibir y validar los archivos reales del pipeline. El ejemplo de metadata suministrado describe el formato y **no acredita una entrega ni sus conteos**.
 
-## Acuerdo localizado
+Fuente: **CENACE SW-PML, MDA, SIN**. Unidades: **MXN/MWh**. Parquet con compresión **zstd**, filas ordenadas por `nodo`.
 
-La respuesta de Claude del 25 de octubre de 2026 establece:
+**`data/` solo lo escribe el pipeline del Mac mini, autor `pml-bot`.** El visor y el validador no crean, editan ni borran archivos ahí.
 
-- `data/hourly/AAAA-MM-DD.parquet`: un día por archivo, ventana móvil de 365 días.
-- `data/daily/AAAA-MM.parquet`: un mes por archivo, histórico diario desde 2023-01.
-- `data/nodes.parquet`: catálogo público.
-- `data/metadata.json`: incluye `horario_desde` y `horario_hasta`.
-- Promedio = `SUM(suma_pml)/SUM(horas_validas)`; el diario incluye además `horas_negativas` y `suma_pml_cuadrado`.
-- La cobertura horaria suficiente exige que el rango completo sea inclusivamente interior a las fechas de metadata.
-- Solo el pipeline de Claude / `pml-bot` escribe en `data/`. Work mantiene el visor y la documentación.
+## Archivos
 
-La ventana puede ampliarse por el pipeline solo tras un nuevo acuerdo; este lector rechaza más de 365 días. No hay otra partición horaria/mensual oculta ni unión de ambas fuentes que duplique observaciones.
+- `hourly/AAAA-MM-DD.parquet`: un archivo por día, ventana de los últimos 365 días.
+- `daily/AAAA-MM.parquet`: un archivo por mes desde 2023-01; el mes en curso se reescribe cada día.
+- `nodes.parquet`: catálogo de nodos y fechas observadas.
+- `metadata.json`: rangos, conteos y SHA-256; el pipeline lo escribe al final.
 
-## Interfaz preparada del lector — pendiente de cotejo físico
+Los nombres del manifiesto son relativos a `data/`, sin rutas locales, equipos ni usuarios. Cada archivo del paquete debe estar enumerado en `archivos`, incluyendo `nodes.parquet`. La lista debe coincidir con las particiones de los rangos declarados; un extracto ilustrativo del JSON no es un manifiesto completo.
 
-| Archivo | Columnas que espera el lector | Origen de la decisión |
+## Esquemas Parquet
+
+| Archivo | Columna | Tipo |
 | --- | --- | --- |
-| Horario | `nodo`, `fecha`, `hora`, `pml` | Esquema de la vista 1 original |
-| Diario | `nodo`, `fecha`, `horas_validas`, `suma_pml`, `suma_pml_cuadrado`, `horas_negativas` | Claves originales y acumuladores acordados |
-| Diario | **`min_pml`, `max_pml`** | Nombres provisionales del adaptador; Claude debe confirmar los nombres reales |
-| Nodos | `nodo` | Clave original; confirmar el esquema completo de `nodes.parquet` |
-| Metadata | `horario_desde`, `horario_hasta` | Nombres confirmados por Claude |
+| hourly | `fecha` | DATE |
+| hourly | `hora` | INTEGER, 1..24 |
+| hourly | `nodo` | VARCHAR |
+| hourly | `pml` | DOUBLE |
+| daily | `fecha` | DATE |
+| daily | `nodo` | VARCHAR |
+| daily | `horas_validas` | INTEGER, 0..24 |
+| daily | `suma_pml` | DOUBLE |
+| daily | `suma_pml_cuadrado` | DOUBLE |
+| daily | `pml_min` | DOUBLE |
+| daily | `pml_max` | DOUBLE |
+| daily | `horas_negativas` | INTEGER |
+| nodes | `nodo` | VARCHAR |
+| nodes | `primera_fecha` | DATE |
+| nodes | `ultima_fecha` | DATE |
 
-Los dos nombres provisionales se concentran en `MIN_DIARIO` y `MAX_DIARIO`, en `vista1.py`. **No se pide al pipeline que cambie su contrato para ajustarse a ellos.** Al recibirlo, Work ajustará el lector si difieren. No se reconocen alias silenciosamente.
+La correspondencia Arrow que verifica el lector es DATE=date32, INTEGER=int32, VARCHAR=string y DOUBLE=float64. Se comprueban las columnas exactas; no se aceptan alias de otra versión.
 
-Tipos de lectura: `nodo` texto; `fecha` DATE o TIMESTAMP sin zona, a medianoche; `hora`, `horas_validas` y `horas_negativas` enteros; precios y acumuladores numéricos finitos, sin nulos. Los dos límites horarios deben poder leerse como fechas ISO. La aplicación admite columnas adicionales del pipeline, sujetas a su revisión de seguridad.
+La hora es **hora final**: hora 1 representa 00:00–01:00. La gráfica conserva la coordenada inicial del intervalo (`fecha + hora - 1`) de la vista validada. No es una conversión a UTC.
 
-Una fila horaria por `(nodo, fecha, hora)` y una diaria por `(nodo, fecha)`; horas 1..24; de 1 a 24 horas válidas por fila diaria. No generar filas de cero horas para completar fechas. El archivo solo contiene fechas de la partición indicada. Los días sin un nodo no se inventan ni se completan. Las claves del catálogo deben ser únicas y cubrir los datos. No se equipara el catálogo observado a un catálogo oficial de vigencias.
+Una fila horaria por `(nodo, fecha, hora)` y una diaria por `(nodo, fecha)`. No hay columna de promedio: se deriva de suma y horas válidas. Los precios horarios conservan los valores publicados por CENACE. No se redondean previamente las sumas ni las sumas de cuadrados.
 
-Los acumuladores se calculan sobre todas las horas válidas del día, **sin redondeo previo de sumas ni de cuadrados**. `min_pml`/`max_pml` designan el menor/mayor precio horario, nunca el mínimo/máximo de promedios diarios. La suma de cuadrados conserva precisión suficiente para la desviación muestral. El tipo físico y las tolerancias finales requieren cotejo con Claude.
+Un nodo solo tiene filas desde que existe. Una fila faltante significa sin dato, nunca precio cero. Una fila diaria con cero horas tampoco aporta observaciones: el lector la excluye de agregados y extremos. El validador exige en ese caso cero horas negativas, sumas cero o nulas y extremos nulos, para no representar precios inexistentes. Para filas con horas válidas, todos los acumuladores y extremos deben ser finitos y no nulos.
 
-## Metadata pendiente
+`primera_fecha` y `ultima_fecha` son el primer/último día **con dato**, no altas/bajas oficiales. El catálogo debe tener claves únicas y coincidir con las fechas observadas del histórico diario.
 
-Además de los límites horarios conocidos, falta recibir el contrato de:
+## Metadata
 
-- Fuente/procedencia CENACE, mercado MDA, sistema SIN y unidades MXN/MWh.
-- Fecha real de extracción/actualización, con zona horaria y significado preciso.
-- Cobertura diaria efectiva, número de filas/nodos y controles realizados.
-- Versionado del esquema y mecanismo de consistencia del paquete, si los define el pipeline.
+| Campo | Valor o significado |
+| --- | --- |
+| `version_esquema` | Cadena `"1"` |
+| `generado_utc` | Instante ISO 8601 con zona UTC de generación del paquete |
+| `fuente` | `CENACE SW-PML, MDA, SIN` |
+| `unidades` | `MXN/MWh` |
+| `convencion_hora` | `1-24 hora final` |
+| `horario_desde`, `horario_hasta` | Fechas ISO inclusivas de la ventana horaria |
+| `diario_desde`, `diario_hasta` | Fechas ISO inclusivas del histórico diario |
+| `nodos` | Número de nodos del catálogo |
+| `archivos` | Mapa de ruta relativa → `filas` (entero) y `sha256` (64 dígitos hexadecimales) |
 
-No se han inventado nombres de campos para estas propiedades ni creado un `metadata.json`. Por ahora el visor muestra el corte efectivo diario leído del paquete y la ventana horaria declarada; **ese corte no es el instante de extracción**. Integrar su fecha real de actualización en pantalla queda pendiente del contrato.
+La interfaz obtiene **todas las fechas del rango de metadata**, sin fechas fijas en código ni inferencia desde el reloj. Muestra `generado_utc` convertido con la zona IANA `America/Mexico_City`. Por ejemplo, el instante ilustrativo `2026-10-26T05:00:12Z` corresponde a `2026-10-25 23:00:12 CST`. Esa es la actualización del paquete; no se presenta como el instante de extracción original de CENACE.
 
-## Validación y publicación
+## Reglas de consulta
 
-`inspeccionar_paquete` comprueba presencia, nombres, esquema físico, particiones esperadas y coherencia de límites. La caché usa el contenido de metadata y la lista/tamaño/fecha de modificación de los archivos, por lo que un nuevo paquete invalida las consultas. No es una verificación criptográfica de procedencia.
+- Rango completo dentro de `horario_desde..horario_hasta`: usar hourly; todas las estadísticas de la vista 1.
+- Cualquier otro rango dentro del histórico diario: usar daily; solo gráfica diaria/mensual; mediana, P10 y P90 requieren datos horarios.
+- `n = SUM(horas_validas)`; promedio `SUM(suma_pml)/n`; extremos `MIN(pml_min)` y `MAX(pml_max)`; negativas `SUM(horas_negativas)`.
+- Desviación muestral: `SQRT((SUM(suma_pml_cuadrado)-SUM(suma_pml)^2/n)/(n-1))`, definida para n > 1.
+- Cobertura: `n / ((fin-inicio+1)*24)`, presentada como porcentaje.
+- Serie diaria: suma/horas; serie mensual: suma de acumuladores/suma de horas por mes. No se promedian promedios diarios.
 
-`scripts/validar_datos.py` recorre las filas sin escribir datos, rechaza nulos/no finitos/duplicados, comprueba catálogo, horas, fechas de partición y acumuladores básicos. Compara además horario y diario en todo el solapamiento. Un archivo ilegible o ausente devuelve código 1 y bloquea la aceptación.
+La lista de nodos viene de `nodes.parquet`. Nunca se unen ambas fuentes para contar dos veces el solapamiento. Los cuantiles no se estiman desde el diario.
 
-Faltan ejecutar esas comprobaciones sobre el paquete final, acordar tolerancias con los tipos reales y probar que una copia deliberadamente dañada del paquete temporal también es rechazada. Esa copia y cualquier exportación son responsabilidad del pipeline; Work no escribe ni siquiera archivos de prueba dentro de `data/`.
+## Verificación de solo lectura
 
-El pipeline debe publicar un paquete consistente en un único commit, incluyendo metadata. Claude conserva exportación, deploy key, revisión de seguridad, commit/push, `launchd` y actualización de datos. No se incorpora ninguna credencial al visor.
+Al cargar una nueva versión, `inspeccionar_paquete` comprueba metadata v1, inventario completo, SHA-256, conteos de filas/nodos, columnas, tipos y compresión. Una discrepancia detiene la vista. La caché incluye metadata y la lista/tamaño/fecha de modificación de los archivos; los hashes se comprueban cuando esa versión se carga.
+
+`scripts/validar_datos.py` añade comprobación de filas: orden por nodo, claves, fechas, horas, valores finitos, acumuladores, primeras/últimas observaciones y cuadre de horario contra diario en todo el solapamiento. Los hashes verifican consistencia con el manifiesto, no autentican por sí solos la procedencia oficial.
+
+Claude publica un paquete consistente, con metadata al final, en un único commit. Conserva exportación, revisión de seguridad, deploy key, commit/push y automatización. Work mantiene el visor. La prueba integral y de paquete dañado debe ejecutarse sobre la entrega real antes del despliegue aprobado por Lalo.
