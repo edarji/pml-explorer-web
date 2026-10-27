@@ -1,13 +1,13 @@
 {
   "version_esquema": "1",
-  "generado_utc": "2026-10-26T03:06:39Z",
+  "generado_utc": "2026-10-27T05:00:05Z",
   "fuente": "CENACE SW-PML, MDA, SIN",
   "unidades": "MXN/MWh",
   "convencion_hora": "1-24 hora final",
-  "horario_desde": "2025-10-27",
-  "horario_hasta": "2026-10-26",
+  "horario_desde": "2025-10-28",
+  "horario_hasta": "2026-10-27",
   "diario_desde": "2023-01-01",
-  "diario_hasta": "2026-10-26",
+  "diario_hasta": "2026-10-27",
   "nodos": 2459,
   "archivos": {
     "daily/2023-01.parquet": {
@@ -191,12 +191,8 @@
       "sha256": "1f76e002d3295d74f5ed7993c4e5b8a23a7e3a1e3553cad54a6da33773c3de04"
     },
     "daily/2026-10.parquet": {
-      "filas": 63924,
-      "sha256": "ab193214c360a6612aeb5e16ae0f58178af02a371b75b58c0bdbbf93f7aac206"
-    },
-    "hourly/2025-10-27.parquet": {
-      "filas": 58440,
-      "sha256": "4d6afd98e27ad917720f563c2b56bd046b656904dd45fd6b0863559808c4ff70"
+      "filas": 66383,
+      "sha256": "c40c20038d9cfb9ae362fa497f5372c50fad060fc8ad83cce564f69d7ec46ebe"
     },
     "hourly/2025-10-28.parquet": {
       "filas": 58440,
@@ -1654,9 +1650,13 @@
       "filas": 59016,
       "sha256": "4fd90ee4c6aca9a4adb047a6bd4cc7e207cac164788007fca36bc9bba792a9a2"
     },
+    "hourly/2026-10-27.parquet": {
+      "filas": 59016,
+      "sha256": "20b30f36c103df2a85c124c7af4b30538114cd078f574c483eb4786fbb546672"
+    },
     "nodes.parquet": {
       "filas": 2459,
-      "sha256": "670b346209e8dc940bbc98794006230a133537f766f01ac3d8f59238a7cc33a7"
+      "sha256": "c3431b02d12f0716afb6ffc544cc2538b81eec2844fc17e38342ca136fb6a0e1"
     }
   }
 }
