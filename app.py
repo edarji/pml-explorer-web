@@ -5,7 +5,8 @@ import pandas as pd
 import streamlit as st
 
 from vista2 import diferencial, resumen
-from vista1 import (DATA_DIR, RESOLUCIONES, DatosNoDisponibles, actualizado_cdmx, catalogo,
+from vista3 import componentes, resumen_componentes
+from vista1 import (DATA_DIR, RESOLUCIONES, UMBRAL_DESCUADRE, DatosNoDisponibles, actualizado_cdmx, catalogo,
                     cobertura_horaria, estadisticas, huella_paquete,
                     inspeccionar_paquete, marcar_periodos, observado, serie)
 
@@ -36,6 +37,16 @@ def consultar_resumen(nodo_a, nodo_b, inicio, fin, data_dir, version):
 @st.cache_data(max_entries=32, show_spinner=False)
 def consultar_diferencial(nodo_a, nodo_b, inicio, fin, resolucion, data_dir, version):
     return diferencial(nodo_a, nodo_b, inicio, fin, resolucion, data_dir)
+
+
+@st.cache_data(max_entries=32, show_spinner=False)
+def consultar_resumen_componentes(nodo, inicio, fin, data_dir, version):
+    return resumen_componentes(nodo, inicio, fin, data_dir)
+
+
+@st.cache_data(max_entries=32, show_spinner=False)
+def consultar_componentes(nodo, inicio, fin, resolucion, data_dir, version):
+    return componentes(nodo, inicio, fin, resolucion, data_dir)
 
 
 def mxn(valor):
@@ -84,6 +95,7 @@ def metodologia():
 - **Faltantes:** una hora sin dato **no es un precio cero**; no se imputa ni se arrastra. La cobertura es horas con dato ÷ (24 × días del rango).
 - **Periodos parciales:** un mes o día que el rango no cubre completo, o que tiene horas sin dato, se marca con ▼ y su promedio usa solo las horas disponibles.
 - **Spread (vista 2):** PML_A − PML_B hora por hora, solo en las horas en que los dos nodos tienen dato; después se promedia por día o mes. Fuera de la ventana horaria se usan los días en que ambos nodos tienen las 24 horas (ahí todas las horas coinciden y el cálculo es exacto); un día incompleto en algún nodo se excluye.
+- **Componentes (vista 3):** PML = energía + pérdidas + congestión, con sus signos (pérdidas y congestión pueden ser negativas). Todos se promedian sobre las mismas horas que el PML. El **descuadre** es |PML − (energía + pérdidas + congestión)| por hora y viene del redondeo de CENACE; se avisa cuando supera {UMBRAL_DESCUADRE} MXN/MWh.
 - **Histórico horario y diario:** mediana y percentiles requieren que todo el rango esté dentro de la ventana horaria (último año). Fuera de ella se usan acumuladores diarios exactos para promedio, extremos, desviación y horas negativas.
 - **Fechas:** “Desde/Hasta” son **fechas de operación** del mercado. “Actualización” es cuándo se generó el paquete público, no cuándo CENACE publicó cada día.
 - **Precisión:** precios con dos decimales; la desviación estándar es muestral.
@@ -277,6 +289,90 @@ def vista_2(limites, nodos, fechas_nodo, version):
                      column_config={"Spread A − B (MXN/MWh)": st.column_config.NumberColumn(format="%.2f")})
 
 
+def vista_3(limites, nodos, fechas_nodo, version):
+    """Vista 3: PML descompuesto en energía, pérdidas y congestión, con su signo."""
+    with st.sidebar:
+        nodo = st.selectbox("Nodo", nodos, index=nodos.index("01AAN-85") if "01AAN-85" in nodos else 0, key="nodo")
+        inicio, fin, resolucion = controles_rango(limites)
+        primera, ultima = fechas_nodo.get(nodo, (None, None))
+        if primera:
+            st.caption(f"{nodo} tiene datos del {primera} al {ultima}.")
+
+    st.markdown("**PML = energía + pérdidas + congestión** (MXN/MWh). La energía es igual en todos los nodos a la "
+                "misma hora; pérdidas y congestión son lo propio del nodo y pueden ser negativas.")
+    if not limites.get("componentes"):
+        st.info("Los componentes del PML todavía no están en el paquete público. Esta vista se activa sola "
+                "cuando el pipeline publique la versión 2 de los datos.")
+        st.stop()
+    if inicio > fin:
+        st.error("La fecha 'Desde' debe ser anterior a 'Hasta'.")
+        st.stop()
+    horario_completo = cobertura_horaria(inicio, fin)
+    if not horario_completo and resolucion == "horaria":
+        st.warning(f"La resolución horaria requiere que todo el rango esté entre {limites['horario_desde']} "
+                   f"y {limites['horario_hasta']}. Ajusta las fechas o elige diaria o mensual.")
+        st.stop()
+
+    try:
+        r = consultar_resumen_componentes(nodo, inicio, fin, str(DATA_DIR), version).iloc[0]
+        df = consultar_componentes(nodo, inicio, fin, resolucion, str(DATA_DIR), version)
+    except (DatosNoDisponibles, duckdb.Error):
+        st.error("No se puede consultar el rango con el paquete público recibido. Es necesario revisar sus particiones y esquema.")
+        st.stop()
+
+    if r["horas_con_dato"] == 0:
+        detalle = f" {nodo} tiene datos del {primera} al {ultima}." if primera else ""
+        st.warning(f"Sin observaciones para {nodo} entre {inicio} y {fin}.{detalle} "
+                   "No se muestra ninguna cifra: la ausencia de datos no equivale a precio cero.")
+        st.stop()
+
+    st.subheader(f"{nodo}: componentes del PML, {inicio} a {fin}")
+    con_dato = int(r["horas_con_dato"])
+    st.write(f"**Cobertura:** {r['cobertura_pct']}% ({con_dato:,} de {int(r['horas_del_rango']):,} horas con dato). "
+             f"**Rango con observaciones:** {r['primera_fecha'].date()} a {r['ultima_fecha'].date()}.")
+    if r["cobertura_pct"] < COBERTURA_ESCASA:
+        st.warning(f"Cobertura escasa: los promedios describen solo {con_dato:,} horas. Las horas sin dato no se tratan como cero.")
+    st.caption(f"Promedios horarios simples sobre las mismas {con_dato:,} horas para el PML y cada componente.")
+
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("PML promedio", mxn(r["pml"]))
+    c2.metric("Energía", mxn(r["energia"]))
+    c3.metric("Pérdidas", mxn(r["perdidas"]))
+    c4.metric("Congestión", mxn(r["congestion"]))
+    c5, c6, c7 = st.columns(3)
+    c5.metric("Horas con congestión > 0", f"{int(r['horas_congestion_positiva']):,}")
+    c6.metric("Horas con congestión < 0", f"{int(r['horas_congestion_negativa']):,}")
+    c7.metric("Descuadre máximo", f"{r['descuadre_max']:,.4f}",
+              help="Máximo de |PML − (energía + pérdidas + congestión)| en una hora. Viene del redondeo de CENACE.")
+    if r["horas_descuadre"] > 0:
+        st.warning(f"{int(r['horas_descuadre']):,} horas con descuadre mayor a {UMBRAL_DESCUADRE} MXN/MWh.")
+    else:
+        st.caption(f"Ninguna hora con descuadre mayor a {UMBRAL_DESCUADRE} MXN/MWh.")
+
+    df = marcar_periodos(df, inicio, fin, resolucion)
+    nombres = {"energia": "Energía", "perdidas": "Pérdidas", "congestion": "Congestión"}
+    largo = df.melt(id_vars=["periodo", "etiqueta"], value_vars=list(nombres), var_name="componente", value_name="valor")
+    largo["componente"] = largo["componente"].map(nombres)
+    st.markdown("**Componentes del PML (barras apiladas, MXN/MWh)** · los negativos quedan debajo del cero")
+    st.altair_chart(alt.Chart(largo).mark_bar().encode(
+        x=alt.X("periodo:T", title=None), y=alt.Y("valor:Q", title="MXN/MWh", stack="zero"),
+        color=alt.Color("componente:N", title=None, sort=list(nombres.values())),
+        tooltip=[alt.Tooltip("etiqueta:N", title="Periodo"), alt.Tooltip("componente:N", title="Componente"),
+                 alt.Tooltip("valor:Q", title="MXN/MWh", format=",.2f")]), width="stretch")
+    st.markdown("**Pérdidas y congestión (MXN/MWh)** · la parte propia del nodo, a su escala")
+    st.line_chart(df.rename(columns={"perdidas": "Pérdidas", "congestion": "Congestión"}),
+                  x="periodo", y=["Pérdidas", "Congestión"], y_label="MXN/MWh", x_label="")
+    avisos_parciales(df, resolucion)
+
+    with st.expander("Tabla de componentes y descuadre"):
+        tabla = df[["etiqueta", "pml", "energia", "perdidas", "congestion", "descuadre", "horas"]].rename(columns={
+            "etiqueta": "Periodo", "pml": "PML", "energia": "Energía", "perdidas": "Pérdidas",
+            "congestion": "Congestión", "descuadre": "Descuadre promedio", "horas": "Horas con dato"})
+        formato = {c: st.column_config.NumberColumn(format="%.2f") for c in ("PML", "Energía", "Pérdidas", "Congestión")}
+        formato["Descuadre promedio"] = st.column_config.NumberColumn(format="%.4f")
+        st.dataframe(tabla, hide_index=True, width="stretch", column_config=formato)
+
+
 st.set_page_config(page_title="PML Explorer", layout="wide")
 st.title("PML Explorer v0.2 beta")
 st.caption("Precio Marginal Local, MDA del SIN (CENACE). Unidades: MXN/MWh.")
@@ -301,6 +397,6 @@ st.caption(f"Fechas de operación disponibles: {limites['desde']} a {limites['ha
            f"Actualización del paquete: {actualizado_cdmx(limites['generado_utc'])}, Ciudad de México.")
 metodologia()
 
-VISTAS = {"1. PML histórico": vista_1, "2. Comparar nodos (spread)": vista_2}
+VISTAS = {"1. PML histórico": vista_1, "2. Comparar nodos (spread)": vista_2, "3. Componentes del PML": vista_3}
 vista = st.sidebar.radio("Vista", list(VISTAS), key="vista")
 VISTAS[vista](limites, nodos, fechas_nodo, version)

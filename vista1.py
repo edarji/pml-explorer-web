@@ -19,6 +19,14 @@ RESOLUCIONES = {"horaria": "hour", "diaria": "day", "mensual": "month"}
 # Contrato público v1.
 MIN_DIARIO = "pml_min"
 MAX_DIARIO = "pml_max"
+# Contrato v2 = v1 + componentes del PML (energía, pérdidas, congestión). Aditivo.
+VERSIONES = ("1", "2")
+UMBRAL_DESCUADRE = 0.02  # MXN/MWh, umbral metodológico acordado para |PML − Σ componentes|
+COMPONENTES_HORARIO = {"energia": pa.float64(), "perdidas": pa.float64(), "congestion": pa.float64()}
+COMPONENTES_DIARIO = {"suma_energia": pa.float64(), "suma_perdidas": pa.float64(),
+                      "suma_congestion": pa.float64(), "horas_congestion_positiva": pa.int32(),
+                      "horas_congestion_negativa": pa.int32(), "descuadre_max": pa.float64(),
+                      "horas_descuadre": pa.int32()}
 
 
 class DatosNoDisponibles(ValueError):
@@ -54,9 +62,9 @@ def huella_paquete(data_dir=DATA_DIR):
 
 
 def validar_metadata(m):
-    """Valida el contrato v1 sin escribir archivos ni inferir fechas."""
-    if not isinstance(m, dict) or m.get("version_esquema") != "1":
-        raise DatosNoDisponibles("Se requiere metadata del esquema 1.")
+    """Valida el contrato v1/v2 sin escribir archivos ni inferir fechas."""
+    if not isinstance(m, dict) or m.get("version_esquema") not in VERSIONES:
+        raise DatosNoDisponibles("Se requiere metadata del esquema 1 o 2.")
     try:
         for campo, esperado in (("fuente", "CENACE SW-PML, MDA, SIN"),
                                 ("unidades", "MXN/MWh"),
@@ -86,7 +94,7 @@ def validar_metadata(m):
             if not isinstance(info.get("sha256"), str) or not re.fullmatch(r"[0-9a-fA-F]{64}", info["sha256"]):
                 raise ValueError("sha256 inválido")
     except (ValueError, KeyError, TypeError, AttributeError) as exc:
-        raise DatosNoDisponibles("metadata.json no cumple el contrato v1.") from exc
+        raise DatosNoDisponibles("metadata.json no cumple el contrato.") from exc
     return m
 
 
@@ -94,7 +102,7 @@ def metadata(data_dir=DATA_DIR):
     try:
         return validar_metadata(json.loads((Path(data_dir) / "metadata.json").read_text()))
     except (OSError, ValueError) as exc:
-        raise DatosNoDisponibles("Falta metadata.json válido del esquema 1.") from exc
+        raise DatosNoDisponibles("Falta metadata.json válido del esquema 1 o 2.") from exc
 
 
 def actualizado_cdmx(generado_utc):
@@ -153,6 +161,9 @@ def inspeccionar_paquete(data_dir=DATA_DIR):
                   "horas_negativas": pa.int32(), MIN_DIARIO: pa.float64(), MAX_DIARIO: pa.float64()},
         "nodes": {"nodo": pa.string(), "primera_fecha": pa.date32(), "ultima_fecha": pa.date32()},
     }
+    if m["version_esquema"] == "2":
+        requeridas["hourly"].update(COMPONENTES_HORARIO)
+        requeridas["daily"].update(COMPONENTES_DIARIO)
     for nombre in sorted(esperados):
         path = root / nombre
         grupo = "nodes" if nombre == "nodes.parquet" else path.parent.name
@@ -181,7 +192,7 @@ def inspeccionar_paquete(data_dir=DATA_DIR):
     # La fuente de fechas de la interfaz es siempre metadata.json.
     return {"desde": _fecha(m["diario_desde"]), "hasta": _fecha(m["diario_hasta"]),
             "horario_desde": _fecha(m["horario_desde"]), "horario_hasta": _fecha(m["horario_hasta"]),
-            "generado_utc": m["generado_utc"]}
+            "generado_utc": m["generado_utc"], "componentes": m["version_esquema"] == "2"}
 
 
 def serie(nodo, inicio, fin, resolucion, data_dir=DATA_DIR):
