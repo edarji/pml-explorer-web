@@ -4,6 +4,7 @@ import duckdb
 import pandas as pd
 import streamlit as st
 
+from vista2 import diferencial, resumen
 from vista1 import (DATA_DIR, RESOLUCIONES, DatosNoDisponibles, actualizado_cdmx, catalogo,
                     cobertura_horaria, estadisticas, huella_paquete,
                     inspeccionar_paquete, marcar_periodos, observado, serie)
@@ -25,6 +26,16 @@ def consultar_estadisticas(nodo, inicio, fin, data_dir, version):
 @st.cache_data(max_entries=32, show_spinner=False)
 def consultar_serie(nodo, inicio, fin, resolucion, data_dir, version):
     return serie(nodo, inicio, fin, resolucion, data_dir)
+
+
+@st.cache_data(max_entries=32, show_spinner=False)
+def consultar_resumen(nodo_a, nodo_b, inicio, fin, data_dir, version):
+    return resumen(nodo_a, nodo_b, inicio, fin, data_dir)
+
+
+@st.cache_data(max_entries=32, show_spinner=False)
+def consultar_diferencial(nodo_a, nodo_b, inicio, fin, resolucion, data_dir, version):
+    return diferencial(nodo_a, nodo_b, inicio, fin, resolucion, data_dir)
 
 
 def mxn(valor):
@@ -72,6 +83,7 @@ def metodologia():
 - **Convención horaria:** hora 1–24 de CENACE, hora final: la hora 1 es 00:00–01:00 del día de operación. En la gráfica horaria cada punto se dibuja al inicio de su hora. No hay conversión a UTC.
 - **Faltantes:** una hora sin dato **no es un precio cero**; no se imputa ni se arrastra. La cobertura es horas con dato ÷ (24 × días del rango).
 - **Periodos parciales:** un mes o día que el rango no cubre completo, o que tiene horas sin dato, se marca con ▼ y su promedio usa solo las horas disponibles.
+- **Spread (vista 2):** PML_A − PML_B hora por hora, solo en las horas en que los dos nodos tienen dato; después se promedia por día o mes. Fuera de la ventana horaria se usan los días en que ambos nodos tienen las 24 horas (ahí todas las horas coinciden y el cálculo es exacto); un día incompleto en algún nodo se excluye.
 - **Histórico horario y diario:** mediana y percentiles requieren que todo el rango esté dentro de la ventana horaria (último año). Fuera de ella se usan acumuladores diarios exactos para promedio, extremos, desviación y horas negativas.
 - **Fechas:** “Desde/Hasta” son **fechas de operación** del mercado. “Actualización” es cuándo se generó el paquete público, no cuándo CENACE publicó cada día.
 - **Precisión:** precios con dos decimales; la desviación estándar es muestral.
@@ -80,16 +92,22 @@ Documento completo: [metodología]({REPO}/docs/methodology.md) · [contrato de d
 """)
 
 
+def controles_rango(limites):
+    """Fechas y resolución, compartidas entre vistas."""
+    inicio = st.date_input("Desde", limites["desde"], min_value=limites["desde"], max_value=limites["hasta"], key="desde")
+    fin = st.date_input("Hasta", limites["hasta"], min_value=limites["desde"], max_value=limites["hasta"], key="hasta")
+    resolucion = st.radio("Resolución de la gráfica", list(RESOLUCIONES), index=1, key="resolucion",
+                          help="Solo cambia la gráfica. Los indicadores siempre son horarios.")
+    return inicio, fin, resolucion
+
+
 def vista_1(limites, nodos, fechas_nodo, version):
     """Vista 1: PML histórico de un nodo."""
     with st.sidebar:
-        nodo = st.selectbox("Nodo", nodos, index=nodos.index("01AAN-85") if "01AAN-85" in nodos else 0,
+        nodo = st.selectbox("Nodo", nodos, index=nodos.index("01AAN-85") if "01AAN-85" in nodos else 0, key="nodo",
                             help="Busca por clave NodoP (por ejemplo 01AAN-85). El paquete público "
                                  "aún no incluye nombres de localidad ni regiones.")
-        inicio = st.date_input("Desde", limites["desde"], min_value=limites["desde"], max_value=limites["hasta"])
-        fin = st.date_input("Hasta", limites["hasta"], min_value=limites["desde"], max_value=limites["hasta"])
-        resolucion = st.radio("Resolución de la gráfica", list(RESOLUCIONES), index=1,
-                              help="Solo cambia la gráfica. Los indicadores siempre son horarios.")
+        inicio, fin, resolucion = controles_rango(limites)
         primera, ultima = fechas_nodo.get(nodo, (None, None))
         if primera:
             st.caption(f"{nodo} tiene datos del {primera} al {ultima}.")
@@ -177,8 +195,90 @@ def vista_1(limites, nodos, fechas_nodo, version):
                      column_config={"PML promedio (MXN/MWh)": st.column_config.NumberColumn(format="%.2f")})
 
 
+def vista_2(limites, nodos, fechas_nodo, version):
+    """Vista 2: spread A − B, solo en las horas en que los dos nodos tienen dato."""
+    with st.sidebar:
+        defecto_b = "01AGU-230" if "01AGU-230" in nodos else nodos[min(1, len(nodos) - 1)]
+        nodo_a = st.selectbox("Nodo A", nodos, index=nodos.index("01AAN-85") if "01AAN-85" in nodos else 0, key="nodo_a")
+        nodo_b = st.selectbox("Nodo B", nodos, index=nodos.index(defecto_b), key="nodo_b")
+        inicio, fin, resolucion = controles_rango(limites)
+        for n in (nodo_a, nodo_b):
+            if n in fechas_nodo:
+                st.caption(f"{n} tiene datos del {fechas_nodo[n][0]} al {fechas_nodo[n][1]}.")
+
+    st.markdown("**Spread = PML_A − PML_B** (MXN/MWh). Positivo: A más caro que B. "
+                "Solo se comparan las horas en que los dos nodos tienen dato; después se agrega por día o mes.")
+    if nodo_a == nodo_b:
+        st.error("Elige dos nodos distintos.")
+        st.stop()
+    if inicio > fin:
+        st.error("La fecha 'Desde' debe ser anterior a 'Hasta'.")
+        st.stop()
+    horario_completo = cobertura_horaria(inicio, fin)
+    if not horario_completo and resolucion == "horaria":
+        st.warning(f"La resolución horaria requiere que todo el rango esté entre {limites['horario_desde']} "
+                   f"y {limites['horario_hasta']}. Ajusta las fechas o elige diaria o mensual.")
+        st.stop()
+
+    try:
+        r = consultar_resumen(nodo_a, nodo_b, inicio, fin, str(DATA_DIR), version).iloc[0]
+        d = consultar_diferencial(nodo_a, nodo_b, inicio, fin, resolucion, str(DATA_DIR), version)
+        a = consultar_serie(nodo_a, inicio, fin, resolucion, str(DATA_DIR), version)
+        b = consultar_serie(nodo_b, inicio, fin, resolucion, str(DATA_DIR), version)
+    except (DatosNoDisponibles, duckdb.Error):
+        st.error("No se puede consultar el rango con el paquete público recibido. Es necesario revisar sus particiones y esquema.")
+        st.stop()
+
+    if r["horas_coincidentes"] == 0:
+        fechas = "; ".join(f"{n}: {fechas_nodo[n][0]} a {fechas_nodo[n][1]}" for n in (nodo_a, nodo_b) if n in fechas_nodo)
+        st.warning(f"{nodo_a} y {nodo_b} no tienen horas con dato en común entre {inicio} y {fin}. "
+                   f"Datos observados: {fechas}. No se calcula spread: la ausencia de datos no equivale a precio cero.")
+        st.stop()
+
+    st.subheader(f"{nodo_a} − {nodo_b}: {inicio} a {fin}")
+    comunes, del_rango = int(r["horas_coincidentes"]), int(r["horas_del_rango"])
+    desde_obs, hasta_obs = r["primera_fecha"].date(), r["ultima_fecha"].date()
+    st.write(f"**Cobertura común:** {r['cobertura_pct']}% ({comunes:,} de {del_rango:,} horas con dato en los dos nodos). "
+             f"**Rango común con observaciones:** {desde_obs} a {hasta_obs}.")
+    if r["cobertura_pct"] < COBERTURA_ESCASA:
+        st.warning(f"Cobertura común escasa: el spread describe solo {comunes:,} horas, entre {desde_obs} y {hasta_obs}. "
+                   "Las horas en que falta alguno de los dos nodos se excluyen, no se imputan.")
+    if r["dias_no_comparables"]:
+        st.warning(f"{int(r['dias_no_comparables']):,} días con horas incompletas en algún nodo se excluyeron: "
+                   "fuera de la ventana horaria no se puede saber qué horas coinciden.")
+    if not horario_completo:
+        st.caption("Fuera de la ventana horaria el spread se calcula con los días en que ambos nodos tienen las 24 horas. "
+                   f"Mediana, mínimo, máximo y % de horas con A más caro requieren el rango entre "
+                   f"{limites['horario_desde']} y {limites['horario_hasta']}.")
+
+    c1, c2, c3, c4, c5 = st.columns(5)
+    c1.metric("Spread promedio", mxn(r["promedio"]), help="Promedio horario simple de PML_A − PML_B en las horas coincidentes.")
+    c2.metric("Mediana horaria", mxn(r["mediana"]))
+    c3.metric("Mínimo horario", mxn(r["minimo"]))
+    c4.metric("Máximo horario", mxn(r["maximo"]))
+    c5.metric("Horas con A más caro", "—" if pd.isna(r["pct_a_mas_caro"]) else f"{r['pct_a_mas_caro']}%")
+
+    st.markdown(f"**PML de cada nodo (MXN/MWh)** · cada curva con todas sus horas con dato")
+    curvas = pd.merge(a[["periodo", "pml_promedio"]].rename(columns={"pml_promedio": nodo_a}),
+                      b[["periodo", "pml_promedio"]].rename(columns={"pml_promedio": nodo_b}),
+                      on="periodo", how="outer")
+    st.line_chart(curvas, x="periodo", y=[nodo_a, nodo_b], y_label="MXN/MWh", x_label="")
+
+    d = marcar_periodos(d, inicio, fin, resolucion)
+    st.markdown("**Spread A − B (MXN/MWh)** · solo horas coincidentes")
+    grafica(d, "dif_promedio", "Spread A − B (MXN/MWh)", resolucion)
+    avisos_parciales(d, resolucion)
+
+    with st.expander("Tabla del spread"):
+        tabla = d[["etiqueta", "dif_promedio", "horas", "horas_posibles"]].rename(columns={
+            "etiqueta": "Periodo", "dif_promedio": "Spread A − B (MXN/MWh)",
+            "horas": "Horas coincidentes", "horas_posibles": "Horas posibles en el rango"})
+        st.dataframe(tabla, hide_index=True, width="stretch",
+                     column_config={"Spread A − B (MXN/MWh)": st.column_config.NumberColumn(format="%.2f")})
+
+
 st.set_page_config(page_title="PML Explorer", layout="wide")
-st.title("PML Explorer v0.1")
+st.title("PML Explorer v0.2 beta")
 st.caption("Precio Marginal Local, MDA del SIN (CENACE). Unidades: MXN/MWh.")
 
 if not (DATA_DIR / "metadata.json").is_file():
@@ -201,4 +301,6 @@ st.caption(f"Fechas de operación disponibles: {limites['desde']} a {limites['ha
            f"Actualización del paquete: {actualizado_cdmx(limites['generado_utc'])}, Ciudad de México.")
 metodologia()
 
-vista_1(limites, nodos, fechas_nodo, version)
+VISTAS = {"1. PML histórico": vista_1, "2. Comparar nodos (spread)": vista_2}
+vista = st.sidebar.radio("Vista", list(VISTAS), key="vista")
+VISTAS[vista](limites, nodos, fechas_nodo, version)

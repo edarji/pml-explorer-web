@@ -19,10 +19,10 @@ class InterfazPublica(unittest.TestCase):
     def correr(self, nodo, desde, hasta, resolucion):
         from streamlit.testing.v1 import AppTest
         app = AppTest.from_file(APP, default_timeout=120).run()
-        app.sidebar.selectbox[0].set_value(nodo)
-        app.sidebar.date_input[0].set_value(desde)
-        app.sidebar.date_input[1].set_value(hasta)
-        app.sidebar.radio[0].set_value(resolucion)
+        app.selectbox(key="nodo").set_value(nodo)
+        app.date_input(key="desde").set_value(desde)
+        app.date_input(key="hasta").set_value(hasta)
+        app.radio(key="resolucion").set_value(resolucion)
         app.run()
         self.assertFalse(app.exception)
         return app

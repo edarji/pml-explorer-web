@@ -1,5 +1,22 @@
 # Validaciones y aceptación pendiente
 
+## 2026-10-30 · Entrega 2: spread entre nodos (vista 2)
+
+`vista2.py` reutiliza la consulta validada de `power-market-lab/scripts/vista2.py` dentro de la ventana horaria (JOIN por fecha y hora antes de agregar). Fuera de la ventana usa los acumuladores diarios solo en días con 24 horas en ambos nodos, donde todas las horas coinciden y el promedio es exacto; los días incompletos se excluyen y se cuentan (en el paquete al 2026-10-30 no hay ninguno).
+
+`tests/test_vista2.py` con el paquete real, A = 01AAN-85, B = 03TLJ-230 (nace el 2026-09-11), últimos 90 días de la ventana:
+
+| Propiedad | Resultado |
+| --- | --- |
+| A = A → cero (horario y diario) | Promedio, mínimo, máximo y horas con A más caro = 0; cobertura 100 % |
+| Intercambiar A/B | Signo invertido en las tres resoluciones; mínimo y máximo intercambiados |
+| Solo horas coincidentes | Horas coincidentes = horas de B; ningún periodo antes del alta de B |
+| Diario = horario en la ventana | Series diaria/mensual iguales a ±0.01 (un centavo en fronteras de redondeo), mismas horas |
+| Sin horas comunes | 0 horas, promedio nulo; la interfaz no muestra cifras |
+| Interfaz | Cobertura común escasa, mediana «—» fuera de ventana, bloqueo A = A, horaria fuera de ventana bloqueada |
+
+Tiempos locales: histórico completo 0.39 s; año horario 0.63 s.
+
 ## 2026-10-30 · Entrega 1: interfaz pública (auditoría de Lalo)
 
 Pruebas: `PML_REFERENCE_GLOB="$PWD/data/hourly/*.parquet" python -m unittest discover -s tests` con el paquete al 2026-10-30 (14 pruebas, OK). `tests/test_app_publica.py` recorre la interfaz con el paquete real versionado:
