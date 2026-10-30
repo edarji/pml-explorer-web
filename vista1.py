@@ -219,7 +219,9 @@ def estadisticas(nodo, inicio, fin, data_dir=DATA_DIR):
            MAX(pml) AS maximo,
            ROUND(QUANTILE_CONT(pml, 0.10), 2) AS p10,
            ROUND(QUANTILE_CONT(pml, 0.90), 2) AS p90,
-           COUNT(*) FILTER (WHERE pml < 0) AS horas_negativas
+           COUNT(*) FILTER (WHERE pml < 0) AS horas_negativas,
+           MIN(fecha) AS primera_fecha,
+           MAX(fecha) AS ultima_fecha
     FROM read_parquet(?)
     WHERE nodo = ? AND fecha BETWEEN ? AND ?
     """
@@ -250,7 +252,8 @@ def estadisticas_diarias(nodo, inicio, fin, data_dir=DATA_DIR):
             SELECT COALESCE(SUM(horas_validas), 0)::BIGINT AS n,
                    SUM(suma_pml) AS s, SUM(suma_pml_cuadrado) AS q,
                    MIN({MIN_DIARIO}) AS minimo, MAX({MAX_DIARIO}) AS maximo,
-                   COALESCE(SUM(horas_negativas), 0)::BIGINT AS negativas
+                   COALESCE(SUM(horas_negativas), 0)::BIGINT AS negativas,
+                   MIN(fecha) AS primera_fecha, MAX(fecha) AS ultima_fecha
             FROM read_parquet(?) WHERE nodo = ? AND fecha BETWEEN ? AND ? AND horas_validas > 0
         )
         SELECT n AS horas_con_dato,
@@ -259,7 +262,7 @@ def estadisticas_diarias(nodo, inicio, fin, data_dir=DATA_DIR):
                NULL::DOUBLE AS mediana,
                CASE WHEN n > 1 THEN ROUND(SQRT(GREATEST(0, (q - s*s/n) / (n-1))), 2) END AS desv_std,
                minimo, maximo, NULL::DOUBLE AS p10, NULL::DOUBLE AS p90,
-               negativas AS horas_negativas
+               negativas AS horas_negativas, primera_fecha, ultima_fecha
         FROM acumulado
     """, [_archivos("daily", inicio, fin, data_dir), nodo, inicio, fin, fin, inicio])
     df["cobertura_pct"] = round(100 * df["horas_con_dato"] / df["horas_del_rango"], 1)
@@ -270,3 +273,54 @@ def catalogo(data_dir=DATA_DIR):
     """Catálogo público entregado por el pipeline, sin configuración privada."""
     return _consulta("SELECT DISTINCT nodo FROM read_parquet(?) WHERE nodo IS NOT NULL ORDER BY nodo",
                      [str(Path(data_dir) / "nodes.parquet")])["nodo"].tolist()
+
+
+def observado(data_dir=DATA_DIR):
+    """Primer y último día con dato de cada nodo, según nodes.parquet (no son altas/bajas oficiales)."""
+    df = _consulta("SELECT nodo, primera_fecha, ultima_fecha FROM read_parquet(?)",
+                   [str(Path(data_dir) / "nodes.parquet")])
+    return {n: (_fecha(a), _fecha(b)) for n, a, b in df.itertuples(index=False)}
+
+
+_MESES = ("ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic")
+
+
+def marcar_periodos(df, inicio, fin, resolucion):
+    """Añade a una serie las horas posibles de cada periodo dentro del rango y si es parcial.
+
+    Un periodo es parcial si el rango elegido no cubre el día o mes completo, o si tiene
+    menos horas con dato que horas posibles. No cambia los promedios.
+    """
+    inicio, fin = _rango(inicio, fin)
+    df = df.copy()
+    if df.empty:
+        for c in ("desde", "hasta", "horas_posibles", "parcial", "etiqueta"):
+            df[c] = []
+        return df
+    desde, hasta, posibles, parcial, etiqueta = [], [], [], [], []
+    for periodo, horas in zip(df["periodo"], df["horas"]):
+        dia = _fecha(periodo)
+        if resolucion == "mensual":
+            fin_mes = (dia.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
+            a, b = max(dia, inicio), min(fin_mes, fin)
+            dias_mes = fin_mes.day
+            n = (b - a).days + 1
+            texto = f"{_MESES[dia.month - 1]} {dia.year}"
+            if n < dias_mes:
+                texto += f" ({a.day}–{b.day} {_MESES[dia.month - 1]}: {n} de {dias_mes} días)"
+            posible = n * 24
+        elif resolucion == "diaria":
+            a = b = dia
+            texto, posible = dia.isoformat(), 24
+        else:
+            a = b = dia
+            texto, posible = str(periodo)[:16], 1
+        desde.append(a)
+        hasta.append(b)
+        posibles.append(posible)
+        es_parcial = int(horas) < posible or (resolucion == "mensual" and texto.endswith("días)"))
+        parcial.append(bool(es_parcial))
+        etiqueta.append(texto + (f" · {int(horas)} de {posible} h con dato" if int(horas) < posible else ""))
+    df["desde"], df["hasta"], df["horas_posibles"] = desde, hasta, posibles
+    df["parcial"], df["etiqueta"] = parcial, etiqueta
+    return df
