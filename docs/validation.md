@@ -1,5 +1,23 @@
 # Validaciones y aceptación pendiente
 
+## 2026-10-30 · Entrega 3: componentes (vista 3) y contrato v2
+
+`vista3.py` reutiliza la consulta validada de `power-market-lab/scripts/vista3.py` en la ventana horaria (umbral de descuadre 0.02 MXN/MWh; el conteo compara el descuadre redondeado a 6 decimales para no contar ruido de coma flotante). Fuera de la ventana usa los acumuladores v2 sobre las mismas `horas_validas` del PML.
+
+**El paquete público aún es v1**, así que la vista muestra «pendiente» (prueba `test_vista3_pendiente_con_paquete_v1`). La plomería v2 se probó en un entorno aislado con PML real y componentes **sintéticos** (nunca versionados ni publicados), 3 nodos, 2026-09-01 a 2026-10-30:
+
+| Comprobación | Resultado |
+| --- | --- |
+| Export v2 + `validar_publico.py` (privado) + `scripts/validar_datos.py` | Sin errores |
+| Vista 3 pública vs SQL privado, horaria/diaria/mensual y resumen | Idénticos en 3 nodos |
+| Acumuladores diarios vs horario | Conteos y descuadre idénticos; promedios ±0.01 |
+| Congestión negativa, descuadre 0.03 en 30 horas | Signos conservados; aviso «30 horas con descuadre mayor a 0.02» |
+| Sin datos / horaria fuera de ventana | Sin cifras / bloqueada |
+| Componente diario alterado con SHA-256 recalculado | `NO APTO`: «Los componentes diarios no cuadran» |
+| Migración v1 → v2 | El exportador rehace solo los archivos v1 |
+
+`tests/test_vista3.py` repetirá estas comprobaciones con los datos reales en cuanto `pml-bot` publique v2.
+
 ## 2026-10-30 · Entrega 2: spread entre nodos (vista 2)
 
 `vista2.py` reutiliza la consulta validada de `power-market-lab/scripts/vista2.py` dentro de la ventana horaria (JOIN por fecha y hora antes de agregar). Fuera de la ventana usa los acumuladores diarios solo en días con 24 horas en ambos nodos, donde todas las horas coinciden y el promedio es exacto; los días incompletos se excluyen y se cuentan (en el paquete al 2026-10-30 no hay ninguno).

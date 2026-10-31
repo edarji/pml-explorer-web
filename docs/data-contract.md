@@ -45,11 +45,25 @@ Un nodo solo tiene filas desde que existe. Una fila faltante significa sin dato,
 
 `primera_fecha` y `ultima_fecha` son el primer/último día **con dato**, no altas/bajas oficiales. El catálogo debe tener claves únicas y coincidir con las fechas observadas del histórico diario.
 
+## Esquema v2: componentes del PML (2026-10-30)
+
+Aditivo sobre v1, con `version_esquema = "2"`. El lector acepta v1 y v2; con v1 la vista 3 muestra «pendiente».
+
+| Archivo | Columna | Tipo | Significado |
+| --- | --- | --- | --- |
+| hourly | `energia`, `perdidas`, `congestion` | DOUBLE | Componentes publicados por CENACE (`pml_ene`, `pml_per`, `pml_cng`), con su signo |
+| daily | `suma_energia`, `suma_perdidas`, `suma_congestion` | DOUBLE | Sumas sobre las mismas `horas_validas` que `suma_pml` |
+| daily | `horas_congestion_positiva`, `horas_congestion_negativa` | INTEGER | Horas con congestión > 0 y < 0 |
+| daily | `descuadre_max` | DOUBLE | Máximo de \|PML − (energía + pérdidas + congestión)\| en el día |
+| daily | `horas_descuadre` | INTEGER | Horas con descuadre redondeado a 6 decimales > 0.02 MXN/MWh |
+
+Toda hora con PML debe traer los tres componentes, finitos y no nulos: misma base de observaciones. Los validadores cuadran en todo el solapamiento las sumas, los conteos y el descuadre máximo diario contra el horario.
+
 ## Metadata
 
 | Campo | Valor o significado |
 | --- | --- |
-| `version_esquema` | Cadena `"1"` |
+| `version_esquema` | Cadena `"1"` o `"2"` (v2 con componentes) |
 | `generado_utc` | Instante ISO 8601 con zona UTC de generación del paquete |
 | `fuente` | `CENACE SW-PML, MDA, SIN` |
 | `unidades` | `MXN/MWh` |

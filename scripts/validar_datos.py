@@ -12,7 +12,7 @@ import time
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import duckdb
 import pyarrow.parquet as pq
-from vista1 import DATA_DIR, MAX_DIARIO, MIN_DIARIO, inspeccionar_paquete
+from vista1 import DATA_DIR, MAX_DIARIO, MIN_DIARIO, UMBRAL_DESCUADRE, inspeccionar_paquete
 
 
 def verificar_orden(path):
@@ -27,6 +27,7 @@ def verificar_orden(path):
 def validar(root):
     t0 = time.perf_counter()
     limites = inspeccionar_paquete(root)
+    v2 = limites["componentes"]
     with duckdb.connect(":memory:") as con:
         verificar_orden(root / "nodes.parquet")
         nodos = str(root / "nodes.parquet")
@@ -52,6 +53,10 @@ def validar(root):
                     condicion = """fecha::DATE != ? OR fecha != date_trunc('day', fecha)
                         OR fecha IS NULL OR hora IS NULL OR hora NOT BETWEEN 1 AND 24
                         OR pml IS NULL OR NOT isfinite(pml)"""
+                    if v2:  # mismas horas para PML y componentes
+                        condicion += """ OR energia IS NULL OR NOT isfinite(energia)
+                            OR perdidas IS NULL OR NOT isfinite(perdidas)
+                            OR congestion IS NULL OR NOT isfinite(congestion)"""
                     parametros = [dia]
                     claves = "nodo, fecha, hora"
                     if not limites["horario_desde"] <= dia <= limites["horario_hasta"]:
@@ -73,6 +78,19 @@ def validar(root):
                             OR suma_pml / horas_validas > {MAX_DIARIO} + 0.000001
                             OR suma_pml_cuadrado - suma_pml*suma_pml/horas_validas < -0.000001 * greatest(1, suma_pml_cuadrado)))
                     """
+                    if v2:
+                        condicion += """ OR horas_congestion_positiva IS NULL OR horas_congestion_negativa IS NULL
+                            OR horas_descuadre IS NULL
+                            OR horas_congestion_positiva + horas_congestion_negativa NOT BETWEEN 0 AND horas_validas
+                            OR horas_congestion_positiva < 0 OR horas_congestion_negativa < 0
+                            OR horas_descuadre NOT BETWEEN 0 AND horas_validas
+                            OR (horas_validas = 0 AND (COALESCE(suma_energia, 0) != 0 OR COALESCE(suma_perdidas, 0) != 0
+                                OR COALESCE(suma_congestion, 0) != 0 OR descuadre_max IS NOT NULL))
+                            OR (horas_validas > 0 AND (
+                                suma_energia IS NULL OR NOT isfinite(suma_energia)
+                                OR suma_perdidas IS NULL OR NOT isfinite(suma_perdidas)
+                                OR suma_congestion IS NULL OR NOT isfinite(suma_congestion)
+                                OR descuadre_max IS NULL OR NOT isfinite(descuadre_max) OR descuadre_max < 0))"""
                     parametros = [p.stem, limites['desde'], limites['hasta']]
                     claves = "nodo, fecha"
                 malas = con.execute(f"""SELECT COUNT(*) FROM particion
@@ -117,6 +135,29 @@ def validar(root):
         """, [limites['horario_desde'], limites['horario_hasta']]).fetchone()[0]
         if diferencias:
             raise ValueError("El resumen diario no cuadra con el horario en el solapamiento")
+        if v2:
+            componentes = con.execute(f"""
+                WITH h AS (
+                    SELECT nodo, fecha::DATE AS fecha, SUM(energia) AS se, SUM(perdidas) AS sl,
+                        SUM(congestion) AS sc,
+                        COUNT(*) FILTER (WHERE congestion > 0) AS cpos,
+                        COUNT(*) FILTER (WHERE congestion < 0) AS cneg,
+                        MAX(abs(pml - (energia + perdidas + congestion))) AS dmax,
+                        COUNT(*) FILTER (WHERE ROUND(abs(pml - (energia + perdidas + congestion)), 6) > {UMBRAL_DESCUADRE}) AS dh
+                    FROM horario GROUP BY nodo, fecha::DATE
+                ), d AS (
+                    SELECT * FROM diario WHERE fecha BETWEEN ? AND ? AND horas_validas > 0
+                )
+                SELECT COUNT(*) FROM h FULL OUTER JOIN d USING (nodo, fecha)
+                WHERE h.se IS NULL OR d.suma_energia IS NULL
+                   OR h.cpos != d.horas_congestion_positiva OR h.cneg != d.horas_congestion_negativa
+                   OR h.dh != d.horas_descuadre OR abs(h.dmax - d.descuadre_max) > 1e-9
+                   OR abs(h.se - d.suma_energia) > 1e-8 * greatest(1, abs(h.se))
+                   OR abs(h.sl - d.suma_perdidas) > 1e-8 * greatest(1, abs(h.sl))
+                   OR abs(h.sc - d.suma_congestion) > 1e-8 * greatest(1, abs(h.sc))
+            """, [limites['horario_desde'], limites['horario_hasta']]).fetchone()[0]
+            if componentes:
+                raise ValueError("Los componentes diarios no cuadran con el horario en el solapamiento")
     print(f"Paquete válido: {total}; {time.perf_counter()-t0:.2f} s")
     print(f"Cobertura declarada/verificada: {limites}")
 

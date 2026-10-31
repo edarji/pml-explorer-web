@@ -53,12 +53,17 @@ class ContratoV1(unittest.TestCase):
                          ("hourly/2026-10-26.parquet", "daily/2026-10.parquet", "nodes.parquet")},
         }
 
+    def test_acepta_contrato_v2(self):
+        m = copy.deepcopy(self.m)
+        m["version_esquema"] = "2"
+        self.assertEqual(v.validar_metadata(m), m)
+
     def test_metadata_y_actualizacion_cdmx(self):
         self.assertEqual(v.validar_metadata(self.m), self.m)
         self.assertEqual(v.actualizado_cdmx(self.m['generado_utc']), '2026-10-25 23:00:12 CST')
 
     def test_rechaza_metadata_incompatible(self):
-        for campo, valor in (("version_esquema", "2"), ("generado_utc", "2026-10-26T05:00:12"),
+        for campo, valor in (("version_esquema", "3"), ("generado_utc", "2026-10-26T05:00:12"),
                              ("unidades", "USD/MWh"), ("diario_hasta", "2026-10-25")):
             with self.subTest(campo=campo):
                 m = copy.deepcopy(self.m)
