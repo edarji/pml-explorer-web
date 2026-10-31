@@ -1,6 +1,6 @@
 {
-  "version_esquema": "1",
-  "generado_utc": "2026-10-31T05:00:01Z",
+  "version_esquema": "2",
+  "generado_utc": "2026-10-31T15:34:16Z",
   "fuente": "CENACE SW-PML, MDA, SIN",
   "unidades": "MXN/MWh",
   "convencion_hora": "1-24 hora final",
@@ -12,1647 +12,1647 @@
   "archivos": {
     "daily/2023-01.parquet": {
       "filas": 73965,
-      "sha256": "e6febadbee62fb798050643e6c0ac3933b23cefdd1c11e3e052b10e523edcd12"
+      "sha256": "786174f1688b12aef2341e25e281db7ae6ed9c902f65662d24ce4987eccc0072"
     },
     "daily/2023-02.parquet": {
       "filas": 66875,
-      "sha256": "e99c86f2da0cc8ca4d4b2c4550a7786ef9513c202b8c6636fc4949efd2cd0450"
+      "sha256": "063cb25ed1d43432903a71bc1a331df41f494026e5d4643db487903633b5d3f3"
     },
     "daily/2023-03.parquet": {
       "filas": 74054,
-      "sha256": "009cd220b6ea178855d2f6f19359bb4132cd48dafba0aadcedc8e313496e75bd"
+      "sha256": "79bd26d9f0030258618cac3331c01594605e07a11f770c301099128c295fc2f8"
     },
     "daily/2023-04.parquet": {
       "filas": 71739,
-      "sha256": "fbc0c3bff481c404c1fd8a71fe5df4ec68f9eeccf14f4c1f158484a10c1722a5"
+      "sha256": "6d9d2282cc95983f2b1da5d9ed313d31f3991a5fc66944d46f0232e785c8ed17"
     },
     "daily/2023-05.parquet": {
       "filas": 74174,
-      "sha256": "aea756c52a5884d76fdfabd88ff36af83a522407f991d8410bf47f3bd1b05c46"
+      "sha256": "b728d7e504a6a21cc7cd4233bc1c2895587f111347180670dd21c011c8fc4d83"
     },
     "daily/2023-06.parquet": {
       "filas": 71840,
-      "sha256": "8aa95c9df1c62a55bcaa5d5f191a4aeae0fa0e69d74b88754bca448603cec367"
+      "sha256": "755dfe1ba119a3a1b21ad781061cbf8c988570cb39ca3b7cd6d3d9ad0facbd30"
     },
     "daily/2023-07.parquet": {
       "filas": 74277,
-      "sha256": "6120a84938da90523243b968d5a6459b900b764c36e6d90600e9aa67c8e1e7e3"
+      "sha256": "ab11d8c3acf6918d72e88d0160f602379cc17cb3c4968be0ee69880f06e57911"
     },
     "daily/2023-08.parquet": {
       "filas": 74321,
-      "sha256": "7b853ebed470559ce31309dc5ac26f2e420e245e4b7afaa3069b2bac6a82c8a7"
+      "sha256": "1ae19428e63de806145d240493648b42c78eac85ad1e86b1b15b32ec0debf0b6"
     },
     "daily/2023-09.parquet": {
       "filas": 71940,
-      "sha256": "c4e4a36b3c4586da6593d7e14540d81a35fc99db9d2596c86877adde077f6533"
+      "sha256": "562d31ee8d487c04689ec6b86359626e1dbb4f00749d32209505924e07d022be"
     },
     "daily/2023-10.parquet": {
       "filas": 74338,
-      "sha256": "627399f773245eb42fb89d1aa65025148236b1570e5b83bf78de0086f54640cd"
+      "sha256": "55c161f809756d8c2825620c9adc0af9c18468da904f7ec490f52146c25554ee"
     },
     "daily/2023-11.parquet": {
       "filas": 71940,
-      "sha256": "b652a90fc0719d517809cfde30ac16431a3213ab5199917e58b560e5922496db"
+      "sha256": "e63aece8c645bb36ff754164fadfc28ba59ddfcf5b11c2193ce4970306cc8866"
     },
     "daily/2023-12.parquet": {
       "filas": 74359,
-      "sha256": "638e1c100f5ebf599a06774e089caefc3e9497d840521e8ba361f0032f6a10dc"
+      "sha256": "30adfba264679c9c293a16a637c58f8770309aa33d780d5f80e198a6d9439c06"
     },
     "daily/2024-01.parquet": {
       "filas": 74423,
-      "sha256": "c25a647fde57b6e8c3588888743a4c1832c647a13276f0a7a91d2fbd4505c5d7"
+      "sha256": "080ad3938254df563a167c47faacaafc36ca053dbbadda539632c53a06f21fd6"
     },
     "daily/2024-02.parquet": {
       "filas": 69716,
-      "sha256": "67328bb66a697a65cb499ce9801fba0d051b1d753b0b02c11eb1d9b5945fcb2e"
+      "sha256": "e8291650296c71fd77cc33d995826cff9c8da1c0a4c3d1f1a40b8d3e2d62359e"
     },
     "daily/2024-03.parquet": {
       "filas": 74524,
-      "sha256": "e31beecdf91c64da8afb7cee65b560b17ee80ce57f8461f23c1aa07d191e981e"
+      "sha256": "ab797609ffd02b3baac494f74f9c66f3ac37905d1327d1ecb3c3c46bb0b4ee29"
     },
     "daily/2024-04.parquet": {
       "filas": 72206,
-      "sha256": "1d92aba4b19274f2d85a4003c70f4d0e891ee5b5181ec79f1c89f280083fe7c7"
+      "sha256": "873c6734123ac97178593024b217ec815ef3cedb948fba66c6bda6eaa436ebab"
     },
     "daily/2024-05.parquet": {
       "filas": 74741,
-      "sha256": "6f5b7b68ca4cd254d7ebdf4f67df89d41d4943643c8a7f275af1933ed909a94c"
+      "sha256": "b2b35df9a3bcab4dcd08b2d005745da6692a685a07249fde279a27b9698319ee"
     },
     "daily/2024-06.parquet": {
       "filas": 72379,
-      "sha256": "348e63fc19901428fb5562428ba256700dcb7cacb31acc63d0e19485e2439553"
+      "sha256": "0f9d17013903b3043ad1a25a30729303fef0fe900b894e81e05694767e3cbb74"
     },
     "daily/2024-07.parquet": {
       "filas": 74867,
-      "sha256": "208c3269e9239787a3c8ce96d4e7d111a7fdd0324380b01749bb15e7a3a11857"
+      "sha256": "44a073961afff876c7f3e810cd2a9d6a238b868e5293e674a1f5fc8465aa4765"
     },
     "daily/2024-08.parquet": {
       "filas": 74948,
-      "sha256": "ac46fd5d7d627ecb9b890436dc2a42cd5814dad38175b0c70036c73a941c4639"
+      "sha256": "393035e58e732a2bff9700ec8224d37e808eac3bb1c65cf09800eb48d2c544f5"
     },
     "daily/2024-09.parquet": {
       "filas": 72549,
-      "sha256": "cae8ed57343fd7bb13cf72c67d29b65486b07365b2dcfeb07f535a3bb6e42c30"
+      "sha256": "ee35e9467ecdfcdc0fe8d5d8af1531d3168c7edf35ec451f4e4ce78b9859b7cf"
     },
     "daily/2024-10.parquet": {
       "filas": 75016,
-      "sha256": "56ca401b1a1f6d2f5ac9652fd1fe7c91bc8cc878d7eca5b5ea1766f42b5cb9fc"
+      "sha256": "98b1b789ca5188004dec77e3597e8bb7308b793e20f9e6f937df0f50073997cf"
     },
     "daily/2024-11.parquet": {
       "filas": 72664,
-      "sha256": "24dbdbed6e354cf1f15b328cb4a48fb88d76b4063bf28c70288c9863ca3f42d6"
+      "sha256": "d536ef76dd20e1f2410988ab33ff43cf7456eb80c689fdedae9def6456fd2c79"
     },
     "daily/2024-12.parquet": {
       "filas": 75113,
-      "sha256": "c7f6b4574729572c6ca3a832a96cac04dee11fb2616307817848635dab0d5af0"
+      "sha256": "5a21f467e6d915d26e8bb2bb3d931569268f9ae321e2ae72e4998c392e021909"
     },
     "daily/2025-01.parquet": {
       "filas": 75139,
-      "sha256": "053c36491d6194426d6e70be72e32c7065828faba9720ca1d9130d00fcba3da9"
+      "sha256": "887511028f97666fb1cb603d93d91fa24ff7c0300426cc7245fc01e58bb2a842"
     },
     "daily/2025-02.parquet": {
       "filas": 67914,
-      "sha256": "9ac822998fb662f258bcfe6eb8c6093929dbb6a7bf536213dec3e95d9579808d"
+      "sha256": "a09264ae962f687cff0066f254895972a54162962698de4db03172165ca9a025"
     },
     "daily/2025-03.parquet": {
       "filas": 75208,
-      "sha256": "ca9ab40db26156ba73604093d503c24cca46cfa85a8e5a8899d2c7a1bfd04bfd"
+      "sha256": "afb7ea691ce96e8509be2bfa9401bfd121a4d89ac0bfa458f8550c26d4d41831"
     },
     "daily/2025-04.parquet": {
       "filas": 72810,
-      "sha256": "4b261192665dcbcbbc5fa60eb14ee9ccd91ada52be563eaad0a2822233258de2"
+      "sha256": "11086e534715434aacc2a3216e4207d7a5162c279a07365e87ff8985c54a56a5"
     },
     "daily/2025-05.parquet": {
       "filas": 75244,
-      "sha256": "0cad50985a39a4b9524620f4c2c9204fed5b3eec6b8d50e8f464ffeb6105e690"
+      "sha256": "0f09b2fa95dcb21639e9deb168deb219a1778738605abd709be50a179f8d9b68"
     },
     "daily/2025-06.parquet": {
       "filas": 72840,
-      "sha256": "5db903aa15f8c392149f819c052c878f5b3bf12973696e7d0b64ff36142f505c"
+      "sha256": "e633924e0e029768dc5707ce7a0f035cb05697967080f1adc6ce4630bdc77b47"
     },
     "daily/2025-07.parquet": {
       "filas": 75281,
-      "sha256": "d3cf58d30ab4d4f5da7af620d0fb6d2815adf4fe1c4f22ab7b470f1c2bfa8b59"
+      "sha256": "3cc40713961df1a8465cfc8c9cd0a13295b74c045e4fb5f7c0e988a2bf13b279"
     },
     "daily/2025-08.parquet": {
       "filas": 75361,
-      "sha256": "69a445afc87ab56d9898d1ee825e8c340f1847d1c0cd48dbb8511ad4039aeaf2"
+      "sha256": "fe3a01ea613ee9d9317e6fc85f88c1415a3509927d524d3f88f8b50250a4793a"
     },
     "daily/2025-09.parquet": {
       "filas": 72973,
-      "sha256": "a5137c3431791c0b311d71b509d1ddb537c8c0053a0c346d867c96cf4d9cbfe4"
+      "sha256": "033dc7abe85665c9d94283659a09512e7409acf74b4864152d9f10189602162b"
     },
     "daily/2025-10.parquet": {
       "filas": 75485,
-      "sha256": "33e07e12b3905cc67498b6b70866f7f5c2cdafe96964b8a87c79252712a94484"
+      "sha256": "e13e55aa4b1c565be818513c41ae1ea6d10ca8acfadf7752eeaa7513c2a83736"
     },
     "daily/2025-11.parquet": {
       "filas": 73061,
-      "sha256": "f2e371170bdbebefa890061add61a184c50969f7418b562ce7f32b7379e62e19"
+      "sha256": "40a44e46934f4cb749340a4de7efb42a6b46a3a6326671d5febc29cf8fba1d7d"
     },
     "daily/2025-12.parquet": {
       "filas": 75557,
-      "sha256": "85162123684efdf435147a9931c21af1f195900b38c0d08a7419d547341ec6e4"
+      "sha256": "d8dedf71deeb791342336ae3411e25c71c7e3fc5ceecc595154b805374b01d6f"
     },
     "daily/2026-01.parquet": {
       "filas": 75611,
-      "sha256": "d64601ee2c8a6dffb519ebdc8f98e35a3257cb3440acf931bdb02d4b7c2adced"
+      "sha256": "32be1d06ff501cb56388dd5931267c6c0da6b92b60489b14950f30e223db3a63"
     },
     "daily/2026-02.parquet": {
       "filas": 68370,
-      "sha256": "6963fe3da3b77e35c7756a9dc05ad60349e3a0e7a795d8705fe56ecccee38460"
+      "sha256": "270182a0a4583166e2a181636e4efbc5e77bd960144c0de112aa4a103c5872d3"
     },
     "daily/2026-03.parquet": {
       "filas": 75763,
-      "sha256": "3a0418fe2e6ef3c2e3b4b450a83cbb90fe74c12065fc808d6351c3107f08631e"
+      "sha256": "283599311f372dec29cd6d922bb6db1f14b78a28db4dce2214e0678da22e98a7"
     },
     "daily/2026-04.parquet": {
       "filas": 73409,
-      "sha256": "1f7c199bfb846c15411b92eea83985ff2ad574d42a13c6810f132782d6e5f685"
+      "sha256": "7a04b8c5c67e74feca7f41224d6e119bd20f5e04e15bb89fa149c96396a24025"
     },
     "daily/2026-05.parquet": {
       "filas": 75929,
-      "sha256": "e268b548058a94c2d08ff1fc1ccd1651be35ad6500f2901d3d91703950770b4d"
+      "sha256": "53060201e41b8ea5ac73d2e6a1d9bf5da7455edc72d5996f36213ed22e55f834"
     },
     "daily/2026-06.parquet": {
       "filas": 73591,
-      "sha256": "5c4121cc9f2b78a46cb05bd2776d97f73e33030d610950beaae3c23a67f0a4bc"
+      "sha256": "95230580314014b4536f4049a84de620a04506e1d0d2896f1b28d5b343e43a6d"
     },
     "daily/2026-07.parquet": {
       "filas": 76155,
-      "sha256": "f83d6525edd170d4e032782bc8c6bf8c3f237761bb142fddc84edb64e5fcad77"
+      "sha256": "4ca7c74f59a1c6aa12163245735fd5d2de1ebc4429c7c23754723ba7482fb486"
     },
     "daily/2026-08.parquet": {
       "filas": 76167,
-      "sha256": "df9bb1fb55e9f792d8ed263c0966f4fa42a28d16ae209891bb172314442cdcef"
+      "sha256": "ff826ff351b8551ed73333bfa4d3e3cd1f22308280c54d780a8eb34392fc111a"
     },
     "daily/2026-09.parquet": {
       "filas": 73730,
-      "sha256": "1f76e002d3295d74f5ed7993c4e5b8a23a7e3a1e3553cad54a6da33773c3de04"
+      "sha256": "90da220aca897f03c0afbdc8299543ff05be19144ab1e7ff87277cf2d4943d2b"
     },
     "daily/2026-10.parquet": {
       "filas": 76219,
-      "sha256": "5859f20b88131b1638be1828a7d4309193cebeda594513039e6f69af0ae9054a"
+      "sha256": "dfa0345ecd4510c88e6b659853e1472c68466b677dc6d777b03db782ce03365b"
     },
     "hourly/2025-11-01.parquet": {
       "filas": 58440,
-      "sha256": "c3e3ea41828e9dfff28434c3c0ab3e969023b8f0b51583a9c672511cb3550527"
+      "sha256": "7e89131153723bcf58d4ebea46aefafc2ff09caa263cfc36f17ce513558b3c0e"
     },
     "hourly/2025-11-02.parquet": {
       "filas": 58440,
-      "sha256": "49ac9d1af8d1ce13607b9b50496b9e39cb4edf17cdfe759b64bad770926313f4"
+      "sha256": "5b4e68e017f24f6dbebc42c1a9a7b133574e135e8feb62e9098498729bd235ae"
     },
     "hourly/2025-11-03.parquet": {
       "filas": 58440,
-      "sha256": "f9ac319bbca40b5d72c7c2f05b37a841f467bcb407e70058e75da8d44bb21feb"
+      "sha256": "be47a68612ebd6e083353ec378714f1be35376057045905e08a8704a9de9de7b"
     },
     "hourly/2025-11-04.parquet": {
       "filas": 58440,
-      "sha256": "926a74ed27f37dfde4bbfc6dfec5d3a4af3c12ba554766a2eeb7f7ea8e7231c6"
+      "sha256": "064fd8ae18d8a805665031d539b779977f8ff9598e41ff717bfef7815d379b51"
     },
     "hourly/2025-11-05.parquet": {
       "filas": 58440,
-      "sha256": "dbd9049703b4cffcd9b517c7348a29856f72c872e5f3360cec68e26efc4fd0e6"
+      "sha256": "9aab03fe98ef04067f041bf445cae2b2813a84a883dd46aded08f96ebe20daba"
     },
     "hourly/2025-11-06.parquet": {
       "filas": 58440,
-      "sha256": "94c9886cb2362f78afe351329c20d50765224824f32257edafa17955c8641e9c"
+      "sha256": "00c50bbd187d280367a49a3611692d7f2f06024b362936366305babd32b57175"
     },
     "hourly/2025-11-07.parquet": {
       "filas": 58440,
-      "sha256": "aacfa9ad0e9de4dde3371177749f21bb23682be573e895ba55f292688404109f"
+      "sha256": "9ec631f901f76a611e46e896aff695897b344ed52bd0cb8f4f3e98f34aa4575d"
     },
     "hourly/2025-11-08.parquet": {
       "filas": 58440,
-      "sha256": "05fe316178e64a15ada725911b81a3fb6a2e01d08509036386f2e89267bb17a7"
+      "sha256": "b073694d6db8c5f37278ef7257fe04f5be3556e0b794b37a44957dce2ee34f84"
     },
     "hourly/2025-11-09.parquet": {
       "filas": 58440,
-      "sha256": "af19686087a59fdb0946880c9067b330c60d825813bb94e0e14eac345657aace"
+      "sha256": "628b0bbb588b924c21610a557d51d84107d7eb62150b45c96a256a7d6d13d24e"
     },
     "hourly/2025-11-10.parquet": {
       "filas": 58440,
-      "sha256": "6ffad16881a0ad5587b072787e50b02748a80caabb2ebef77829e1145e0d8283"
+      "sha256": "60db02d05c60ad838b0abeb2fad9142a7d8e8611b80bc42393aacf18d61749ff"
     },
     "hourly/2025-11-11.parquet": {
       "filas": 58440,
-      "sha256": "25c0664165b070ca4b864fa647a57b2b03d4952bddb880c5c157577a96c47cf2"
+      "sha256": "bccc0b5343f2d9822bc77ce897f90b1f9bcb1981e699bd99dc4918f8ecefd1d3"
     },
     "hourly/2025-11-12.parquet": {
       "filas": 58440,
-      "sha256": "c24aaec2b90bcd6ee1ad4a1be3faa8cab784cbd5488459ad50684a93fb555eb7"
+      "sha256": "6d8341a088ec2e09bd13f3c0b3b5c571c261c73ade163fae431820cdf7155f44"
     },
     "hourly/2025-11-13.parquet": {
       "filas": 58440,
-      "sha256": "8d3121d74eb26e87324737dff02606bfa183b3015e1b710fb71e377750ba3ac9"
+      "sha256": "1e7ea84d4f3681ad4b2f385e677811446641b051ce7d744e464b13d727dce8cf"
     },
     "hourly/2025-11-14.parquet": {
       "filas": 58440,
-      "sha256": "f08db37b7409fa4a6dcfb0010b4012958ee111b2b23e69e619f9752283098728"
+      "sha256": "e83731cf54d3765979e812d4a3cbd748a024a515c2ea7c3cf67c2ba349ec0140"
     },
     "hourly/2025-11-15.parquet": {
       "filas": 58440,
-      "sha256": "7fe9348ec4dbdcba8ac0b6a7717f509f0cb6c9e7d2289dddf49ddfded0d02864"
+      "sha256": "0f5a719a96b4cb19f948b8483e3441da7d862ed324b332a5af9547c1b2899f12"
     },
     "hourly/2025-11-16.parquet": {
       "filas": 58440,
-      "sha256": "e545a3d4d998ab94d4a33cfba0f42465015ba974576ca535c83a321be689d721"
+      "sha256": "86879ee470217388c2569170b70f01a7c1c8a1facbbafc3106a6f0365aa7644a"
     },
     "hourly/2025-11-17.parquet": {
       "filas": 58440,
-      "sha256": "0d011e1db204e64012c053302edff4c8a9bc70b15b6099355308f67ab0b893ce"
+      "sha256": "42a7c02c8085262cfff1d403603b63f03085af3ab18de8b606b219103d93265b"
     },
     "hourly/2025-11-18.parquet": {
       "filas": 58440,
-      "sha256": "83693164d8a4c6208da486ee521e4c2cf4cb35ade3ff5663ff388ed696710a9e"
+      "sha256": "fdde501571fb5a5f99628fee0821dbb83ff81fd8312250605f123d0a9a0d4af6"
     },
     "hourly/2025-11-19.parquet": {
       "filas": 58440,
-      "sha256": "6f486548c44c29dd726e3938a6c04225f79e01f4fae6f578369728ecb52f3fd6"
+      "sha256": "564cc84286afc6a0aa47aef889ede72cd1ebd2a15467457536eb279351193693"
     },
     "hourly/2025-11-20.parquet": {
       "filas": 58464,
-      "sha256": "4e2d58e78b232d1c248e106a8bead4a1b40720158bee26ac7d8bdc9e9933c624"
+      "sha256": "76f998bd0d76a7da9d15b2f76f33ed7dac71bfebbd54159701da59837850bf93"
     },
     "hourly/2025-11-21.parquet": {
       "filas": 58464,
-      "sha256": "6a93c06d0ac9cb5c4049962216bd601b3d8cbee16ad0df216f83e6b9be4faa74"
+      "sha256": "97d49cfeceeac5af1623351ee2a04646e7b97316d40e5ddc8b63cb849312f32c"
     },
     "hourly/2025-11-22.parquet": {
       "filas": 58464,
-      "sha256": "a6e84abdf7bc7029cfa3508cbb6a9aaac6d379a173ff960c0c31b2c39206ff8a"
+      "sha256": "9483342a6317be53bdc4b8a9cf0ad5df3cb1ba6a1dfd8dd87e60dae437e2ea9b"
     },
     "hourly/2025-11-23.parquet": {
       "filas": 58464,
-      "sha256": "d376db6cf1aa1cd9eb1bc7b8a852d6ee7a8197541a264e0af7739987c383fa5f"
+      "sha256": "33c91d937eab0925d42cf7386f99b5a34a96c3bfb95e3b62f063e4c7bc77bba1"
     },
     "hourly/2025-11-24.parquet": {
       "filas": 58464,
-      "sha256": "6b33a899a6d3c76d8e82728ce90e7bda16b7fb9954506b9cda555b2dc9d45789"
+      "sha256": "fb6ee979b95c03e2051debb6cef670e193be44a54b2c3afe48d372abc29fe852"
     },
     "hourly/2025-11-25.parquet": {
       "filas": 58464,
-      "sha256": "419e56a6920855e561933252cd19b062d429c16b763f88481e97a90c3713606d"
+      "sha256": "101d31808685edb4d632de373188f816ba3a1f4880580add443db594eee123d4"
     },
     "hourly/2025-11-26.parquet": {
       "filas": 58464,
-      "sha256": "588061cc9b0b52cc12d337a2657b16b6035ad0e6aeb181a82f91002f46dd98f3"
+      "sha256": "f63180ad73834b75e3aea4fc2ac8a4dea79322642d55859a9496105d73b08a01"
     },
     "hourly/2025-11-27.parquet": {
       "filas": 58464,
-      "sha256": "ea68131e2489a49357c2d2f49bc7060d92a5010fa3d4a5a5b04f3c41d1adc81c"
+      "sha256": "bf1fabd835349af6379f094afc4a9c0fdcd7d3043dd29ef81b831ccf8adc821a"
     },
     "hourly/2025-11-28.parquet": {
       "filas": 58464,
-      "sha256": "18fdf8f491208af2e94f387f292f0d1f3d5d807af9b1c9bc2f3225ac734e385f"
+      "sha256": "5763c1d739f4d35bb8429ce924e518b1750d64dfcdedcf2cfe3e95f5dec34aaf"
     },
     "hourly/2025-11-29.parquet": {
       "filas": 58464,
-      "sha256": "b656077c97b66608ca406097323d66e92ce29aec85ca62ad8d763b5d04b3ee9d"
+      "sha256": "780ea345afe63ae1794100baef5c0b76424e57b1ab75fb891f1133744950dfa6"
     },
     "hourly/2025-11-30.parquet": {
       "filas": 58464,
-      "sha256": "bf7f38c93141aa0f4874ed15a9cbbe2dc20f1429c582fd5028a79a68eab7ce52"
+      "sha256": "03356820685b8028e0bc02171945a560ff06dd80d67ff64d34dc238c8190fb95"
     },
     "hourly/2025-12-01.parquet": {
       "filas": 58464,
-      "sha256": "b205df66f6293039d4207b07fd7a007ac677bea3d668fa9339d10b09d1190805"
+      "sha256": "c018bd986375f296cf61a6463d9f822390799ab1b460766f17ccaeb43b1ff10c"
     },
     "hourly/2025-12-02.parquet": {
       "filas": 58464,
-      "sha256": "d91f5fac937689d725947fc8cb37be743c7ccc3b8181fde1438b14541c5f8d0f"
+      "sha256": "da7b5328a61f464486db57895e5c76e44163f56474401f0e19d8c9f8551c6268"
     },
     "hourly/2025-12-03.parquet": {
       "filas": 58464,
-      "sha256": "8abb258463d262308b006279e3f738594efd36661083199497ba79bab199b494"
+      "sha256": "d6f4ec75f3271f6bcdbe49bddd1b324032182484c360b050998a0f9de676dcb5"
     },
     "hourly/2025-12-04.parquet": {
       "filas": 58464,
-      "sha256": "24318ae52307e4156ddebc2dc073fbb26be97397b785e9f132e3a22d0d81b529"
+      "sha256": "4ed0f76b460275bff35f9d20ee4e80699469ee52c0c7ab360c35498552f48989"
     },
     "hourly/2025-12-05.parquet": {
       "filas": 58464,
-      "sha256": "da10a45b1c42f057dbbf2abbc95c286b95c42a35e6366a233f640df2393a8e25"
+      "sha256": "b74ed775c164a07f68e6439abe0385b8f9a49f322bca16c2e4dce1fdf06905ed"
     },
     "hourly/2025-12-06.parquet": {
       "filas": 58464,
-      "sha256": "b0164f53ce008483945e4545abed918f0f29c500f6af8d80cda3aa15c39a5f2a"
+      "sha256": "2c5bedf78dd40faebc66f35dc310fdd22e76d7ebd6ba9c13607468239a84e83f"
     },
     "hourly/2025-12-07.parquet": {
       "filas": 58464,
-      "sha256": "3be4a10a93e369994ef8d837244e25f14f37a3d80e593e8ed04db01a4248ceea"
+      "sha256": "48530513f02e82cb6a51ebdd111da6a039285aa942250e1ee3a0109a372b3149"
     },
     "hourly/2025-12-08.parquet": {
       "filas": 58464,
-      "sha256": "43504aa3e58f884bdc9199cac03decb25a256a4dcb99883007360fe4f5f8f250"
+      "sha256": "892d0011aa94376ce9196f1846dfc997962a8c5f686b994555a1bffe00829c19"
     },
     "hourly/2025-12-09.parquet": {
       "filas": 58464,
-      "sha256": "c16dfd5ff709fbd406a5b6ab200df2d48c563f290ccb9fcddeb3316c4a971e41"
+      "sha256": "f259dbb912cc33533e93f9c5e13f675c1749316b341c73e3ef0ecf77a408da37"
     },
     "hourly/2025-12-10.parquet": {
       "filas": 58464,
-      "sha256": "d45e413dba4422fda5502d3391ab62f5fb04b6a6c793a31d545810d47ec88be5"
+      "sha256": "c8e51bc025116f89788526489a31ff322ebf3789ec455f434fb79133a5963a5c"
     },
     "hourly/2025-12-11.parquet": {
       "filas": 58464,
-      "sha256": "d2cc097d56c97ad689c56208957b5ba02154b1ddd4a3c95bceec36ed1ec1ff60"
+      "sha256": "dfd45042d3091a2b80c2a2220f4b08143d99c1572d5f6c17330ddc44c88340e0"
     },
     "hourly/2025-12-12.parquet": {
       "filas": 58464,
-      "sha256": "677d1dab4aa808d1e3b6afd1df84042d650d01791e87d69dd0dcc52baca78d72"
+      "sha256": "9a5dfcb5fb556bf167c1b2235627a3ccdb0bd63b55aa5c518fb7b149b8c86ad0"
     },
     "hourly/2025-12-13.parquet": {
       "filas": 58464,
-      "sha256": "03c216cc7c3af7e07de81e9eede680406254a4e757e28a73eba54eea8bfef267"
+      "sha256": "c0ace4e198d06f9cba9f2476534c1c52d55e6d080c6b0f07224f1af60e8b40cb"
     },
     "hourly/2025-12-14.parquet": {
       "filas": 58464,
-      "sha256": "dbdd0a6b8a0bd9634a0eac811c734bd43e42aa6802848970a4bbe89266da21ef"
+      "sha256": "96992fbca6bc572d6257f52ca85f932fc1cb7600ff91f318f9e68e6696b6b1ba"
     },
     "hourly/2025-12-15.parquet": {
       "filas": 58488,
-      "sha256": "f40ebea20ae4b80569457149874416ef634e2f1ecfb8aa3fd1b0618bd8cbbda6"
+      "sha256": "45b30f4936b9c5df84c97af52d498fad383dfcbcda45abdcef3f3b428ac57a71"
     },
     "hourly/2025-12-16.parquet": {
       "filas": 58488,
-      "sha256": "389205a1b13ac2a16066761f9bc23901b97f28b57c79b7002973a82923b1d1dd"
+      "sha256": "74df5a91a5bbdf78b474b00479931ad5031746e570894a64c631135248fd8cb4"
     },
     "hourly/2025-12-17.parquet": {
       "filas": 58488,
-      "sha256": "ef964324c70ca857dbc661d718211a1b0700f3eb07fd3399657001d9d657769b"
+      "sha256": "6369897b4b421bd9c52bab3acb34818b42543ef8812737217a5b6b40bed40ccc"
     },
     "hourly/2025-12-18.parquet": {
       "filas": 58512,
-      "sha256": "5f13147dfe69c1be4eacb7d92ecfab93931591f77b96910f0de17c333e05d564"
+      "sha256": "a7d0f1ce40cb8292f30f0ddc6aecd3a239cbde36f4773bdf2642a749bcac148a"
     },
     "hourly/2025-12-19.parquet": {
       "filas": 58512,
-      "sha256": "753a58f6967a5761008283b5c4a586011b07e7bd70d556c2ff531e8ac3353786"
+      "sha256": "f0501f68c03608a6f81cdb2c4d7f3479290eead94f687c521f0a722b6ccd6dbb"
     },
     "hourly/2025-12-20.parquet": {
       "filas": 58512,
-      "sha256": "9e902ed9d39789194c16e62be17455facb5014c72de0606d675869ecd5faf588"
+      "sha256": "3bfa72d35d22cea51668f330493c808967df883cbca27159265409ecdb236540"
     },
     "hourly/2025-12-21.parquet": {
       "filas": 58512,
-      "sha256": "14751800a150b41edd239aad433502f1a718624b0b09dc3833f30d937e89d88e"
+      "sha256": "cc17ad6b83e601076f81020b17bcb30727127ced8803c71ade4ec8d8a05a34c6"
     },
     "hourly/2025-12-22.parquet": {
       "filas": 58536,
-      "sha256": "dd8307580756fe0d6987b2bd9c3ae6084631362dc39bde2541629ab8d6ad3f92"
+      "sha256": "d78b18cb6a843ec6a053ec7c81909b3bc4ac49088eb586d6d7b63137ceba598a"
     },
     "hourly/2025-12-23.parquet": {
       "filas": 58536,
-      "sha256": "9b66f330e6ed8548acd7e7632cd967dac8a188dd1cca1cdea8e49eae92b9f7bd"
+      "sha256": "dd020e4ef375a8a3c8aaa6eab2348dd6a4c56856fceeaf466fdc08aa1b382b82"
     },
     "hourly/2025-12-24.parquet": {
       "filas": 58536,
-      "sha256": "b2894eb62ef97f91eea1d51c94c747e7094384477a314d9cd73f4f5e39e0d9eb"
+      "sha256": "bdc23408759b8e7e56190c769dadc85bdcd27ed2e2a7f982ecee4a1136d13d9f"
     },
     "hourly/2025-12-25.parquet": {
       "filas": 58536,
-      "sha256": "b8810d9ef4ccebb7e944175708bf6f64b6058ee176400dd934fb18de1ecde712"
+      "sha256": "939321afc58cb015885aed7e78791306a6df7c5ccd418149a9d7dd77bf1ba403"
     },
     "hourly/2025-12-26.parquet": {
       "filas": 58536,
-      "sha256": "4e1b979d61c96bb0edd508d586d692e311b6eed4c2d9779f37b2fc03560278f5"
+      "sha256": "7fad7bbbf322c352d3c5c6c95582ed196f5bf017d484c5ad2597a282be6d9206"
     },
     "hourly/2025-12-27.parquet": {
       "filas": 58536,
-      "sha256": "7aa70a584336174c121fe9ae65c7ac2f2698657ee4822997a6b4096e1e4b3fd9"
+      "sha256": "db551bfd6c75aaff69244d4134f64fc6beadc40b69e12d5ae070fceafc0a9d88"
     },
     "hourly/2025-12-28.parquet": {
       "filas": 58536,
-      "sha256": "edb646f08a81c73c4581cc17079b82c4409c522920cf3d1043c3b8b4765a9a39"
+      "sha256": "c23077a8c45f32502f907058371aed1a4d9ee79ebad226b821faa5465709b7ac"
     },
     "hourly/2025-12-29.parquet": {
       "filas": 58536,
-      "sha256": "3fadd43978636155d9d561469d4dd955a5e532f0b8e510a6fbd9e69d2f01c5b5"
+      "sha256": "7af3c986a2c37d0401922ebd1c2300b3c13831c5cccaaa28229b469a9095060f"
     },
     "hourly/2025-12-30.parquet": {
       "filas": 58536,
-      "sha256": "78dd2b434e7c332e0a50f03a83fbbf737c4dea11ffce32acb0dfa244394c3711"
+      "sha256": "b582a76d80d7d456ae7c798597ba4264bd6f13d2e0eaeb9a01c87d070499a62b"
     },
     "hourly/2025-12-31.parquet": {
       "filas": 58536,
-      "sha256": "d0a8e8be5e02b37a72d07698852103e3c73e5241dc6e7c8bab3fe76cb5864e12"
+      "sha256": "d6e189ebd221c39ece043191b0cc5ea8593f28bae1c680e44427587145c42ae6"
     },
     "hourly/2026-01-01.parquet": {
       "filas": 58536,
-      "sha256": "22f1fd4e4c3fd7d7cc511048f7bce236cc37488c3252883af47eb939e669b178"
+      "sha256": "fb918cb0f84989be54711fbacffc20b6375f1588cd869c8ee52d09a6960d87bf"
     },
     "hourly/2026-01-02.parquet": {
       "filas": 58536,
-      "sha256": "e752582438478c32a438e38204444db218fce965b6308c99ea640c72f07fa9ee"
+      "sha256": "472262de9ad2d64caaee99cce4396a2466f3c6bb5f0fa3f5c1fa395f61497200"
     },
     "hourly/2026-01-03.parquet": {
       "filas": 58536,
-      "sha256": "3f0501b4e7a9fe8c761f90abb2fc1d955848c056d40ce750283aab24ce1f8666"
+      "sha256": "ee7d678ceba0a48a765ba501fac605fe4e57a5ba62c58830f4b6efd1e8def498"
     },
     "hourly/2026-01-04.parquet": {
       "filas": 58536,
-      "sha256": "17d076a1bf22fa0cc1c365d65f01955f22245b534e77ea861ba2f87e506c3039"
+      "sha256": "c0f406b0e280b279e702f258615cef91fb59ebbcb8a1f16a9eda0b4391d6b747"
     },
     "hourly/2026-01-05.parquet": {
       "filas": 58536,
-      "sha256": "c900c08217bd6ff2fbef8610264abc89253f93b50f194af28a0cbd3b56a9d776"
+      "sha256": "f69b435f413aff61b26bd6e2c0264552799bb40206a0d5e948a2bed62f9af9f0"
     },
     "hourly/2026-01-06.parquet": {
       "filas": 58536,
-      "sha256": "5a4d81745462efcbe42bad4d43b574631b537bd1bd29401c39163fb3db8ee5ce"
+      "sha256": "eb9540424954da558a12539ffef92e676978ec5798d8a6566dca0093b18fb591"
     },
     "hourly/2026-01-07.parquet": {
       "filas": 58536,
-      "sha256": "220095db475bdddb4c8e476fcdd87668b764852f22857706037324e3479a88e5"
+      "sha256": "1fae677867cfe4d92bbd49390ce5b8f1c57352bd2ab588f2a1175b40a39e6883"
     },
     "hourly/2026-01-08.parquet": {
       "filas": 58536,
-      "sha256": "4ab4647bd401f0b3adf7e2d1a3868ff5644854806eda6146b2bfd468e8b9deba"
+      "sha256": "e2b6546b8fb6b78f07c857d6c0a075a214a9e78ae7fa95447d3415a6b036b0cf"
     },
     "hourly/2026-01-09.parquet": {
       "filas": 58536,
-      "sha256": "6777597521dfca83ff9fdcbbe3a1d12a406671a439d025a621ba9676a3ffd951"
+      "sha256": "feeb034716a36e5ff70335bbf8a0a2eaf70f435cc7646730e8572d2456587fcb"
     },
     "hourly/2026-01-10.parquet": {
       "filas": 58536,
-      "sha256": "0b950d69d5fb3a98ae647c240b708b0e81cd102e5abba49fe20413d27cb1de64"
+      "sha256": "4c7c97aa6221c11a8bfe0f80edd56ae1f8b79fb18188b7273897bfed7c06ed59"
     },
     "hourly/2026-01-11.parquet": {
       "filas": 58536,
-      "sha256": "e545def1288de3465abe6a4d14de19bae22f10d13b27ae80de395dba2505ab69"
+      "sha256": "05abb2138515ae0efeea09f48f3c8665e9dba994a511ff946fbbba3df2c35018"
     },
     "hourly/2026-01-12.parquet": {
       "filas": 58536,
-      "sha256": "1d96eacfbde51bd51e86642dd45940ca34ba3918a3e391bba9b12b71b0900fa7"
+      "sha256": "d3a2eba751021123e88f1fbcfe44134a7f8a6498f18da9cc49735e6245547224"
     },
     "hourly/2026-01-13.parquet": {
       "filas": 58536,
-      "sha256": "8ae9270cbd8352bee92ab77a4eb53140559fa056e234e26c759bdd56ab4f84ca"
+      "sha256": "fcadd56283270dc7ce8193b6a95d8ce38ba849a0f36247fff434927e067a0ff3"
     },
     "hourly/2026-01-14.parquet": {
       "filas": 58536,
-      "sha256": "a4a98f7af8708ff9de17ce153fdae6fce3c9d6728042e665fa7e8506e53a6818"
+      "sha256": "05264059c3e74f16d4b987a3ffe176db9f1da2f65dc8e34649e7f1b6850ffd59"
     },
     "hourly/2026-01-15.parquet": {
       "filas": 58536,
-      "sha256": "1d14e7a5083c9896033edca6696e40428d149a2309b844e3112aed609569d20e"
+      "sha256": "54370cc1922787b955b582171f8d17fc2073d68d1eb90f6234a4db34e2267bb5"
     },
     "hourly/2026-01-16.parquet": {
       "filas": 58536,
-      "sha256": "245018a3c8c342a63b45fd470229d7d87d8dc0bc510a1f6facde2a34f4dc7f59"
+      "sha256": "f379de60165821b3ae84f5a3017a4d0fa1d566963acd61305cfc376e2897b5c4"
     },
     "hourly/2026-01-17.parquet": {
       "filas": 58536,
-      "sha256": "da0d989e262dd316c12b6d24e7cf4588940fbc6d31207177399545eb3e05b7fb"
+      "sha256": "814680069dd6ac4f0cbadb187730bb5fec232e6148107b8be90c0c28589589f4"
     },
     "hourly/2026-01-18.parquet": {
       "filas": 58536,
-      "sha256": "fe468c6aa43a3fdf9baf10f6a33eddf896d6bc4f349601b33624d1ec197fdb83"
+      "sha256": "d54c572de7d189a6bdc403e8e577f1079af2321f5009923ea9555978bec8a9cf"
     },
     "hourly/2026-01-19.parquet": {
       "filas": 58536,
-      "sha256": "e9dfd9a7ab3d3237ffeb69acbff30ea17fa8e0e052dd57a229ec0b09dd761245"
+      "sha256": "bbedbedf72d7251d20e47125ac410e60eb81f359257df88ad65154401d2db77c"
     },
     "hourly/2026-01-20.parquet": {
       "filas": 58536,
-      "sha256": "225de4fc318ab0c3c9b0f19393c199b87b6c79ebf6f1e9fa7abf6c445711c2b3"
+      "sha256": "458ec28c1d85675cef29f06cc5452286effb530df053c975a53f1ac28287b2cb"
     },
     "hourly/2026-01-21.parquet": {
       "filas": 58536,
-      "sha256": "434644b051de8d86867db9636291cdc4c5ae12141267b00c1ab293edb5ece30c"
+      "sha256": "260eada14c011d81cc8340b9ccf75fe375ac09aa1ebcddd84c673fe7949c95d8"
     },
     "hourly/2026-01-22.parquet": {
       "filas": 58536,
-      "sha256": "e6e57e0978d796860f9f1e60a2aa9638b21d15aa54e4378b26a21f6ee7922ffc"
+      "sha256": "fbf38268b2096150b82a883ea54b655728ab0d130ae88bd33e0648e5f9d13ad8"
     },
     "hourly/2026-01-23.parquet": {
       "filas": 58536,
-      "sha256": "9e75eb8341bcf024041c6a06fc6342aa6375f07034c30dd45723f173a56a61c5"
+      "sha256": "8c244cd8ebe7fc38ef47aa7566b586c6ebeb765dbd980e43e670d8eb6529a415"
     },
     "hourly/2026-01-24.parquet": {
       "filas": 58536,
-      "sha256": "8ee56d490bd2333c563b80e7f292cefb7ead636116a6a4b0f9b867121bf17671"
+      "sha256": "d3017439924a481f150a7f78d451e428a62937b3173e5776a24b0cf9db52b862"
     },
     "hourly/2026-01-25.parquet": {
       "filas": 58536,
-      "sha256": "89c60b8b4a98931b292fa3a9aaa97ac1b1dc2a9c16d0d88e01918d125297c7d5"
+      "sha256": "d70fd487cb7cd910b51044d2e665d6a9c7b9f193fce18fa1c6b83594148ba3cf"
     },
     "hourly/2026-01-26.parquet": {
       "filas": 58536,
-      "sha256": "b01354e1480d37464ae4f298a39aeab577140ab7fd4527fb4c190c2b6f292897"
+      "sha256": "70399b4780091f85d8c10a31a34973b1055bba404c164549b8531764ce23d365"
     },
     "hourly/2026-01-27.parquet": {
       "filas": 58536,
-      "sha256": "e7f2266bb012305cb0098d9bd8a3f9ab5acb4a608b89ad1db43e75fb5e700836"
+      "sha256": "f73c8e79be8ae80b6a06412eb5fed03bf7967ea43bce6b5aaf90b06e47ffa4c2"
     },
     "hourly/2026-01-28.parquet": {
       "filas": 58536,
-      "sha256": "ac24df85b87cabda3bcc963c784721b45fcccfdcff56eda382733027d1d04b67"
+      "sha256": "ac6ce58b1726ce1ac2c3cf0c229da7af444c08e8052d05373d0d963f0001ec9d"
     },
     "hourly/2026-01-29.parquet": {
       "filas": 58536,
-      "sha256": "82dcb74f65e66fdf7f55a00fef2a1f5a74205ccd89a9f6e31c459f0ab67f11b1"
+      "sha256": "061806d68deea014e0393186d0b59a5fdf4904a196556cd2b94a502dfdf94937"
     },
     "hourly/2026-01-30.parquet": {
       "filas": 58560,
-      "sha256": "90b6fcfdd473db1d2b1a5e12ff42024ed9556cb66a724a5f0c9226b51ad72bab"
+      "sha256": "a2f5060eca07605d05a6d96a7e7c6c18313d64d109fce477d4c04e8da44bb243"
     },
     "hourly/2026-01-31.parquet": {
       "filas": 58560,
-      "sha256": "acd19b94c74b8fcee6a8b72178ec2a2b4fe9e8a65d09750decd3651d4ce76882"
+      "sha256": "f9607271c21e0c14ce93af350c918c703cf7c077d5a717e1a4be5cfa4b643cfc"
     },
     "hourly/2026-02-01.parquet": {
       "filas": 58560,
-      "sha256": "398f74a00bd93d80869215bf3711abdb1a4e3984cc1b2b6dec30aa9222f35edc"
+      "sha256": "1aa6201ca51a16f82d9edaa76336df067856c62c2b3e82868c38fd8c78c64ac6"
     },
     "hourly/2026-02-02.parquet": {
       "filas": 58560,
-      "sha256": "34498bd399831631082fd77d4de250d9268a26233e41f4661124e4460dfa9268"
+      "sha256": "34d1e1567a29c2b0944b2ac4f1789634a4763e96afa20aebbce0bccdb5e9adc4"
     },
     "hourly/2026-02-03.parquet": {
       "filas": 58560,
-      "sha256": "3d0b1d319102e09cdce09c187a0a51a909cf14f61d73aba4ecf1cc1442c33bcd"
+      "sha256": "cf91a9260e46f9d107fa002b7903c94aa5d158a31ed544ded91a3fa941625f4e"
     },
     "hourly/2026-02-04.parquet": {
       "filas": 58560,
-      "sha256": "42912e3121f1b110b76e14b5f3f392259206e4f190317b77ae8a81df8c4a8246"
+      "sha256": "f90274d11da1b04bc4c19a287f1d99747efa987d0e150faeb578be4b6117bfc1"
     },
     "hourly/2026-02-05.parquet": {
       "filas": 58560,
-      "sha256": "48e8c804bb7ba5b413b1f43d37fbe42d6552c28604f32597c37483f1b9d631da"
+      "sha256": "bcd647c37da245a46442f64b31063ba7597917f3b1821993447439954a4f675d"
     },
     "hourly/2026-02-06.parquet": {
       "filas": 58560,
-      "sha256": "e77c3b51f7744ccfc700552f29b6169d386db0cacd104c5841cba3c702bbbefa"
+      "sha256": "0790f805c6ab544b105dd2c8fe631c82faf1525a8f7bd8a97ac6570628ed4751"
     },
     "hourly/2026-02-07.parquet": {
       "filas": 58560,
-      "sha256": "d2034b4eddaca201cd86fab7a1d53b3a2a6b65baeac855f22e4ccc59414ba0a2"
+      "sha256": "bad90c4724a8ac1e7f714a2114704a2f2bfee30b6ea12f44937b24902c9ee664"
     },
     "hourly/2026-02-08.parquet": {
       "filas": 58608,
-      "sha256": "cb6cbad33085bfb4937ff2a0e3451a2c4ade90d755f6c70c4646d0b67341048f"
+      "sha256": "7518a23e52d799e73302f9f53acb0337e29a899ca534ae5e865153e99613f70e"
     },
     "hourly/2026-02-09.parquet": {
       "filas": 58608,
-      "sha256": "1c7de11e2cbfaed4bcbaca72549122f303e385c1c186d99ac8e95151a1d64f89"
+      "sha256": "f4e976a7b11d572aee4feddbe1b0ed417f15140656bc7f311eeb105ab46b4999"
     },
     "hourly/2026-02-10.parquet": {
       "filas": 58608,
-      "sha256": "a74116603bb455f71926a46c34649e81c3d9ae2190990fb45d4eb3f845026172"
+      "sha256": "591413ea64585e8d8a940b8b86a11b664bc79b57924fdb827dcd0d52f1dbd8e4"
     },
     "hourly/2026-02-11.parquet": {
       "filas": 58608,
-      "sha256": "b2a72c63c8236b965a992f4968d12f7ba0492453524d4129f2d1cf6f0aa0a201"
+      "sha256": "cc1313a07f49ab15022c1f0ff0f48e395679dcd3a45779329400a853bab7b69e"
     },
     "hourly/2026-02-12.parquet": {
       "filas": 58608,
-      "sha256": "68b5191869e4c885f4e8d4b4e0282f399b29b68fac6379091fd04b77d92cf0ca"
+      "sha256": "a81e67c7a3f63430e618b75bf4fa159065c211bb212238ed1d114834461f5179"
     },
     "hourly/2026-02-13.parquet": {
       "filas": 58608,
-      "sha256": "9aa9647bb4f92fd3aaa9ab45d2707ff73c6a36b8fc7eb2f0dc8d3e9ca5965c66"
+      "sha256": "992bb08b83b1baf3f39cf660c94d4fbad4169682f44dabc157a6fadb96d422eb"
     },
     "hourly/2026-02-14.parquet": {
       "filas": 58608,
-      "sha256": "7a64ab9a17d4a711892050169918ef562600c4ff4c7701986a0326fea852c65d"
+      "sha256": "08fa822b67c1632a129b8a06b179904517e11573b25115c28d6dc11e0e42ecb1"
     },
     "hourly/2026-02-15.parquet": {
       "filas": 58608,
-      "sha256": "fc575af84b659e8efe236a582c0bd92f8a5d45d8a001b637ecc56e5a5c61808d"
+      "sha256": "fd00848fb530fa5110af9429889d98dbfaf244435b84ce97fd495ae0d4d4844d"
     },
     "hourly/2026-02-16.parquet": {
       "filas": 58608,
-      "sha256": "52bba7db84346389d970a9e439e40954c88563a0ee4ae5edab874a4a16cf9c31"
+      "sha256": "91e0117a163f2092a12ab3c8ffb75354f3a3ce2cd21197349e4c47210b979c76"
     },
     "hourly/2026-02-17.parquet": {
       "filas": 58608,
-      "sha256": "220494279475635c7ae6ad60f258aa3bb9dcc4a4bdc97c357e413c24862fc62e"
+      "sha256": "14ae3293ba4aec6ec01c5397e1083d088d6be92dfe38c1bbb0f5312d60a3b6f7"
     },
     "hourly/2026-02-18.parquet": {
       "filas": 58608,
-      "sha256": "04f6e5fce69e19c212acdf67cc76f43d0f48730faeead0a8c364fdd1a6a59e19"
+      "sha256": "31044eb1ce969851eb10260b548df56faa7f7bbba3735db507cffc08d7afabe1"
     },
     "hourly/2026-02-19.parquet": {
       "filas": 58608,
-      "sha256": "1d88ab2207cbb777729d481b1f73c28ea76692aaa9bd652f9b9dd87b5b62f91c"
+      "sha256": "8c54b549815a3f7be7d5b8f2fc7df049940e56d4428d58824a35a69810b8b11b"
     },
     "hourly/2026-02-20.parquet": {
       "filas": 58608,
-      "sha256": "d568547798dd8845b5b1f6b2da0c5be92204fe306fa6436a946afa9557df953e"
+      "sha256": "a06ce59cbd54641eef0bbeac452f73d3ca8a1f53e37af5ee62651f50b5788926"
     },
     "hourly/2026-02-21.parquet": {
       "filas": 58632,
-      "sha256": "70459ecefd73ce52a4a62eee3f005d1d9efc14fa947612497603f810678156a7"
+      "sha256": "bebac1e94bfc9af3f332548dfb92377bb57b1d45cc2b098f0fb0ad318a0e8c34"
     },
     "hourly/2026-02-22.parquet": {
       "filas": 58632,
-      "sha256": "87b1ac868b21c3a44da7b4bc5d48b7e2b94f16f3a34b7cf41bfdf646782c7866"
+      "sha256": "b7e802cc23f285a69a5a3fa2384fc54958325889f74f76e7489ad939c6fe47f0"
     },
     "hourly/2026-02-23.parquet": {
       "filas": 58632,
-      "sha256": "f58fec2714a989ab2ee188bf5f568c42fb27b5f5f4a4e25b24dafc8c1e9e46e2"
+      "sha256": "aee7e945691bcd8fa966fc5b3dbc213d47c0c4c5dc3847b5f246c16f16b7292b"
     },
     "hourly/2026-02-24.parquet": {
       "filas": 58632,
-      "sha256": "d60013c0c321e300aa98045ac5997ddf7ed61bb193b28a3828d29ca9b96a52a8"
+      "sha256": "c4c9a3cf7e67ebcf5588d90a0367dc4796eb15483ff25347ee4a9cc109948520"
     },
     "hourly/2026-02-25.parquet": {
       "filas": 58632,
-      "sha256": "90c1b64f498ee50362eb6df2803d8960d20a8fa531234fc338a5626fd19f0da0"
+      "sha256": "1f2383ca41c4178fcfd8b79591740327bc7ef4da666f781c540add6fd9a5cc4c"
     },
     "hourly/2026-02-26.parquet": {
       "filas": 58632,
-      "sha256": "0ed1e551d2d527a0f4007c83b6a38aacdd028ab836732d089ae6983ef1fe432a"
+      "sha256": "61b9df6a647c232d85e91929fcce2e441a274ee6eda2ace13acb7986e807f3c6"
     },
     "hourly/2026-02-27.parquet": {
       "filas": 58632,
-      "sha256": "a014aef327731e8a312616ad6c34d8473e3d6a0083b74f6310b79652f0d1c556"
+      "sha256": "e6de29ffbcfa681e59a3ecd4896b52395651e5795cf58c9a0c822bb5e77fd59a"
     },
     "hourly/2026-02-28.parquet": {
       "filas": 58632,
-      "sha256": "f196f899bde38d6e94f1ab06a59a4bcbe1ffdec5767cbdad4cf8d664e42912a9"
+      "sha256": "061d55f7ac90d0f5a565421b3ffa555dc16c38a5c37486d2117443d33b691cd5"
     },
     "hourly/2026-03-01.parquet": {
       "filas": 58632,
-      "sha256": "41bd0cb931d3b4047ddb7ead0801ed4deb2fdcd6a26c94cc97301cbc0347cd11"
+      "sha256": "a84b0ae0561661ddd5cb2224aba423d0a44afd3212d67ba477cb7e988b452741"
     },
     "hourly/2026-03-02.parquet": {
       "filas": 58632,
-      "sha256": "77fc9baeac7cabb03e92c6a66f1fabfaee8dd5600d42dbdce9c966902ac1c6a9"
+      "sha256": "431fcc7c158526c641c9a4e39bfc79a7264c9e5102f2ec2499fd684ed5fa5042"
     },
     "hourly/2026-03-03.parquet": {
       "filas": 58632,
-      "sha256": "83c9d5798c8ffc686a1460694b293e4e0907705589ac5267131c0d757a6385bd"
+      "sha256": "dcfa1463d5f6190d6b090bd437877592dae458301c34bea56447c859e6c910ef"
     },
     "hourly/2026-03-04.parquet": {
       "filas": 58632,
-      "sha256": "7d7fb180f7b33390ed72842aaf7051b9ffffb307a0214d8687c99925e1a33cd1"
+      "sha256": "aedcb5463fc605afb8d4f5da0d201d49adf02adc0c998babe3f867994bfb6e30"
     },
     "hourly/2026-03-05.parquet": {
       "filas": 58632,
-      "sha256": "e6b152383d9982d07be7b2de2a59cc53c55c63fd87aabf224d95855ee6f855e7"
+      "sha256": "b1fd55d7e06d9894a966f2d6b0e2ff4e1f43c276c661f308877cc7ad74410b4b"
     },
     "hourly/2026-03-06.parquet": {
       "filas": 58632,
-      "sha256": "6bb6f32b7021625c0faabfa62042d3b015a38890f5432fa2eba43c56b463e0b0"
+      "sha256": "b64b50bf0ef79c838ec29fe4aef36d28a32448b7e797cc52ff86b78930595e20"
     },
     "hourly/2026-03-07.parquet": {
       "filas": 58632,
-      "sha256": "7b801ba47a5d551a1c2302ef1cd6d7210976308c4e869672dc9cf821fbf0a1b8"
+      "sha256": "dcb93bbcb7bba6f0cc469540bddb7e1dcc5ebb0b6889d87f10a8507362fd997f"
     },
     "hourly/2026-03-08.parquet": {
       "filas": 58656,
-      "sha256": "b8fb6b289576706ab7c15566e7b6d1cab75710d8f7d611ba7e95d70d4856faf4"
+      "sha256": "f4322e589f5327a1ea3c8e8772b53ef17299e1cf15770a1d8584d7f85825a387"
     },
     "hourly/2026-03-09.parquet": {
       "filas": 58656,
-      "sha256": "66b5f6e5749bad997d30a9159167215fedbe63de6852bb07dbf1cecd832c74fd"
+      "sha256": "d3608f072cf9010fdfd34e2d0df0d954a319857a6da54460347ca50d05a0765c"
     },
     "hourly/2026-03-10.parquet": {
       "filas": 58656,
-      "sha256": "85b5278cb92b2a06b9922ae5ae158327a91bf20de9ecb7d7b2d605cf4d41eed4"
+      "sha256": "b6b0c948ca7708841bfd07ab2caf6e8fc21f3c55df6266d4db16dfe26eda2e3b"
     },
     "hourly/2026-03-11.parquet": {
       "filas": 58656,
-      "sha256": "92ca754470412917154acedabcf791f805e66e285d3d8ffd35efa36805e7b576"
+      "sha256": "f2c5e14f47ee7374842b6b3d811186859986fea95a91ebacbfbbde05dbd59d31"
     },
     "hourly/2026-03-12.parquet": {
       "filas": 58656,
-      "sha256": "1acba2a7317059715d2a5d4c82821fc1d0e9f7ad84c9ff14dc562bd3807a85de"
+      "sha256": "46dd37932ff68edf8b6426d6a32860628496674c2e889bb24ba6d778bbcecd9b"
     },
     "hourly/2026-03-13.parquet": {
       "filas": 58656,
-      "sha256": "96f9ede618b9d8f38bbc6595c453c7d14cdabe7cadcee1faecefe2021a53b628"
+      "sha256": "8df58d5e5d467210413afae41b4781112ebc0e5dc14b8c70bd8dffab8ade6224"
     },
     "hourly/2026-03-14.parquet": {
       "filas": 58656,
-      "sha256": "059d46fc61ca11cd73d1902e2b006edcf9781ffed642dad4efc628ecba742b59"
+      "sha256": "4bec1006ce95dee5cbe5d9a369a91128c8cd0a66c3c199fc2a45c2eb0854ebc7"
     },
     "hourly/2026-03-15.parquet": {
       "filas": 58656,
-      "sha256": "a20df980a9e52ca06bc80fdcf149fc07f18a4fa4ad05b1b67546e790cba2c109"
+      "sha256": "c3a6a8b4671251f30cbdfff316dfcca9bdcc364a87171e427fdd2359a07a37b8"
     },
     "hourly/2026-03-16.parquet": {
       "filas": 58656,
-      "sha256": "eaf4740adb6602d9c4582049bcf6db8cce0fd76c4b0506ec68448354f658a3bc"
+      "sha256": "3bba0e8bf9582455223dd5aac2d0f69da71d9cbd4c4cac5a30b822ea56d7f5e7"
     },
     "hourly/2026-03-17.parquet": {
       "filas": 58656,
-      "sha256": "adb5a5329c4c86f92aa025f979607a3f46ce0fcfd0d168f144ce6ce1e40b06ab"
+      "sha256": "b84f19a00034f07306d29df2cc8d87141242058856be426a00a67f99bf469d51"
     },
     "hourly/2026-03-18.parquet": {
       "filas": 58656,
-      "sha256": "89bf5dbf14ba43b05edaf66dc4adf38bdef66005df93da0f911e85a17cc6bd3c"
+      "sha256": "987e53941cb917b6c663c8e2f85af098ff3c032842248cea8963765b01aaacd5"
     },
     "hourly/2026-03-19.parquet": {
       "filas": 58656,
-      "sha256": "b6d1909796e1ceb2ab3911e64d65992737168911bc662453caec1ff15c58a268"
+      "sha256": "e5a48802e5a78d05717a90adddabfb3dedb1ba32825e45f0942a8e5e1a9a8464"
     },
     "hourly/2026-03-20.parquet": {
       "filas": 58656,
-      "sha256": "b72f7d6e85d139a6e9a5ffc6b6433faee7b85cc4c3becaa64f5fe83d27b69256"
+      "sha256": "a03ffde4ef63db6ecf01bbf2b85d4997d68f95dbe67362f27117a62287937949"
     },
     "hourly/2026-03-21.parquet": {
       "filas": 58656,
-      "sha256": "0dd315503c20b4ead4f62caf6fa039669f4081cde6c303d60b8d1b01b2dc0da6"
+      "sha256": "ec44d51c0ee4648ad5350fe359e78f8fad520067be8fe11c9f11ae904a3674e6"
     },
     "hourly/2026-03-22.parquet": {
       "filas": 58656,
-      "sha256": "475ecaac3092f67abd06651682e5618bc22064f9ea9ab26ac348037303d51f5e"
+      "sha256": "4a9849c7505dd83f081ca30ea2617c9bf29e98aa5ca4fb09bad6f2f8e080dcfa"
     },
     "hourly/2026-03-23.parquet": {
       "filas": 58656,
-      "sha256": "bbe76b63ad993c238f17c3ec0df0843a74bf2bdb91065762e22d8bac139650df"
+      "sha256": "7d0f65d22dbd93942f93c81b8f13399a1176147fe3481d6f936098701ca2a34a"
     },
     "hourly/2026-03-24.parquet": {
       "filas": 58656,
-      "sha256": "53658704c1a027bc7dfe35ed2236b09575886d703ff65f4553f2486af48d78bd"
+      "sha256": "9025bdbac635e259e51bb910ab5b032dabb1d18e85d310a3511d9eb088397d43"
     },
     "hourly/2026-03-25.parquet": {
       "filas": 58656,
-      "sha256": "0f59bb4ff2a3b6090965001ff1fde215a9348bfa6b0bd1161fed98882e52edb8"
+      "sha256": "c572c5b4fede7f0a52cda1be3f61db473962b0558ef41d2e223af81f5a785962"
     },
     "hourly/2026-03-26.parquet": {
       "filas": 58656,
-      "sha256": "ef4bde87b0459cb92051e1780bceec9bac367710918597e3ff0f98d9051b670a"
+      "sha256": "299e0872a1ed68307c04808787b2dcdcac2577d50f339f30dddca4f65201847a"
     },
     "hourly/2026-03-27.parquet": {
       "filas": 58656,
-      "sha256": "c9bd7a64a81f578fc9f8533389191c0db4a83a8cc1be69d5736c22cddeb8354b"
+      "sha256": "df0069da10e3878943253b00a769a96f7f9aa7b2e64dd20486bb2cf550352968"
     },
     "hourly/2026-03-28.parquet": {
       "filas": 58656,
-      "sha256": "b3d5ff6afb465397d6bbe28592a1013979e4fd53111e740fb139f970e4ea1941"
+      "sha256": "19a9665aa41ad3d58d74f988f7f08c1fdf3994c227bb8496c52722091475e44e"
     },
     "hourly/2026-03-29.parquet": {
       "filas": 58704,
-      "sha256": "9256786799146e1cf44ea03bcd3af5b4409c1e873f7fe8768f93f2c2cb8f5f1a"
+      "sha256": "966534e9158178b404727e3eef3e0a7d33e1c907173f098b2b3c6e51843c4f6d"
     },
     "hourly/2026-03-30.parquet": {
       "filas": 58704,
-      "sha256": "4485df7cec887c1325015393cc6919ca2ccf07403bcec14cac8b6074400577f6"
+      "sha256": "2110e25de60efa505a5c3de59f6f25e7ac6a7b3d3c6059ba990bfa4887c4e83a"
     },
     "hourly/2026-03-31.parquet": {
       "filas": 58704,
-      "sha256": "dd0ea1d3456674b1eddedac024ba3311ade16e963c3ddb2f6554fda0ede05810"
+      "sha256": "899a346656eb50b6b0c88834585059bdd15565ba45922417b8a9021894131bd1"
     },
     "hourly/2026-04-01.parquet": {
       "filas": 58704,
-      "sha256": "ade49351df0d275285a8937ad2247ed08524c0017715dde525f8db4fc57fc013"
+      "sha256": "8733a8d93897a1865466c3f32218a34b81c52138e4d77c2db8ee9c7e817110be"
     },
     "hourly/2026-04-02.parquet": {
       "filas": 58728,
-      "sha256": "291df9b33d0ff57d1b9c707e43752415350edb653a33b5f4fd7c60b96cabe69d"
+      "sha256": "c0988edf013d762bff675bc4646bb946bc47b6187b144a7a799d652869290177"
     },
     "hourly/2026-04-03.parquet": {
       "filas": 58728,
-      "sha256": "74a82c4138c4e142a609ee0c46ada744ab3c43880e9afa6d7bc930c2d877108b"
+      "sha256": "57458af40542a0768e133054e922f4b747b11b812e20ecc75f694fec2522e7a1"
     },
     "hourly/2026-04-04.parquet": {
       "filas": 58728,
-      "sha256": "2ebb2d2ab802ce6fcaf2d99c0728ef2b3be72d85d345806ff3d25586465ac88c"
+      "sha256": "1c59f9116f1584335b423839d8ab9b0289ccadd835043934d3af60641e178a36"
     },
     "hourly/2026-04-05.parquet": {
       "filas": 58728,
-      "sha256": "3d5c876138b1543c15fbdbea1c33efd57a23d61bb75c4c4a55049ad76305ef47"
+      "sha256": "df2be4bd7a1b4448dcec700d0f6aec5a846a131ebd2080fda46121491818d1a2"
     },
     "hourly/2026-04-06.parquet": {
       "filas": 58728,
-      "sha256": "5d6c8b824a438dbfd4b91a0694ed6f15a54f375633e79e76854cb89135ad5c90"
+      "sha256": "88cc4312eecad530e3da770b0904f77f084c4fba8ce14fad8162d39185534e24"
     },
     "hourly/2026-04-07.parquet": {
       "filas": 58728,
-      "sha256": "40db59f45ad42c14d72732665f74124618262a0438f79c1a116f86c1a88a6486"
+      "sha256": "a617d106ca6144c4ed31826a8ec92f93e543934cc6f1eda9718ae75fbc8f2087"
     },
     "hourly/2026-04-08.parquet": {
       "filas": 58728,
-      "sha256": "aacedc0f99d13030aeeca6df123f826ca92184d93d9eee59a79aae9e5bdaad0f"
+      "sha256": "c4e830f1ff7cd13599798c0cd52ace568247ffe2274ae82224cbf141aeb2c8ac"
     },
     "hourly/2026-04-09.parquet": {
       "filas": 58728,
-      "sha256": "a2afd1173476d53851afd5ade28de85804d5462d1f31f3d115b2e492d1bad3b3"
+      "sha256": "db838fd606773727f51072a05778673e75aa50c36b5774d27dd5f9b178641fa4"
     },
     "hourly/2026-04-10.parquet": {
       "filas": 58728,
-      "sha256": "0de6a4f5019d34c112888fd243de65e326e7c52cffbff6b40699ad67abd65480"
+      "sha256": "b891ef6601f72a615c2b6749d9882aa539e3878c1d6778d43209dce40faba25e"
     },
     "hourly/2026-04-11.parquet": {
       "filas": 58728,
-      "sha256": "f21af6b64053a02abe3d6402a512bec8279317e75f02819e6b5f6e5cb2e0c65d"
+      "sha256": "9d19c6767ef621dba18944706716acf2a9ac32ca95d3eb503d27298275030ff8"
     },
     "hourly/2026-04-12.parquet": {
       "filas": 58728,
-      "sha256": "7a4d923cab64f9ad6426feaee8413b0df9d2a0bab3bf5682ee1b5bd74eb8d33f"
+      "sha256": "3584a15d965408b342ca5d3d393c679e97f864148db27340ce0687ea6a4f049d"
     },
     "hourly/2026-04-13.parquet": {
       "filas": 58728,
-      "sha256": "409069520ce8d3360189fdb2a0af6eed3d5181cd63c36e16076e494a4586c649"
+      "sha256": "06aa46d8824829151d953939d2fa9b2cffa92ab775f034e9f36d3d27dfbdc0c3"
     },
     "hourly/2026-04-14.parquet": {
       "filas": 58728,
-      "sha256": "72650bf541d82846d4f169de13ed2fca9017569afa846cb28b7b9d2a68e8eede"
+      "sha256": "10e8bcac085df0e5a711b5dd9e29ec97718cd5b2b814cca72adc5f85323113ab"
     },
     "hourly/2026-04-15.parquet": {
       "filas": 58728,
-      "sha256": "3bb6294872bff211d7722ee0de78719f1b21ab436ecc9570419538e19816de42"
+      "sha256": "8c35fef7feb6776b702778c6292393bb4c6f60f8e13898c43dbe27155482f509"
     },
     "hourly/2026-04-16.parquet": {
       "filas": 58728,
-      "sha256": "cdf6c943a7f41596981e00ad4d555179e470d78dc65cb691fb1222011cfe8889"
+      "sha256": "c31a1f979450daf867527ec546898170242e78bdbcae4c92288d930a0a0b4913"
     },
     "hourly/2026-04-17.parquet": {
       "filas": 58728,
-      "sha256": "8da7ecbc0f32bd62d8e208c8dbfa20cd550a09a4113ac4c164e0b2cde51ab307"
+      "sha256": "9c986d8543eb9f1f53ba1eaa5463c2ab88ffdea63644f6fe7a44010aca0ea413"
     },
     "hourly/2026-04-18.parquet": {
       "filas": 58728,
-      "sha256": "b1ef9f6e0736ef8754a58e4a75fa4ad71870d3173fe2e45d044a2a77345f93eb"
+      "sha256": "82217d050b8f14ae6cbf289089a4842bbfa8c9c962c18cba6781811625d95734"
     },
     "hourly/2026-04-19.parquet": {
       "filas": 58728,
-      "sha256": "663dd2df648bdc5c9488aa48b134aee2556eda6ca392e64c63dec071fe0709e1"
+      "sha256": "1f5b767787d2918841b56e829da4007925419c0ad3557ceb595e22a28b3bc152"
     },
     "hourly/2026-04-20.parquet": {
       "filas": 58728,
-      "sha256": "359d12c300f7d3edaa28da83a581f4a4d6feedc3bf826efbbf71c9bfaf769245"
+      "sha256": "5fddd54cb7022d14d01afa1247df161b59c5373b3051b675560a45c51308cf12"
     },
     "hourly/2026-04-21.parquet": {
       "filas": 58728,
-      "sha256": "75f95d45212d3176ae1708345a9a18fb0ab5456fb1859ab212731845282edeb8"
+      "sha256": "ab5f4bf2a7972365e8d29ceadfef2b1c11a10de20baea5f93714bccb63b6a65c"
     },
     "hourly/2026-04-22.parquet": {
       "filas": 58728,
-      "sha256": "bd760e30885e91980881bf56116680085f591c3bfb6fa10a3be9629fac1c02b5"
+      "sha256": "195461c7e473bd692a22397e247d13e079410f46104a29355c814f11dbe541a8"
     },
     "hourly/2026-04-23.parquet": {
       "filas": 58728,
-      "sha256": "44e045dc022e67df64380c6fe469d4cf383709169d4ba332d2845b3052847d89"
+      "sha256": "23c3ce6c96a151b914b467eb9aca8157c3cec4b957127c709628bacfd83ce070"
     },
     "hourly/2026-04-24.parquet": {
       "filas": 58728,
-      "sha256": "cf5582f792900217ca00d1edf9cfde1b6c39a3850a3f8cded81e88c170c7073a"
+      "sha256": "0322d9934f2ae1cd151b4ae8459b2b7ddc5df37114168594382711350e7d0269"
     },
     "hourly/2026-04-25.parquet": {
       "filas": 58728,
-      "sha256": "217abb6bed0dc6425654cd6c0e610ee4f9df03b453c619791370f8a1b9c46bed"
+      "sha256": "beb92c505cb532e403592f38e57f2cc8dbded3f98f300531aadc7c71d26e23fa"
     },
     "hourly/2026-04-26.parquet": {
       "filas": 58728,
-      "sha256": "cf4b6a987615b5fbb101dbe4ec5f9caa20fb24f6163fbdcecb389a351589cc75"
+      "sha256": "f8218c843ebae9365f251e6cc8d31c7fd9852baf4619cff6359bcdf43e59f8f6"
     },
     "hourly/2026-04-27.parquet": {
       "filas": 58728,
-      "sha256": "5fd25f3faddf5d37ad6d89bd4d06a47ed05a3a8c17fdeaa99e3ff995931d89c9"
+      "sha256": "b6bb5aaa8683107e983d6635e149745de3ad5f06ac2a0972fb578138f9b93cc3"
     },
     "hourly/2026-04-28.parquet": {
       "filas": 58728,
-      "sha256": "255078defd93371b861905b0c495bf214a4166e3eac9364cfeb91101dd4afe8c"
+      "sha256": "09d3c9875863b1e67fa36aff40a49046a21b8f7f2bfee89d54982bbf2e96d3e8"
     },
     "hourly/2026-04-29.parquet": {
       "filas": 58728,
-      "sha256": "27b6695f565341ae37309d6d4179248a209f4b58ebce0aecc5949757f5a5671d"
+      "sha256": "dc25381a5eb60bc24afec199c4e8be5400b13ddb4397c5fccba02cc805e446d0"
     },
     "hourly/2026-04-30.parquet": {
       "filas": 58728,
-      "sha256": "a4622a5e029f2889bd295a7839875551fa3a1856c65b4292c29f9a33faf91908"
+      "sha256": "c87f886dc1532637d7569e73e7c5352edc4a3e6500490fcd2fbcd77edfa8e38c"
     },
     "hourly/2026-05-01.parquet": {
       "filas": 58728,
-      "sha256": "ce5e9932d8613554f3a5452d42e85bd6162894412c650b2db3498b3aa3780c2b"
+      "sha256": "cff0fe16e5c0024b9908a6d6b7df58ce7356a6c11b3f9161020b61f351c0e918"
     },
     "hourly/2026-05-02.parquet": {
       "filas": 58728,
-      "sha256": "a28745a25b877b10bfcdad63a266b57da790aa46c7282cae0a5ba73647ce1709"
+      "sha256": "a1322d11d0373ac6e6f3f3778e195dcf41bb030292070f8475a2759a85d448ea"
     },
     "hourly/2026-05-03.parquet": {
       "filas": 58728,
-      "sha256": "dc00b313051e70134d546c57a6218e966f18709f383b7debfefa05ff949ed4d2"
+      "sha256": "2f68dd30943d034cd11a85b65406a75b9b1c4a03faa4c82e295f2b76bc4e67c8"
     },
     "hourly/2026-05-04.parquet": {
       "filas": 58728,
-      "sha256": "61386cf21d25b73a041d2e7d33cf8f40520715e58a17a956c384fa8fc9bec996"
+      "sha256": "a97d16389b65a922046973295bb395bbd47df1d6a191b9d2ff32c68dc0c62e9d"
     },
     "hourly/2026-05-05.parquet": {
       "filas": 58752,
-      "sha256": "faa4598a13ef5b6d930320f8cc85df1ca2628aefc02dce341312c99ea1c8a441"
+      "sha256": "4c156d0924cdf6b6528b04a1103bf6368bdfe766a34f0357e6d55544f01ff0a2"
     },
     "hourly/2026-05-06.parquet": {
       "filas": 58752,
-      "sha256": "7ea469840c43824d43a21bf987089032bf05f69c81f424a76d0dfb77c51ac9a1"
+      "sha256": "bfde72471f61f9a1a739bda79c94181550cf99b6fbae0a852bd254c01645cd27"
     },
     "hourly/2026-05-07.parquet": {
       "filas": 58752,
-      "sha256": "2787206b80502ec91b0d4b883cc06089a14f8d9a53b37d76de90f2f0fd2d12ce"
+      "sha256": "d3b46f416c24a550b54236512297b4cd4fdd879ae96dd00b7c315284441499fc"
     },
     "hourly/2026-05-08.parquet": {
       "filas": 58752,
-      "sha256": "2d0f5eaa66a0e041b13abaefbca9cf7827c1729ea7da5bc6bb80779d2b1a8596"
+      "sha256": "fadd3575a42f9f880deae61972127594434ee2e4b1caa5e6e74ea6147abe811d"
     },
     "hourly/2026-05-09.parquet": {
       "filas": 58752,
-      "sha256": "098e9a90d1629945f195c34a44829d80df8b801ce73772841cce9bb3d497106b"
+      "sha256": "e0f33a16415b11de3be3a8b1854951409bbde35c8c6d812e68e5cb9f6dc76209"
     },
     "hourly/2026-05-10.parquet": {
       "filas": 58752,
-      "sha256": "f42a59ba87bba1b07531af728689528b5b58717ca7155d740f10d4e09420739b"
+      "sha256": "f8182a4f4d11818c82625dee6afd1b5d341dc8868a5c3903d3196f9c31830584"
     },
     "hourly/2026-05-11.parquet": {
       "filas": 58752,
-      "sha256": "dd6b915e1fdccbec0f83d65dc6a49b44313a0de1ccf1157f359133bda7f8a006"
+      "sha256": "b47c7a36d4c22814927a973472d66619ac4a94362053beff538ee595b9f53aa2"
     },
     "hourly/2026-05-12.parquet": {
       "filas": 58752,
-      "sha256": "ccaac43ea15380343b2f87f20ef075da3acdaf187fb28f43ec2cf56887380776"
+      "sha256": "a6f7ba54198ace53afe6334e05ed191973974e5c8b67d1ea4aa0db4adce7d7c5"
     },
     "hourly/2026-05-13.parquet": {
       "filas": 58752,
-      "sha256": "26c2ba8ed50f1ae5c0ba3649304ba1a90bd49ace84bd82169ad908ed4259f85d"
+      "sha256": "1dc8615252b80429171e1678ad8fa9733001bc52472ebf7144af585187bbb80c"
     },
     "hourly/2026-05-14.parquet": {
       "filas": 58752,
-      "sha256": "38216254d2ab57419f272db55fc918921059e5d3de9004336b82a28f0720dd09"
+      "sha256": "51b1feaf77e6311c2908df8ee42564b17c75d6cdd7fb7e48883469ba8cfbec38"
     },
     "hourly/2026-05-15.parquet": {
       "filas": 58752,
-      "sha256": "5ad04a2b5dd5e100274a07e780821909431c8f32e8fbe16e82ba24ccf6e091fb"
+      "sha256": "b64a016c0c0227af00eb737c32ab73c201a124906024bfaf99007ea2dc4b31c8"
     },
     "hourly/2026-05-16.parquet": {
       "filas": 58752,
-      "sha256": "fbae818693b88de480329aa779fc9505bc272d79cbf001f5a1f698611e8bab63"
+      "sha256": "027a94a4e24c11db6246848cb6d2e6943f09e400e0d303756818247a7adf3b49"
     },
     "hourly/2026-05-17.parquet": {
       "filas": 58824,
-      "sha256": "7eb423d12eec2b2f0d57b452a738f690427c61b2b9c34c8815a47336acc9a229"
+      "sha256": "4ff65236311cbe6fcbb4e674c979e90c31aea09539a202b81abaf6e98cfc030c"
     },
     "hourly/2026-05-18.parquet": {
       "filas": 58824,
-      "sha256": "213a67ddeb46bd9244215999c5874a7e8698ca73f825bed79fe337f7561eb065"
+      "sha256": "5752fa1e27ccda2a3097d980d60d72b9094ff642b66ce5ff2ba7713fee6ee985"
     },
     "hourly/2026-05-19.parquet": {
       "filas": 58824,
-      "sha256": "421febeee808b6218fa88cf344150a72c458b854c45d87da9cf86d965af6a23f"
+      "sha256": "f700334dde9fc8125aec5dc3c2c3283ecc30db4fd9ed0624acbdf19a344f05c2"
     },
     "hourly/2026-05-20.parquet": {
       "filas": 58824,
-      "sha256": "57a8047dfae80cde400877e95470f68695c7bdcded6654ca8aa5df394af4b9d2"
+      "sha256": "31e538162590ad9e7f6153402bebe8aefd82c49f875634171d78f53bdd94b15a"
     },
     "hourly/2026-05-21.parquet": {
       "filas": 58824,
-      "sha256": "0bebc7d6853432b9d5c2c3213dfcd95e4c52fbd78434d102b5d5b140d8bdab20"
+      "sha256": "4f738e18c4a54e3d24bb2cbe9e1b116d124442f24ce79da76e113c738e583816"
     },
     "hourly/2026-05-22.parquet": {
       "filas": 58824,
-      "sha256": "9b94c616e88cdcc7380baba3497df03b6c80773e64eaed191ba9c968cb428b64"
+      "sha256": "bfba616d39374fc5a259f479633df0fb7afcf51cde44394ded93e8144cf23e6b"
     },
     "hourly/2026-05-23.parquet": {
       "filas": 58824,
-      "sha256": "6571546187fe29bc777f8c3ad08361b738bcf77f0ac1424152a6f3b4fceb0797"
+      "sha256": "30812dd16d12aa915a21df5cf3c38f4c52f19b98775a0366d467235b10acc623"
     },
     "hourly/2026-05-24.parquet": {
       "filas": 58824,
-      "sha256": "13f33873b33874e4561f78c1e2a9d0025c441d0d1fa693a393dce32b5435db58"
+      "sha256": "f18e4dbf611c631935275c9af8ad19e5c4412f09db66c49af1dec67f587f4b88"
     },
     "hourly/2026-05-25.parquet": {
       "filas": 58824,
-      "sha256": "9a40aae0b48500a827c4b74e0c854d6875680ce5a36ec7ab0d0ca93a1064b544"
+      "sha256": "837df5778c7b1da02a89d20f60cbe927cd9ae6448423ac0b3d75d43aef0d47af"
     },
     "hourly/2026-05-26.parquet": {
       "filas": 58824,
-      "sha256": "9900af8b1b524650b2e24b7ed126302f07fb01c39bd008698c284bc5584e5da5"
+      "sha256": "3c122223b44393e27fd2df92407de3997cc1230ad41df0200881374ed8929a2c"
     },
     "hourly/2026-05-27.parquet": {
       "filas": 58824,
-      "sha256": "f4588dbdd85ce79cc70842ec37649dcd38fea4d3f6bbf0b936b61a77b85b1b7d"
+      "sha256": "ddbfdf81ad5d2db78e3d5fa2f9584bb51644976905004b5333061e9fc6a63792"
     },
     "hourly/2026-05-28.parquet": {
       "filas": 58824,
-      "sha256": "12060e6d08179eb3f6a1f77a856d54b0468d52b5838260b03fe65bb450c9065d"
+      "sha256": "f971ca5a153778e36aec8602366ecb0a5877166d35e9d943dc4cd4e768e38df8"
     },
     "hourly/2026-05-29.parquet": {
       "filas": 58824,
-      "sha256": "5fb980b29bb618411c8cc7dff38b6fe55f10ad11d9c144e0a18dff5fb13bd877"
+      "sha256": "c6b70ec8c8699b68281a5072ea1aec1230d281cc9bcabd03ccb8d40aa27bf5f0"
     },
     "hourly/2026-05-30.parquet": {
       "filas": 58824,
-      "sha256": "e1a4c05913032c4aee576fc0eb47c1d7f48cfbeb4eb1b6a086d6d2b326614a12"
+      "sha256": "22193347fad452d8c9894e4b09d7af16c631cd732b14e84143a39d83d092a988"
     },
     "hourly/2026-05-31.parquet": {
       "filas": 58824,
-      "sha256": "0fe9a5caa64fc7d43bdacf7f193549172725c24091bb64dea0332a60ebcdbf99"
+      "sha256": "b64733a4913274704d75077ac7eb01c9f35d7ff837c18e397cf341bc103f5cf0"
     },
     "hourly/2026-06-01.parquet": {
       "filas": 58824,
-      "sha256": "dc0623510bb621926e5046c132b8703430ef35dc6dbed2b63f42c6450d442a0c"
+      "sha256": "747ce84325129370cd224d60a96b49262fef927cf4cdfede18a3798353d67a07"
     },
     "hourly/2026-06-02.parquet": {
       "filas": 58824,
-      "sha256": "1716c3bf8c1f3243f41d4150fb5c5b16b4cdbd3c1933fe83128f887f76ecb4d4"
+      "sha256": "d7a8f2bcbb870b14852b92b4915f958c1f7aa61d632f538ae793e78fe37a43a8"
     },
     "hourly/2026-06-03.parquet": {
       "filas": 58824,
-      "sha256": "6f2253d6194397b28ac74846eb72b0dc5850ed8c037f1d84571b1f3d5ad80a4f"
+      "sha256": "360b76bce6dda66b944df5d268ab15afb30e9d9c9edf25c5dcd74003ee35ccfe"
     },
     "hourly/2026-06-04.parquet": {
       "filas": 58824,
-      "sha256": "47f45a9d3e5440e583abdb07c512c3cf374f3aa768ae0229e5ccb24aa14529a6"
+      "sha256": "573af44e18e23b16ee8b654afa6209d56b1aa2db2da95c2bfe7106a1172d277e"
     },
     "hourly/2026-06-05.parquet": {
       "filas": 58824,
-      "sha256": "989b8bdcbc69c1057597f04423b3bd318a479ff3c99c03e4926aa6f833536607"
+      "sha256": "06524b6ab1a99eff4752b221d965a0ff65e09abf06e2c08a346963d6f3e21a93"
     },
     "hourly/2026-06-06.parquet": {
       "filas": 58824,
-      "sha256": "364720fe7b099d70c76d185ff89b637d2d71066f8e2c22e3758dfb12a1de806d"
+      "sha256": "8076e92d27ce57db4c11c0df7c79136022a297d3a0f5921813009351d82be6b8"
     },
     "hourly/2026-06-07.parquet": {
       "filas": 58872,
-      "sha256": "af7b014f044234125a4641ef6bc07d069ec801d8cd9de6a6d58366f559f7b9fc"
+      "sha256": "67d041fc2ee66f2becd0e0095bb87a6e5da147bbc4b5a88fc8f4997fcfbf50a9"
     },
     "hourly/2026-06-08.parquet": {
       "filas": 58872,
-      "sha256": "e2f92b9870fb928aac6f17c463d6e608acac15463b32e4682efe52905157a1c9"
+      "sha256": "1494e7ae1cdd50df50127b14b3c85e4f459b70c46a919a205506d33dcd45e7d1"
     },
     "hourly/2026-06-09.parquet": {
       "filas": 58872,
-      "sha256": "a332e3bd8557c09ae775b4138946c2548142d87a745e57587e1dee54c0dfd8b3"
+      "sha256": "4ff8e22573d44f2d17323e2c2b24276bdafe0951c361faa38253dfbb93e18c97"
     },
     "hourly/2026-06-10.parquet": {
       "filas": 58872,
-      "sha256": "69f4c4c799f00752aff7ecd55985c2ad7ac45a40c3da75a31a01f325cacfd17e"
+      "sha256": "1f19ea70e6fc8acfad5712abcb43ffc110aab662eceaae7064a2c1dd212a0927"
     },
     "hourly/2026-06-11.parquet": {
       "filas": 58872,
-      "sha256": "e4a3f8cb1a56f6ab393aeaeadb66ea54fdb24d258b42a29d31a8d6154994669a"
+      "sha256": "38a01595e1bd35e67f0bab2e9096c136be777f16f71203baffdc176f07c2ca58"
     },
     "hourly/2026-06-12.parquet": {
       "filas": 58872,
-      "sha256": "302cc36adc692f3c1d5d42d66ea215606817562dce2fa9afe2e3c72db608fffc"
+      "sha256": "335bcf5d8fb32cd9bef58120e8d89c7f2ff3a9475caefb1be4c5b31034db6506"
     },
     "hourly/2026-06-13.parquet": {
       "filas": 58872,
-      "sha256": "07ce7f9c82743b1becf47efd69cda84b96f562bfa48fd20dfe5a6ccc6e9cdbe7"
+      "sha256": "204938fecee8523e428f452f0fddc3ea6483c0ccb0be4cdcc83d0247fc2c061f"
     },
     "hourly/2026-06-14.parquet": {
       "filas": 58872,
-      "sha256": "70a8cddc1d1dfa679354f71f6065e2341c292ad3882a261437005b8087b1382c"
+      "sha256": "45fc26abc606792dd0a02955e8499cab035a322bbe163266d9b940629611828d"
     },
     "hourly/2026-06-15.parquet": {
       "filas": 58872,
-      "sha256": "6c4c87ed722110fb087a2d25f3fe791fd04bf235c303a0433cd7c2df7be0df5a"
+      "sha256": "b06614c011eef19a1ba22516215e185900ee034f420faff944b1138d038f8ee7"
     },
     "hourly/2026-06-16.parquet": {
       "filas": 58872,
-      "sha256": "f99e94396ebb60e4516271eae2042dbacad00ebd959d9dd62ac937eeb364aa25"
+      "sha256": "32e984fca70fc9c74278abb37f12d7ce94291b1371aa3a4af6e02fbd32ef9fc4"
     },
     "hourly/2026-06-17.parquet": {
       "filas": 58872,
-      "sha256": "b4c8bbbee597badb7623c3a875e88132e5556a5e22a280d366a6197064ace273"
+      "sha256": "6b0ec0a0800f46dbd3cde8ff22d8e091cd19235fc867edad4bd399eb1d96da6c"
     },
     "hourly/2026-06-18.parquet": {
       "filas": 58896,
-      "sha256": "0c0f64c060675402146f0924d42abc0d3cf00ed787c1fcc2f335cacea90b3f27"
+      "sha256": "07a49d29cc323a4ff86ca064420d6ca0b20fffbfe0a11ed3eff493f69d02769c"
     },
     "hourly/2026-06-19.parquet": {
       "filas": 58896,
-      "sha256": "2c8095635ab4c1d739da6b6e5193d5ddad5fe8a29826c4f6bcee785a21f6848c"
+      "sha256": "0cc9488a0e58e9e7d1587d3b016888b972d1b1d2ac975589dd52793d99a68c61"
     },
     "hourly/2026-06-20.parquet": {
       "filas": 58896,
-      "sha256": "91b377b8e12c5977f4e78b32d081717ab07c699950bda8439556cd04574bd374"
+      "sha256": "ce01a1505dca466c6678c5cb92a16e1f597d67885b5fccb726246e92a9abab9f"
     },
     "hourly/2026-06-21.parquet": {
       "filas": 58896,
-      "sha256": "26f009ae6b67d213cbcf58ef2f7984d284e7349cfd87c3a17296a33111755448"
+      "sha256": "8d02cf91dbf4c6360655487b8c7c96b142f112caee1df36cc3acbbd77d5ab800"
     },
     "hourly/2026-06-22.parquet": {
       "filas": 58896,
-      "sha256": "f24ee505953da7becba9bb50c6413d28e64b3d0c757a970b3c46f0fd7a1c94bb"
+      "sha256": "3948156ffa56c58e83d9c6e072c9f25e4a08074340a650e9128a29756ee97edf"
     },
     "hourly/2026-06-23.parquet": {
       "filas": 58896,
-      "sha256": "09c12f8e9056210e78329a548ba5d95ab18e12e45e77b557d6d02ca3c38da147"
+      "sha256": "f27e5469b66ee3b8aa5e377da280c1b30e3fe7fce76b05c72b1f59ee06e422f6"
     },
     "hourly/2026-06-24.parquet": {
       "filas": 58896,
-      "sha256": "9cf1b3ece5cd116d34a66a70c646196b0270cf6efaafe74905fe265ae2b563d5"
+      "sha256": "7f8e9e2dfb6ccfe1f04c5b1f05d91695ec66eacf3e747ffa2fc1d6a6ca39ada7"
     },
     "hourly/2026-06-25.parquet": {
       "filas": 58896,
-      "sha256": "6c17bf4576f7251ef9f2c8fabdee5cdba40953ef34f730870a614fc9a25d4d41"
+      "sha256": "b3725c44e0099e7ca78481fce55c0cbd0293e93479047c6f8bb58642b1cef780"
     },
     "hourly/2026-06-26.parquet": {
       "filas": 58896,
-      "sha256": "cf7da8587827f95b9f1e5dc660a15d95565fe302860b3c9e4d8079e58f708921"
+      "sha256": "79aa32affb40cebf976458993f665ce6fca65eb42cccd7f9c4d8677c7a6cc14e"
     },
     "hourly/2026-06-27.parquet": {
       "filas": 58896,
-      "sha256": "71504cd8957ec2abe7379e3858e031663cbe61e6d9811dadd1ff94e796b7f07a"
+      "sha256": "e89a52f1b33d64ba24deceb5c1eadaf291dceb64e8248ced172c4ee2b0becdb4"
     },
     "hourly/2026-06-28.parquet": {
       "filas": 58896,
-      "sha256": "19020fa6a41d4c972638b796f2a73390b809a3bc9acda5b693ac43aa58377313"
+      "sha256": "1cac7cf25eefa213cf68b4f9594db20d01cbacb0cf15b9afc1ade6033d1d15ce"
     },
     "hourly/2026-06-29.parquet": {
       "filas": 58896,
-      "sha256": "ee9a27d80a94a976d559ea40098826a06e4aecb0ea0e025906b3fc6bc191fdac"
+      "sha256": "a6faea9cfcc345b464288ebe107ce220f77f826a26e1a60cfaea25079a25add3"
     },
     "hourly/2026-06-30.parquet": {
       "filas": 58896,
-      "sha256": "be705ce3632c1f957fd15b5d9cd7405163556105891ed28e86a976633730ee8d"
+      "sha256": "40fbe5aed0413755aeca090a5dd22adb95dcc290cddfec53cf453cfbdbe8ba98"
     },
     "hourly/2026-07-01.parquet": {
       "filas": 58896,
-      "sha256": "d2a89615116b51e876daab392efdb56766355374b2e92d17c569750d238a834d"
+      "sha256": "d2e395c70a3791ee38830c73cfdac7c4299a20b7b09a587b3c89141483b9c988"
     },
     "hourly/2026-07-02.parquet": {
       "filas": 58896,
-      "sha256": "f79b9e96ae8ecc846635edb6a871149b630ec4755dbd3abb352b7aa9ba70db10"
+      "sha256": "0fb96f8bd5d726ba67910cbbf77368ca9397c270b6138cd2a2b376ed71bc9e53"
     },
     "hourly/2026-07-03.parquet": {
       "filas": 58896,
-      "sha256": "675adafccf9e2bec369bb33bcdb736a78f5addd35f8b1a99e6f205387a191b79"
+      "sha256": "7f58e1d4274144b79f54d28232c4b0c91028453dca19011afcff01b99dd7181b"
     },
     "hourly/2026-07-04.parquet": {
       "filas": 58896,
-      "sha256": "92579745f37266c44c82fe331e1d0ade8115f9a96d6174cb7b0dd6f0e02fb39f"
+      "sha256": "a7a5de4a8129b6034506940315eac30def0c66eec80cec9efe376a47b80edf4c"
     },
     "hourly/2026-07-05.parquet": {
       "filas": 58968,
-      "sha256": "4cef54520d69055d58a36f64f8e65f024151d33dd27e435ee12c5bdca6630103"
+      "sha256": "24032ee5dc53d6166135cc5c5057b1ebb0fbd17944eea00af8ee7af59a7e6a59"
     },
     "hourly/2026-07-06.parquet": {
       "filas": 58968,
-      "sha256": "b583c646015c90bba5b5b1908ee33ffd1ddbac37f61da996a6a172fb16c643c1"
+      "sha256": "9c1b984c1a50923cdfa520ae03dde82c1abab327b0d2489bd94b9df5e0d14aa7"
     },
     "hourly/2026-07-07.parquet": {
       "filas": 58968,
-      "sha256": "8aa665b1848b310f3a7cda49de1c2665c479295c0b6a4271deeec06acee74251"
+      "sha256": "5ebcc03cd4ffa07236d1a71e1f5558b86c98b30b8f65e990ae66802ea3322dc3"
     },
     "hourly/2026-07-08.parquet": {
       "filas": 58968,
-      "sha256": "cef445e16a4a5f3acf8a6a7cfeed50f205ee057ab2e35644786ee3b95200c8d1"
+      "sha256": "30d36cfcb838803242d616ebf4e4836e3424ab78f995b98a84f4c787eb8ce440"
     },
     "hourly/2026-07-09.parquet": {
       "filas": 58968,
-      "sha256": "f4379f332efe95d01be9332b9beb60c8e987342a48af97b2672ece253c840133"
+      "sha256": "3e07a02370f3e27b0208d69a3b873214dc79fcbaf2dff2cb78981d3bbce7eac2"
     },
     "hourly/2026-07-10.parquet": {
       "filas": 58968,
-      "sha256": "dd9c55d7f28050bd409ec45e6ce4427500d9f649864679a4325384706941e6da"
+      "sha256": "176c093f88b6be2017a5750c458225719afb7e36bfc0fc39bbca8bfc42800a0f"
     },
     "hourly/2026-07-11.parquet": {
       "filas": 58968,
-      "sha256": "f2d636cc8a4bbfd7f5e0e8150570375ef8a7d843a22aa8e59daffe6274eee60f"
+      "sha256": "0f4447ce0e2a81687361e16aa2e4d845f37dd1e9c81c128e5a595b9bde7a2643"
     },
     "hourly/2026-07-12.parquet": {
       "filas": 58968,
-      "sha256": "d527036d98d0b9de9790eaac5c2f976c91d1c7ed971688b4f5e6165a39c99d5d"
+      "sha256": "c4da8b96314ab7ae91260c42b788fc267bfc9c3e2cb637eacf03bc5eb9047567"
     },
     "hourly/2026-07-13.parquet": {
       "filas": 58968,
-      "sha256": "2a34451147680bf03d259a617d1a17d02392fe466b860d0d2b9f63a560cac79d"
+      "sha256": "f595c34e520265f6724424d749f90f2a51beb91847ff8899f08b2df03e9d96bc"
     },
     "hourly/2026-07-14.parquet": {
       "filas": 58968,
-      "sha256": "10b416f1a533dfb1b4aa96e93fb2cec492c9c43beed9c55064533bce62efa9f8"
+      "sha256": "063e97571c5f70f58933ab3854faed3e1777aaed3d74f24f3e73b45075977a09"
     },
     "hourly/2026-07-15.parquet": {
       "filas": 58968,
-      "sha256": "04c6cb60d3e8552f8acd47e29ee9421c98f9c5c57bfd376d3ce020e541f6d9af"
+      "sha256": "655150f47346e8aad8f8c80d30ff8b0b75a942aebb43bdbe7042bbf1c5a6c051"
     },
     "hourly/2026-07-16.parquet": {
       "filas": 58968,
-      "sha256": "0ed7ac371d2cb615a56c1bcaf25b984817821051cbe8d2b8d81d4da863ab9c9a"
+      "sha256": "9b8dbb2ea2dbc2d7c66c64b8cc542001e037043e073c30ee27bc14636260c409"
     },
     "hourly/2026-07-17.parquet": {
       "filas": 58968,
-      "sha256": "050dd738dbcdd1ff658af25559b3803acfa59f943e217d6048b5c54573149495"
+      "sha256": "9d58ef8f1a7028a6f0b852d33e1fcfe49a4793fb380fec45df9d57fa7b87bce4"
     },
     "hourly/2026-07-18.parquet": {
       "filas": 58968,
-      "sha256": "e4fbf281f910facfea37a867a1f3a370af8f604290c48c1a66ef7c9a752d3050"
+      "sha256": "65c3bf0e93838b7496c6e062c66e57cf17cf371964b2396a87c17d911ba4877d"
     },
     "hourly/2026-07-19.parquet": {
       "filas": 58968,
-      "sha256": "8f77ff4e387c866794a7e114b213fdec7c3b7cc6acef1aa31fa2f3358934b3e2"
+      "sha256": "d00e3612ae0ec0aceb4f76092f71316b4502d5db54af2fe9f7c6a1ae1fd4523c"
     },
     "hourly/2026-07-20.parquet": {
       "filas": 58968,
-      "sha256": "b6d9d775d4e93dcddde16c71268714322f6bd1b347b3f29e2216b5aa7f1092d6"
+      "sha256": "8a26bf25f943ae02dec794fa5ae63a670b108f26aff1f3d32765f8880689a9b4"
     },
     "hourly/2026-07-21.parquet": {
       "filas": 58968,
-      "sha256": "ba5b3e5f8ada7c55b1599c455cca37c051e6ff19be01e450267a725e908ff903"
+      "sha256": "8cba7b30a5b65e6b4605eebc2ecb0dedb8c72abd9e18395dfdad930a9ad96225"
     },
     "hourly/2026-07-22.parquet": {
       "filas": 58968,
-      "sha256": "ff9dd5b57abe3e84d205b1523116ad94dc3606875d8d68f9c846c7894c17e24b"
+      "sha256": "63513e9f0c1e77a68f69988d35995f073f8a6485df64622fc0909bcb2923bb5a"
     },
     "hourly/2026-07-23.parquet": {
       "filas": 58968,
-      "sha256": "6e451ff8b4d3ca785570d249c7c4ce7e8ca57805af39c0502a25d5600ed8f617"
+      "sha256": "359d1502fdd540fa0a461397f38857cafe060fc764c501af4d7b5c80d6cef64d"
     },
     "hourly/2026-07-24.parquet": {
       "filas": 58968,
-      "sha256": "77a1cf02390088f4afdcd39c49f27c1ee7508478f31425c61f71bb6c3b0b9f10"
+      "sha256": "0105c01506864f045e95ca3137913539d2fe41a65eba2abf57893bd53f633c4e"
     },
     "hourly/2026-07-25.parquet": {
       "filas": 58968,
-      "sha256": "a16e03a9d2061f29990209cb74c150bc0008a5115d285ba72ba3cb69ed14499c"
+      "sha256": "d3a64d6a2ceb9d752c2a9594ea4cc6dec65ed3b54268ee1dcb27ed6c0d6590f4"
     },
     "hourly/2026-07-26.parquet": {
       "filas": 58968,
-      "sha256": "dd3e6ef93b84e5aa72c1a3abee1a3c31bcc7ad34b217af0701e7ef42b12e6712"
+      "sha256": "31982039d720895e8e334bbb29376302faaf81e176f3851ac11781ee1543683f"
     },
     "hourly/2026-07-27.parquet": {
       "filas": 58968,
-      "sha256": "de5144f41791e88b35d769a864cfb25cc3e07f5098b20ee3b0595255dd6ebae5"
+      "sha256": "9b13fb3703e11bd09f26bded41b3ab0b11d54bb2a68b3d8d1227659505ede772"
     },
     "hourly/2026-07-28.parquet": {
       "filas": 58968,
-      "sha256": "4af15948310ca61f58ef6b691d600dbaca56f124a29112f921196879eae45ba8"
+      "sha256": "084ec8e4d0cd0f85f8e642de7cf28d13f9889d112ca23e1d903c92c823f2330c"
     },
     "hourly/2026-07-29.parquet": {
       "filas": 58968,
-      "sha256": "27351624f21a4182d17daea4873f166d9734f4474286b53c7bd3d9ae6936f37b"
+      "sha256": "4f013772623e19ecfbc97a8307fd975e5bb3326402cf5a1aa477079b11adff4f"
     },
     "hourly/2026-07-30.parquet": {
       "filas": 58968,
-      "sha256": "cb0d8f84e64c14c42c76118c378c7f7522350546a692df34357b75030a17b4d6"
+      "sha256": "2870a82d55fffa7321b9e161cc11d2bc27da8236035053eb71b3477bf05fd139"
     },
     "hourly/2026-07-31.parquet": {
       "filas": 58968,
-      "sha256": "959ca49ecb5575947168cfa526e379f16feeb7f9c2ae17aae01322f4e7d2516a"
+      "sha256": "fa5efa0077144f12d6bbfdf8ddfffed032b1cf9fae3c5fa12a7a3940fe8cbd03"
     },
     "hourly/2026-08-01.parquet": {
       "filas": 58968,
-      "sha256": "2d443fc7bae5c055358801d1f3b09d548304509c93326a894c970627ecc1a5d5"
+      "sha256": "683f1a3dd36f68d88ad5c87c76430905c5d285ccd2362bebb363ad7c01fd1eea"
     },
     "hourly/2026-08-02.parquet": {
       "filas": 58968,
-      "sha256": "e055e1df2b09dc7b792b4ecb3237778d0fce5e6ff7b4fad0e6ab9d18eb7e8173"
+      "sha256": "dac09c86606509b08e92d3e27fad53a2187d9df57b5d77c82b729fbea5379420"
     },
     "hourly/2026-08-03.parquet": {
       "filas": 58968,
-      "sha256": "435dec0e3854347cca4a683fb9cc2d2004bf2dc122acf3c7a8a9d6861001a157"
+      "sha256": "896bbcc2c49f5124bd48aff882dae963758dc31624f20a44ad39d7faf9f11fa0"
     },
     "hourly/2026-08-04.parquet": {
       "filas": 58968,
-      "sha256": "52814d0d14258c10746e5cf11708959da3baa3bc9e6e398165fb831044d40180"
+      "sha256": "70d07301ab49d5506712f3a89bd720b8d6c8ba6dd6bbfba5829311064bcba056"
     },
     "hourly/2026-08-05.parquet": {
       "filas": 58968,
-      "sha256": "1322d5aad102c4d1513383ec90faa5bf9fba34dcec0d2fe681b69e2465e584c1"
+      "sha256": "781c1edfda24ed262a3b57d81417d7ccdda10c90deb8106867fc0de109f14dc7"
     },
     "hourly/2026-08-06.parquet": {
       "filas": 58968,
-      "sha256": "1ea1ecfd0cf1ea93d8c4a961cb76a350ba833666834c5a02b7780fa1fc1ae301"
+      "sha256": "36cc2f4c4534815ca9552a2ae602253e84294b5ec9e74a8cea951614cd394b4f"
     },
     "hourly/2026-08-07.parquet": {
       "filas": 58968,
-      "sha256": "0c24e9b9a0964617f5691355606160597b7580f00089b48184c97b77f742d5c0"
+      "sha256": "604bbb6adad8dcbb200d7dd6a4b3dd3088a30ab6e77655c799b5a0c814413ce9"
     },
     "hourly/2026-08-08.parquet": {
       "filas": 58968,
-      "sha256": "81d885e9b7f31fe0ae4be9d37f679b6df45dbeaec755d3704a674e78cfdbb9b0"
+      "sha256": "95c52082bc96863afac0a65fe02b44636b1d08e64c6c0f95803427a48205c762"
     },
     "hourly/2026-08-09.parquet": {
       "filas": 58968,
-      "sha256": "bc19444a09203c470c2464e582677915e2a594ad5b1cc57e177216d106857363"
+      "sha256": "42d63e7494713f964b443150afcd67c5cecb2679970e4bc3f0d89d76e7753bd3"
     },
     "hourly/2026-08-10.parquet": {
       "filas": 58968,
-      "sha256": "7668e731561fce530064374348b98a39ac08d33d58573916cd771de9be599822"
+      "sha256": "c2da6a773113dbd011899250f85efb94fb9213e41587761c0d0ddf7fb98c12cc"
     },
     "hourly/2026-08-11.parquet": {
       "filas": 58968,
-      "sha256": "68b4bd9a56df8420d02ea20457deaeabe8dc83b5bd3674145a3def981cd865b3"
+      "sha256": "b9f9bacf0c79b7e61eefbd001e31b874a0992cc6d61d439910705f42cdf59dd8"
     },
     "hourly/2026-08-12.parquet": {
       "filas": 58968,
-      "sha256": "ac4e006701c7a79b86aa92fa17e2013ad08093c0efa1c91a97457836b98cca9f"
+      "sha256": "b4932b2b3e1c3ab72498561be226db1313011e1e9b8bc91f735faad2cb6348b8"
     },
     "hourly/2026-08-13.parquet": {
       "filas": 58968,
-      "sha256": "9ba8a5530f5268358ffbcb8d065fe66b7e4e42f68d4c389ab3fe7e8b3faeb407"
+      "sha256": "aad3f25e7a0d7e22f1d43228e5534973b82182c4172df9aceecb540ac92c7e62"
     },
     "hourly/2026-08-14.parquet": {
       "filas": 58968,
-      "sha256": "7ba723340108171aa294e7da3289ca040e474b7d2026e52879bd2b197b5e15e2"
+      "sha256": "7aac6d858d9dac905fdf2c31998be9764827e3283973e7654f2a55be9dca2967"
     },
     "hourly/2026-08-15.parquet": {
       "filas": 58968,
-      "sha256": "32ecdc805284d8a9a8278cbd2d1c3f0b0b941c16b56b51b6814b5c5a47b5e5a4"
+      "sha256": "9eac8dde97f925703b0046de406c7ff4971936d7699d40369f432d2c45a3cd9b"
     },
     "hourly/2026-08-16.parquet": {
       "filas": 58968,
-      "sha256": "23772bc81123740b984c2a7c3356ea6c6a4f9a5ce4d771ccdd4dec6244f35f80"
+      "sha256": "3b22f9042acfdc5d990e89b1220aa275ece4986e59e2aa4237b980ef72ce783b"
     },
     "hourly/2026-08-17.parquet": {
       "filas": 58968,
-      "sha256": "55b1fb7e33bd1a9ec4238d98c753190bf981cd56f4a7b7de621e6fbb544fff43"
+      "sha256": "878b71872d0a940648ec4a4a35ee7ad77b89b943c233da8a5b8f283e2b59a5eb"
     },
     "hourly/2026-08-18.parquet": {
       "filas": 58968,
-      "sha256": "46303785c0ee6074b245f90d0a4fa36e9bda6be49f695e7d9b50ec1aea144925"
+      "sha256": "9cc149da9c73ada3464e014fc55f6d4c64657cfa1f199877d266d3726456b6d6"
     },
     "hourly/2026-08-19.parquet": {
       "filas": 58968,
-      "sha256": "c3df616201f20f291baa28400b00dd22380b1f24d4a8db89d084c2a0d193f04f"
+      "sha256": "bfcaa4423fc08731ebf37517fcf6f9430c2fa44c8e61107f15d551b4125ea062"
     },
     "hourly/2026-08-20.parquet": {
       "filas": 58968,
-      "sha256": "a8ff67bbc4ff5603870c0b6af4bb0c5acd39d8146628578d8c0ae8b7d18fd0e3"
+      "sha256": "dd0921c91d5bacfdcd80c6dfe0e9302ab238b86f13468d5651cdfb79261d4b5a"
     },
     "hourly/2026-08-21.parquet": {
       "filas": 58968,
-      "sha256": "28f4dda7880764fc0df1b57595d081c5cc187e6e04002281ea659f96e9c69ddd"
+      "sha256": "4556edfb5fd909070f725ddf377c3f15e105c23545581fb00705ef370fcb95fa"
     },
     "hourly/2026-08-22.parquet": {
       "filas": 58968,
-      "sha256": "77a03b50c00ccb44fe7a392112df820d0ffe2a5fdfe9a2bd20cebe7147221154"
+      "sha256": "7e721009d20bd0edc0a88ac561786aa5f0a9ddc3f51e42c0ecaa2399250a7b40"
     },
     "hourly/2026-08-23.parquet": {
       "filas": 58968,
-      "sha256": "b0c488da5e5e298e56808b10c79475e890031f4af182843dd04f333f708e85c0"
+      "sha256": "7725915088b159e1c2d4acf4a0d582fef3714f89e99abd85a4769c4664a78f46"
     },
     "hourly/2026-08-24.parquet": {
       "filas": 58968,
-      "sha256": "59db9095c7d7b80d286b27a0e94be9ef73a313468143b4b47cb9e0de5bb9038e"
+      "sha256": "fc8ce8eb53e68dd5eb73d81593cbd827c4883d9bb4fc4234c07614bb5f9a2cbb"
     },
     "hourly/2026-08-25.parquet": {
       "filas": 58968,
-      "sha256": "acd871473ee8fd7e56dd1d5b1ffdbe99c97005835c82875da5ce4b9f89681eaf"
+      "sha256": "877d67c298bcd1941c7f26d4de8fc74f6e924e5c653e8b63d86673ae80046e84"
     },
     "hourly/2026-08-26.parquet": {
       "filas": 58968,
-      "sha256": "0f721d70e0f86db76e0ed64ebb35913637a6f55ce75bbeb9b05dcbaf30c079ae"
+      "sha256": "c27d5063839e7172a0a4dbae440abcc9742cb9aa08941b5668cc8f3d97980653"
     },
     "hourly/2026-08-27.parquet": {
       "filas": 58968,
-      "sha256": "76976740c15bd31f8dff7219ba449ac02210621d0d7f0ef414445d40b73f7088"
+      "sha256": "73d080f0aef79da252295bcc9500d0cca5420559041f86e1b56d0b7696f0d32e"
     },
     "hourly/2026-08-28.parquet": {
       "filas": 58968,
-      "sha256": "243d1f794b4f95cd360c4fb92dbed8bf23a86975a8614b2f528d30134a7194aa"
+      "sha256": "e96aca825b3514cf9348ad5529b854204f896d66a2b1d96a9c87aa33ae6ebd71"
     },
     "hourly/2026-08-29.parquet": {
       "filas": 58968,
-      "sha256": "00e8e448429eea2c682a007f773faf88b9bd29ce770c30ae714a8906d4bc4b41"
+      "sha256": "ffe130df8d409e0287c923fb1934c750bb8abf20bf42eeecfa070e271d66a842"
     },
     "hourly/2026-08-30.parquet": {
       "filas": 58968,
-      "sha256": "96552ac7b012b60e11666cc58b0f8278890c74e8fd15d09ec4788faa3e9fc362"
+      "sha256": "de7054a5e51f225ddadb596e964bd3e3874d7fcbbfdb11248bcf50579c75fa0c"
     },
     "hourly/2026-08-31.parquet": {
       "filas": 58968,
-      "sha256": "ead96ae2c37228382782be42a34b2a22cadae12cf932f640f1423c0a3542dbf7"
+      "sha256": "112a712844f4201d3410c6e7a6cc0ba967a76c534d199aef1a9c39007dbd072b"
     },
     "hourly/2026-09-01.parquet": {
       "filas": 58968,
-      "sha256": "b192b0b24cd1de095cdb00f63f9a327d3fa6d565ac9cef89398ac5a0502e0ee9"
+      "sha256": "9b1ba740e45fa7547bb1a7e85e3e38bbdb6590e63eb990b4fc540b0a9bdc503e"
     },
     "hourly/2026-09-02.parquet": {
       "filas": 58968,
-      "sha256": "97d476cbcb86963adf9d235d19ca65f65450195d2b384ecc336083ea64eab6dc"
+      "sha256": "1dc67be67b447667af5bbfb544da74ad0ea06f063d2efe055fc4fcef57e903d5"
     },
     "hourly/2026-09-03.parquet": {
       "filas": 58968,
-      "sha256": "fa3796f3d33f0bec57750d7abd893f177c4f5cad27b58b4e379fc7aa5e3600f9"
+      "sha256": "42dcc1b5318d0b871bb407e35b9104957f03c1bf0846d41da354e029b0e0cf77"
     },
     "hourly/2026-09-04.parquet": {
       "filas": 58968,
-      "sha256": "3e8237fdc14841ccb53a4e12cf133f280956a527e823499f7f6c91cf556332c3"
+      "sha256": "bc5744e55c1f654dce426c71514484fff1516b401c77f4dcc1280ffef494c994"
     },
     "hourly/2026-09-05.parquet": {
       "filas": 58968,
-      "sha256": "82fcef5a10fe47e9bb4d8c3b9fa6c16873a46daa91cd20d4ab7cf638f1f0288e"
+      "sha256": "1160e3a36bd573e0f5770832d20dd86a38fbecc6cfc6f358fe6e853d33ef43be"
     },
     "hourly/2026-09-06.parquet": {
       "filas": 58968,
-      "sha256": "ae7d442ee6acc93e7e2f93d3cda268f14ef3e305adfc08c46b55c034663720d3"
+      "sha256": "a8a7489f6051b00974760b0bc41867a09338026108b124ab1b18bc2336d82837"
     },
     "hourly/2026-09-07.parquet": {
       "filas": 58968,
-      "sha256": "c6d6c924d1b1671f58e5adac41c64a4a1482d760d55e70a9d3f0ed5f21bc8055"
+      "sha256": "827f156ee9fdc44218f426555223aa5d7c71a69b6c767ea6da2a497616aab8e9"
     },
     "hourly/2026-09-08.parquet": {
       "filas": 58968,
-      "sha256": "222cefe0346962b986990be81b8322e742775bba905a1e5fab7a97611ba90982"
+      "sha256": "e1dafbbfdd2cec24500abfb4bffcca465cce83b11cdf62c0d95741ec8754405f"
     },
     "hourly/2026-09-09.parquet": {
       "filas": 58968,
-      "sha256": "d7a2df09cab2cfd1928969301c24a288c08971771fdc57eba772736772744e8a"
+      "sha256": "0e61d6e2a8f0314750241230f74f1bb055d2ea17bcefb2f6658c2f7c66045f1c"
     },
     "hourly/2026-09-10.parquet": {
       "filas": 58968,
-      "sha256": "52416252368a5a001d1b50423c9541b71e26058064b17f9bb2cb24a0b1e0a305"
+      "sha256": "51373e611c6623c349974f9759eb45e1a45c8add6e235bc61cbe52160eced284"
     },
     "hourly/2026-09-11.parquet": {
       "filas": 58992,
-      "sha256": "c08d0aa29dfd72c32c1bc1bc888e14cd10ba37e7e50fbb222b50297c166d1cdb"
+      "sha256": "631a3e10fa97a880dbfd78944b7946879475152a6c1fa0bad421d593cea1a283"
     },
     "hourly/2026-09-12.parquet": {
       "filas": 58992,
-      "sha256": "19501147eb387bf42d6e81779006ff0ddd45c584a68689feb0a1050edbaed213"
+      "sha256": "fcf4126e6d582518c86dbe7b9a5e971bd3c153788914c7b997616608fe226d93"
     },
     "hourly/2026-09-13.parquet": {
       "filas": 58992,
-      "sha256": "9144a58d40b4f62a9be39c34c9f5d629d5612ff1181186b104cc4aecba5ccf19"
+      "sha256": "733a7c68afd0f9483377c349730cb5141099db5618cc87abb20f54138e15533b"
     },
     "hourly/2026-09-14.parquet": {
       "filas": 58992,
-      "sha256": "56a40c5c831a99e4553eaf5f8c6e5987aa15035a4dd7c14f8a6a84e4b0203414"
+      "sha256": "92aab95fd47c21c961f13a747e9b48025d2d99932b58edfca6e1a66da48c82e6"
     },
     "hourly/2026-09-15.parquet": {
       "filas": 58992,
-      "sha256": "eef24f577e833280a5de7948f38820a4e321e9533800fcb2620f1f102089d548"
+      "sha256": "12ed40c20682816cf76e331f60fa45ac248c867d5cb5fed8c745399810d97282"
     },
     "hourly/2026-09-16.parquet": {
       "filas": 58992,
-      "sha256": "c99472445e34299d36bfedbb48c70ee37dd578ebcb5751a9e2ed538e07c1963e"
+      "sha256": "bd2b7c79df93939140bc5ebee2b51ba7712c846d50d99afdec533986369eb668"
     },
     "hourly/2026-09-17.parquet": {
       "filas": 58992,
-      "sha256": "e5530d42d4ff558f780f5c8d620094f97b724a1988cf65f499638f92de2cb218"
+      "sha256": "10d0e9bfb52e436658c9e80bab8bf2a86471e53b04461b8b98c25518eab9967a"
     },
     "hourly/2026-09-18.parquet": {
       "filas": 58992,
-      "sha256": "2ccbfaafcf96e1a947dab49c38eecb68daf4fc100d492dadb664524964e41f1b"
+      "sha256": "cd913710492bcc80def6ba840951c6de1b7cb0c50312944ba2b58a4219d19cc0"
     },
     "hourly/2026-09-19.parquet": {
       "filas": 58992,
-      "sha256": "92ac303b54c6758bbe0e1eb4bd00131744756765fce017870e65548140ab5d63"
+      "sha256": "faa98ebb72187131bb095812c21a2a1ae5261dbaa7ed62caa670ddc375fb3b71"
     },
     "hourly/2026-09-20.parquet": {
       "filas": 58992,
-      "sha256": "938f64a473a90c81b3dd3a6d440dc109dd45026b7e26d700a716b3dfe596b7c8"
+      "sha256": "7cc14fbd0820447c5aa4d1844c8a107d9ea6e7412bfc6bc9b9725f456a027f88"
     },
     "hourly/2026-09-21.parquet": {
       "filas": 58992,
-      "sha256": "dd61eaf0e158ac7953c5bdcf5c0851feeaf60ad40f39b0130e38eeb63b7bb626"
+      "sha256": "ebd76f259c183eff83a3003628aa5119798aaf68f762377108b3047fde62b2a8"
     },
     "hourly/2026-09-22.parquet": {
       "filas": 58992,
-      "sha256": "215e0ed1b4f73516a7179e5941b03c3fbd8c4438900ebce9af8051acb2d9b35b"
+      "sha256": "a52c3f6dae95868366bfc9bc48427d03c6117f5440c1054dcf75f0a174807463"
     },
     "hourly/2026-09-23.parquet": {
       "filas": 58992,
-      "sha256": "b030ae67c3b97bbcdd37b67037ab4f44642b8ec1629128cbe09117544ff358c3"
+      "sha256": "c90455c9c43c3e4bbc23e6495138c746506d1fab2844bbde96d1dae5bcdf73a9"
     },
     "hourly/2026-09-24.parquet": {
       "filas": 58992,
-      "sha256": "a13b4924b720c76f903ef050647c5cf62c9a7176206dac7538ff4344365f52c1"
+      "sha256": "bfc3c133868c50b92fb9eac316efa99afaceeae40090c39275ce5bb9c7087c01"
     },
     "hourly/2026-09-25.parquet": {
       "filas": 58992,
-      "sha256": "077d299b42d4f47b7c3b0a39482757492a1fdc375ab48c2edcb852226dc1f458"
+      "sha256": "ce2afea45be28b31b6c0c18c5a2432ee1c63fc97c576b51307358c905c9c7ca4"
     },
     "hourly/2026-09-26.parquet": {
       "filas": 58992,
-      "sha256": "a435af045694469b2138f36564e174fc3c9623bb2308f53c02e2826ffa7bdff7"
+      "sha256": "0ab54b94a47a61c276b75af13abd47c8188cf309011f4339f7e00697fb166c5c"
     },
     "hourly/2026-09-27.parquet": {
       "filas": 58992,
-      "sha256": "1b5fee948f7fdfc9ea11c06f54d12235b3c9de3197b41c7c3c58adb7fb38c434"
+      "sha256": "d6594b8a1e5f3a3dab4ab7c6d7f2974d3757ecf29fcd1b048121dd7d2014e39c"
     },
     "hourly/2026-09-28.parquet": {
       "filas": 58992,
-      "sha256": "17ccd62b3a847f4e8f8d6eaca2ddfef99ed0f625975738392f94b3b6a7c618a4"
+      "sha256": "d9a5e24860116b76bac9d377e6800770e343fd9600efcef2a33c3b83fa32cf9c"
     },
     "hourly/2026-09-29.parquet": {
       "filas": 58992,
-      "sha256": "e067282a96f49b13e03817f45bbfdfcf1d30f9d54ab975fb81481e9d9b90c1a3"
+      "sha256": "728add692790451df89d75558120228b4572edfae5586854cb6c6dd4e6da4755"
     },
     "hourly/2026-09-30.parquet": {
       "filas": 58992,
-      "sha256": "f9b0eb55579ffbe391b17cdc9fb79e2164954f65b7713b83687638ae6ec47789"
+      "sha256": "65c648dbab03e9e61c9510b766bb5d05801c9af5ecd971215a16991516cd97d8"
     },
     "hourly/2026-10-01.parquet": {
       "filas": 58992,
-      "sha256": "dd4a0cfb713c22d93cc6a3c1acfaff688b8c66aaa3c228436ee26e7c0c514144"
+      "sha256": "996693e3f2b90bb9a16216a747589e998772208652988f6f97ec10447e890a11"
     },
     "hourly/2026-10-02.parquet": {
       "filas": 58992,
-      "sha256": "f119b839eeda00b877970153ae59ce6ec1cc37834f5d715adc54a66ca4b763ee"
+      "sha256": "8e9c4fb41807421007de1a2c13d425bb71871a67c916e0cd4eae8641a571392c"
     },
     "hourly/2026-10-03.parquet": {
       "filas": 58992,
-      "sha256": "6af6ee23347ae360ac4f997d8b143c106562f2884d12bec56677b2db164f8bd8"
+      "sha256": "1206e688d4acac21f3c53be18d8d0968c79f61cfdd4d789a7ee8af0430c1a70b"
     },
     "hourly/2026-10-04.parquet": {
       "filas": 58992,
-      "sha256": "6af7cd0df65e3d72912abf4a39c041889426bd5c390f2cff983faff930e68499"
+      "sha256": "36cda8b900f0866a37cf2221ad673830aa7d16380b5c5254a28b5473adcdd519"
     },
     "hourly/2026-10-05.parquet": {
       "filas": 58992,
-      "sha256": "bb180c9f7828a276c7b1ceed7c9b126fb0cdcd9691642ab20ba4195568ce6ca6"
+      "sha256": "093f849dd645b3d4a42e33b86fa83981b72c70a64fbe2260c1a0c58ea09a13a6"
     },
     "hourly/2026-10-06.parquet": {
       "filas": 58992,
-      "sha256": "fdecb22aa15aa1de0ae6404d68474414b33c5608a535521c548b931691f4f02f"
+      "sha256": "253255e4af226df812860fed9a4dc47861cc5e879e2e41e4fee340c662ca4084"
     },
     "hourly/2026-10-07.parquet": {
       "filas": 58992,
-      "sha256": "348ac69fbac7770cc169b9f0a61b2ad6b89772e18b522be9a8f73a9a15d7a062"
+      "sha256": "150327f64d968a342a9f3044761ebc77a8851dc329b7793852e28234c35bcd39"
     },
     "hourly/2026-10-08.parquet": {
       "filas": 58992,
-      "sha256": "d9bd1c1be2d4fc3b6bba1fff3ff91cd32912c4267aa43a043524315e9a8a8b93"
+      "sha256": "cf33bde3905abe6733b3c8e481023140f03cdcbba18abac6b94d1c0e4146369c"
     },
     "hourly/2026-10-09.parquet": {
       "filas": 58992,
-      "sha256": "c935a5f3cc1d84091948ccb140f882436fe15c2e7a8af4c86f02e1dd080d5f16"
+      "sha256": "886ba464b951b3485d536e7dcb44b97c89e565fd45cb9dec036b3159e66d3567"
     },
     "hourly/2026-10-10.parquet": {
       "filas": 58992,
-      "sha256": "9e6585b79c8cd13682f1ab9fa5986ad0c4619371652972a95701bbda0c69dbe2"
+      "sha256": "9625d206c9d0a7f1e9e6b2aa70e854405d91771fc93f86e976a0bd54c9776af6"
     },
     "hourly/2026-10-11.parquet": {
       "filas": 59016,
-      "sha256": "2a0db8c47e7c057247d71979cbefd681d098829a11efe3fcb0f5ea4d65fd91a8"
+      "sha256": "655afd7e98f4b8f2ee472df6ebd45a463d0d3a1966893a2290ea832b47ca1d26"
     },
     "hourly/2026-10-12.parquet": {
       "filas": 59016,
-      "sha256": "103ec5c69418e9d2e80db3d7496fc6c23cf9fea1a7ad90877d3c13b6cddf43e4"
+      "sha256": "cb74136833f984e69b46af1f2b2d455b5b41de593e006ba58d9e9cdc2fd3a0d9"
     },
     "hourly/2026-10-13.parquet": {
       "filas": 59016,
-      "sha256": "1e54900b459ef613b48cf28414e5567836fd7687d242d1a82bbcd9452dfc1a2b"
+      "sha256": "b6144cd396738fa61db61bef599ee3f05ca14a84ae1d7e1ed13f81b9abea33d8"
     },
     "hourly/2026-10-14.parquet": {
       "filas": 59016,
-      "sha256": "8204fd0bf700dc9ce4e1431594f5f07a0b43adebbb97ef88c00beb8c78d9b109"
+      "sha256": "cbadb04a61c48de6461c7f1c3bf4e1e980b99aa28214af81adacdd195fbc68c1"
     },
     "hourly/2026-10-15.parquet": {
       "filas": 59016,
-      "sha256": "066f8b57933c90232e2fdb30f1678e385921ffd953d96440e2ac275a114bf24b"
+      "sha256": "0e32007ea99a509a66fcc06389d81f7da2c5b77e6b77acf3060cd6844f484547"
     },
     "hourly/2026-10-16.parquet": {
       "filas": 59016,
-      "sha256": "99df30d09f883485e185ddb9b14acacc80612392fac403bbcd9bf1948bc37a27"
+      "sha256": "3e64b7513690ff2246fcd82aa59188ac4af9a3969d54fd69d5327c779f6534c2"
     },
     "hourly/2026-10-17.parquet": {
       "filas": 59016,
-      "sha256": "1708626d324a8e617eae5c555ac0bc2746e9d8fa5c09e63ce32be3c39f4dafc5"
+      "sha256": "af6c670ac84d1e59be960b2cbafe86f5c37aeb95012b919de7a60f2831e8e9c7"
     },
     "hourly/2026-10-18.parquet": {
       "filas": 59016,
-      "sha256": "6ac0e9273aafcf1259f299fe7e3f83b7157389b38119010843b38d299c514bae"
+      "sha256": "5290829f29a8fed0c5b65310e2049e227f64e4a1a2b3047c10b50cc6d50befde"
     },
     "hourly/2026-10-19.parquet": {
       "filas": 59016,
-      "sha256": "513f849c7c76f21a1fa45653950da033981389ef554fa6d092e23bbe4470f3ae"
+      "sha256": "2df1ce5c3c9a369a100a5415f878bfdf5fbb39434c1c6d659ae8ff0f66b34cc3"
     },
     "hourly/2026-10-20.parquet": {
       "filas": 59016,
-      "sha256": "2b14aad8c1734937c772ec59f04e9bf0216991542de4b1eeb2fc026abe7402d6"
+      "sha256": "8bd48d11fbe402a21c0d3bb8927e7733e142bd281b22d914ec659b9ce71194e4"
     },
     "hourly/2026-10-21.parquet": {
       "filas": 59016,
-      "sha256": "d6b718e9fe8aadc548c20cad797995b5d052bac13e6c253209532c793da5aec4"
+      "sha256": "82b06cf8c762c79e27c75fd1a47a1336d26fbea035a9aecc0bab70df0ab7798d"
     },
     "hourly/2026-10-22.parquet": {
       "filas": 59016,
-      "sha256": "fdda3845dcbafb858ff8376c8367bcaa6f5ef1eb9cf28652774af00b1f5eb1dc"
+      "sha256": "5441346f24e1fb7f771f05bfe0e3e4980220d7cc824dce8e306ddad18e8a3918"
     },
     "hourly/2026-10-23.parquet": {
       "filas": 59016,
-      "sha256": "edbe3e198a49831dc96f058a1144b9268beee6c912e60cd03e9129a16b25a8ba"
+      "sha256": "ac0ed468a82315091321dd348d066ba7bbaaff4e1ee7f9e191bb0151cfb23332"
     },
     "hourly/2026-10-24.parquet": {
       "filas": 59016,
-      "sha256": "30049d5617b6e0af3178969f7a2869624b326a9c2e853e9f75d4cdcf9e1b0b8a"
+      "sha256": "15c1b1e443de190f52033e4e6b4abcc8fbbfac064781f28fdb2900619a7fb94b"
     },
     "hourly/2026-10-25.parquet": {
       "filas": 59016,
-      "sha256": "188d232f9310e4a5c0ebab3c26384a186ef4c651535175c1bb3a5fc0e549dd4d"
+      "sha256": "e43fa1ed931eb90a0697686bb3542cd08f0f9dbd1c275444f6e7942cfcda8821"
     },
     "hourly/2026-10-26.parquet": {
       "filas": 59016,
-      "sha256": "4fd90ee4c6aca9a4adb047a6bd4cc7e207cac164788007fca36bc9bba792a9a2"
+      "sha256": "ae900f1ff474e89b9e89a0d014c370e4e24a9b7815f50124ad7d5f3e5677da74"
     },
     "hourly/2026-10-27.parquet": {
       "filas": 59016,
-      "sha256": "20b30f36c103df2a85c124c7af4b30538114cd078f574c483eb4786fbb546672"
+      "sha256": "cea5d517307c01439d7d29ec4e49ba3bcd87eb1c978eeb9bf7aac02078ad342f"
     },
     "hourly/2026-10-28.parquet": {
       "filas": 59016,
-      "sha256": "3251b4ce619891165b9468710488dd18e8c937dd8af7bcd0fcc4ccc5e7d41d89"
+      "sha256": "6073c45efb031f928bbd93369b20509bfea42cccef4677e5774dd243d1216d68"
     },
     "hourly/2026-10-29.parquet": {
       "filas": 59016,
-      "sha256": "72898625caff10f7382c21845658319d97fd0262db1716eda045d3164a84e18b"
+      "sha256": "f2dbdf01535ba57fdc49601a583b4aef4f839a710b85064de61de1dc42884216"
     },
     "hourly/2026-10-30.parquet": {
       "filas": 59016,
-      "sha256": "0117276b0d85d739c2ed0f4a31c41d1ce0a79af5e422fac2461275996560a251"
+      "sha256": "6ef8adc16c7839d6ce732452c0653b9dc6fceb23dd897a682a5aa71ea59aee3f"
     },
     "hourly/2026-10-31.parquet": {
       "filas": 59016,
-      "sha256": "20e7f0af79b0a5a1cd55c11fe53699489f1a3411d788a8911ec715cc6b36b84e"
+      "sha256": "0d86827baf2f79c850ad59e76ceeac8c625150056ca15e19a02fa8651d94b166"
     },
     "nodes.parquet": {
       "filas": 2459,
