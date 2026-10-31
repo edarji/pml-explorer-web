@@ -176,7 +176,7 @@ class ReferenciaReal(unittest.TestCase):
             self.assertFalse(app.exception)
             self.assertEqual(app.date_input[0].value, self.desde)
             self.assertEqual(app.date_input[1].value, self.hasta)
-            self.assertEqual(app.metric[1].value, 'Requiere datos horarios')
+            self.assertEqual(app.metric[1].value, '—')
             self.assertTrue(any('2026-10-25 23:00:12 CST' in c.value for c in app.caption))
 
 
