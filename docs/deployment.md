@@ -1,6 +1,6 @@
 # Preparación de Streamlit Community Cloud
 
-Revisión: **2026-10-25**. No se ha creado ni desplegado una aplicación pública de Streamlit durante esta preparación. **El primer despliegue requiere aprobación explícita de Lalo.** Crear/actualizar este repositorio público es una acción distinta, ya autorizada.
+Revisión: **2026-10-25**, con nota de estado del **2026-11-01**: la aplicación ya está desplegada en https://pml-explorer.streamlit.app/ (rama `main`, `app.py`). Lo que sigue es el procedimiento original; las mediciones de RAM, arranque en frío y consulta en Community Cloud **siguen sin verificarse**.
 
 ## Configuración lista
 
@@ -14,7 +14,7 @@ Revisión: **2026-10-25**. No se ha creado ni desplegado una aplicación públic
 | Configuración | `.streamlit/config.toml` |
 | Secrets | Vacío; la lectura de este paquete público no necesita secretos |
 | Datos | `data/hourly/`, `data/daily/`, `nodes.parquet`, `metadata.json` |
-| URL de aplicación | Pendiente; no se anuncia una URL supuesta |
+| URL de aplicación | https://pml-explorer.streamlit.app/ |
 
 La [guía oficial](https://docs.streamlit.io/deploy/streamlit-community-cloud/deploy-your-app/deploy) permite elegir repositorio, rama, entrada y versión de Python. El valor predeterminado de Python del servicio puede ser distinto; seleccionar explícitamente 3.14. Falta comprobar la instalación real en Linux/Community Cloud. La resolución Linux con pip dry-run se había comprobado para estas mismas cuatro versiones en la preparación anterior; no sustituye una construcción real.
 

@@ -111,6 +111,15 @@ class AuditoriaUxV03(unittest.TestCase):
         self.assertEqual(app.radio(key="resolucion").value, "horaria")
 
 
+    def test_fechas_invertidas_avisan_sin_cifras(self):
+        app = self.abrir()
+        app.date_input(key="desde").set_value(date(2026, 10, 30))
+        app.date_input(key="hasta").set_value(date(2026, 10, 1))
+        app.run()
+        self.assertEqual(len(app.metric), 0)
+        self.assertIn("'Desde' debe ser anterior", app.error[0].value)
+
+
 class Periodos(unittest.TestCase):
     def test_marcar_periodos(self):
         import pandas as pd

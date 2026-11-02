@@ -1,8 +1,8 @@
-# PML Explorer v0.1
+# PML Explorer
 
-Vista 1 de **Electricity Markets Monitor**: evolución histórica del Precio Marginal Local de un nodo, Mercado del Día en Adelanto (MDA), Sistema Interconectado Nacional (SIN) de México. Fuente: CENACE. Unidades: MXN/MWh.
+Módulo de **Electricity Markets Monitor** para consultar el Precio Marginal Local (PML) por nodo: histórico, spread entre nodos y componentes, Mercado del Día en Adelanto (MDA), Sistema Interconectado Nacional (SIN) de México. Fuente: CENACE. Unidades: MXN/MWh.
 
-**Estado al 30 de octubre de 2026:** aplicación pública en https://pml-explorer.streamlit.app/ con la vista 1. Datos actualizados cada noche por `pml-bot` (23:00, Ciudad de México). Las vistas 2 (spreads) y 3 (componentes) se validaron en el laboratorio privado y se portan aquí por entregas; ver [validación](docs/validation.md).
+**Estado al 1 de noviembre de 2026:** aplicación pública **v0.2 beta** en https://pml-explorer.streamlit.app/ con las tres vistas (PML histórico, spread entre nodos y componentes), enlazada desde [edarji.net/mercados](https://edarji.net/mercados/). Datos con **esquema v2**, actualizados cada noche por `pml-bot` (23:00, Ciudad de México); la fecha de cada paquete aparece en la aplicación. Ver [metodología](docs/methodology.md) y [validación](docs/validation.md).
 
 ## Estructura aprobada
 
@@ -57,4 +57,4 @@ El promedio siempre es simple por hora válida, sin ponderación de demanda. El 
 
 Los cambios económicos se validan primero en `power-market-lab`; después se trasladan aquí con sus pruebas. Este repositorio no modifica el laboratorio privado ni contiene su configuración operativa.
 
-Destino posterior al despliegue aprobado: enlace desde [edarji.net/mercados](https://edarji.net/mercados). No hay todavía una URL de aplicación confirmada.
+La aplicación se enlaza desde [edarji.net/mercados](https://edarji.net/mercados/) y ofrece el regreso «← Mercados · edarji.net».
