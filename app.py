@@ -1,4 +1,7 @@
 """Entrada pública de PML Explorer."""
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
 import altair as alt
 import duckdb
 import pandas as pd
@@ -12,6 +15,15 @@ from vista1 import (DATA_DIR, RESOLUCIONES, UMBRAL_DESCUADRE, DatosNoDisponibles
 
 REPO = "https://github.com/edarji/pml-explorer-web/blob/main"
 COBERTURA_ESCASA = 80  # % de horas con dato bajo el cual se advierte explícitamente
+SITIO_MERCADOS = "https://edarji.net/mercados/"
+ZONA_MERCADO = ZoneInfo("America/Mexico_City")
+AYUDA_NODO = ("Escribe la clave NodoP o parte de ella, por ejemplo 06ESC. El paquete público "
+              "solo contiene claves: no incluye nombres de localidad ni regiones.")
+SIN_RESULTADOS = ("¿Sin resultados? Busca por clave, no por nombre (por ejemplo 06ESC, no Escobedo). "
+                  "Pulsa Esc o borra el texto para conservar el nodo elegido.")
+# H03: los st.caption de Streamlit 1.66 usan opacidad 0.6 (≈3.70:1 sobre blanco). Con 0.8 el texto
+# queda en ≈6.67:1 sobre blanco y ≈6.19:1 sobre gris claro, por debajo del texto principal (12.53:1).
+ESTILOS = "<style>[data-testid='stCaptionContainer']{opacity:0.8}</style>"
 
 
 @st.cache_data(max_entries=2, show_spinner=False)
@@ -104,21 +116,37 @@ Documento completo: [metodología]({REPO}/docs/methodology.md) · [contrato de d
 """)
 
 
+def dia_de_consulta(limites):
+    """Fecha de operación por defecto: hoy en Ciudad de México, acotada al rango del paquete.
+
+    Solo elige el valor inicial de los selectores; los límites siguen saliendo de metadata.
+    """
+    hoy = datetime.now(ZONA_MERCADO).date()
+    return min(max(hoy, limites["desde"]), limites["hasta"])
+
+
 def controles_rango(limites):
-    """Fechas y resolución, compartidas entre vistas."""
-    inicio = st.date_input("Desde", limites["desde"], min_value=limites["desde"], max_value=limites["hasta"], key="desde")
-    fin = st.date_input("Hasta", limites["hasta"], min_value=limites["desde"], max_value=limites["hasta"], key="hasta")
-    resolucion = st.radio("Resolución de la gráfica", list(RESOLUCIONES), index=1, key="resolucion",
+    """Fechas y resolución, compartidas entre vistas. Por defecto, el día de la consulta en resolución horaria."""
+    dia = dia_de_consulta(limites)
+    c1, c2, c3 = st.columns(3)
+    inicio = c1.date_input("Desde", dia, min_value=limites["desde"], max_value=limites["hasta"], key="desde")
+    fin = c2.date_input("Hasta", dia, min_value=limites["desde"], max_value=limites["hasta"], key="hasta")
+    resolucion = c3.radio("Resolución de la gráfica", list(RESOLUCIONES), index=0, key="resolucion", horizontal=True,
                           help="Solo cambia la gráfica. Los indicadores siempre son horarios.")
     return inicio, fin, resolucion
 
 
-def vista_1(limites, nodos, fechas_nodo, version):
+def selector_nodo(nodos, etiqueta, key, defecto):
+    """Selector con búsqueda por clave NodoP (H05). No hay nombres oficiales en el paquete público."""
+    return st.selectbox(etiqueta, nodos, index=nodos.index(defecto) if defecto in nodos else 0, key=key,
+                        placeholder="Clave, p. ej. 06ESC", help=AYUDA_NODO)
+
+
+def vista_1(limites, nodos, fechas_nodo, version, panel):
     """Vista 1: PML histórico de un nodo."""
-    with st.sidebar:
-        nodo = st.selectbox("Nodo", nodos, index=nodos.index("01AAN-85") if "01AAN-85" in nodos else 0, key="nodo",
-                            help="Busca por clave NodoP (por ejemplo 01AAN-85). El paquete público "
-                                 "aún no incluye nombres de localidad ni regiones.")
+    with panel:
+        st.caption(SIN_RESULTADOS)  # encima: la lista «No results» de Streamlit taparía un texto inferior
+        nodo = selector_nodo(nodos, "Buscar por clave de nodo", "nodo", "01AAN-85")
         inicio, fin, resolucion = controles_rango(limites)
         primera, ultima = fechas_nodo.get(nodo, (None, None))
         if primera:
@@ -207,12 +235,16 @@ def vista_1(limites, nodos, fechas_nodo, version):
                      column_config={"PML promedio (MXN/MWh)": st.column_config.NumberColumn(format="%.2f")})
 
 
-def vista_2(limites, nodos, fechas_nodo, version):
+def vista_2(limites, nodos, fechas_nodo, version, panel):
     """Vista 2: spread A − B, solo en las horas en que los dos nodos tienen dato."""
-    with st.sidebar:
+    with panel:
         defecto_b = "01AGU-230" if "01AGU-230" in nodos else nodos[min(1, len(nodos) - 1)]
-        nodo_a = st.selectbox("Nodo A", nodos, index=nodos.index("01AAN-85") if "01AAN-85" in nodos else 0, key="nodo_a")
-        nodo_b = st.selectbox("Nodo B", nodos, index=nodos.index(defecto_b), key="nodo_b")
+        st.caption(SIN_RESULTADOS)
+        ca, cb = st.columns(2)
+        with ca:
+            nodo_a = selector_nodo(nodos, "Nodo A · buscar por clave", "nodo_a", "01AAN-85")
+        with cb:
+            nodo_b = selector_nodo(nodos, "Nodo B · buscar por clave", "nodo_b", defecto_b)
         inicio, fin, resolucion = controles_rango(limites)
         for n in (nodo_a, nodo_b):
             if n in fechas_nodo:
@@ -289,10 +321,11 @@ def vista_2(limites, nodos, fechas_nodo, version):
                      column_config={"Spread A − B (MXN/MWh)": st.column_config.NumberColumn(format="%.2f")})
 
 
-def vista_3(limites, nodos, fechas_nodo, version):
+def vista_3(limites, nodos, fechas_nodo, version, panel):
     """Vista 3: PML descompuesto en energía, pérdidas y congestión, con su signo."""
-    with st.sidebar:
-        nodo = st.selectbox("Nodo", nodos, index=nodos.index("01AAN-85") if "01AAN-85" in nodos else 0, key="nodo")
+    with panel:
+        st.caption(SIN_RESULTADOS)  # encima: la lista «No results» de Streamlit taparía un texto inferior
+        nodo = selector_nodo(nodos, "Buscar por clave de nodo", "nodo", "01AAN-85")
         inicio, fin, resolucion = controles_rango(limites)
         primera, ultima = fechas_nodo.get(nodo, (None, None))
         if primera:
@@ -373,7 +406,10 @@ def vista_3(limites, nodos, fechas_nodo, version):
         st.dataframe(tabla, hide_index=True, width="stretch", column_config=formato)
 
 
-st.set_page_config(page_title="PML Explorer", layout="wide")
+st.set_page_config(page_title="PML Explorer", layout="wide", initial_sidebar_state="collapsed")
+st.html(ESTILOS)
+# H01: regreso explícito al sitio editorial, fuera de cualquier panel para que se vea en las tres vistas.
+st.markdown(f"[← Mercados · edarji.net]({SITIO_MERCADOS})")
 st.title("PML Explorer v0.2 beta")
 st.caption("Precio Marginal Local, MDA del SIN (CENACE). Unidades: MXN/MWh.")
 
@@ -395,8 +431,12 @@ if not nodos:
 st.caption(f"Fechas de operación disponibles: {limites['desde']} a {limites['hasta']} (diario); "
            f"{limites['horario_desde']} a {limites['horario_hasta']} (horario). "
            f"Actualización del paquete: {actualizado_cdmx(limites['generado_utc'])}, Ciudad de México.")
-metodologia()
 
 VISTAS = {"1. PML histórico": vista_1, "2. Comparar nodos (spread)": vista_2, "3. Componentes del PML": vista_3}
-vista = st.sidebar.radio("Vista", list(VISTAS), key="vista")
-VISTAS[vista](limites, nodos, fechas_nodo, version)
+# H07: vista y filtros en un panel con texto visible dentro del contenido, cerrado al iniciar, en vez de la
+# barra lateral (en móvil quedaba sobre los resultados o como un icono sin texto). Cerrarlo no borra la selección.
+panel = st.expander("Vista y filtros", expanded=False)
+with panel:
+    vista = st.radio("Vista", list(VISTAS), key="vista", horizontal=True)
+metodologia()
+VISTAS[vista](limites, nodos, fechas_nodo, version, panel)

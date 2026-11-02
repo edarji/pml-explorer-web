@@ -65,6 +65,52 @@ class InterfazPublica(unittest.TestCase):
         self.assertIn("resolución horaria requiere", app.warning[0].value)
 
 
+@unittest.skipUnless((v.DATA_DIR / "metadata.json").is_file(), "Sin paquete público en data/")
+class AuditoriaUxV03(unittest.TestCase):
+    """Correcciones P1 de la auditoría UX v0.3: H01, H05, H07 y fechas por defecto."""
+
+    def abrir(self, vista=None):
+        from streamlit.testing.v1 import AppTest
+        app = AppTest.from_file(APP, default_timeout=120).run()
+        if vista:
+            app.radio(key="vista").set_value(vista).run()
+        self.assertFalse(app.exception)
+        return app
+
+    def test_enlace_a_mercados_en_las_tres_vistas(self):
+        for vista in ("1. PML histórico", "2. Comparar nodos (spread)", "3. Componentes del PML"):
+            with self.subTest(vista=vista):
+                app = self.abrir(vista)
+                self.assertIn("[← Mercados · edarji.net](https://edarji.net/mercados/)", app.markdown[0].value)
+
+    def test_filtros_en_panel_cerrado_sin_barra_lateral(self):
+        app = self.abrir()
+        self.assertEqual(len(app.sidebar.children), 0)
+        panel = app.expander[0]
+        self.assertEqual(panel.label, "Vista y filtros")
+        self.assertFalse(panel.proto.expanded)
+        self.assertEqual(panel.radio(key="vista").value, "1. PML histórico")
+
+    def test_busqueda_por_clave_con_ayuda(self):
+        app = self.abrir()
+        self.assertEqual(app.selectbox(key="nodo").label, "Buscar por clave de nodo")
+        self.assertIn("no incluye nombres", app.selectbox(key="nodo").help)
+        self.assertIn("Busca por clave, no por nombre", " ".join(c.value for c in app.caption))
+        app2 = self.abrir("2. Comparar nodos (spread)")
+        self.assertTrue(app2.selectbox(key="nodo_a").label.startswith("Nodo A · buscar por clave"))
+
+    def test_fechas_por_defecto_en_el_dia_de_la_consulta(self):
+        from datetime import datetime
+        from zoneinfo import ZoneInfo
+        m = v.metadata()
+        hoy = datetime.now(ZoneInfo("America/Mexico_City")).date()
+        esperado = min(max(hoy, date.fromisoformat(m["diario_desde"])), date.fromisoformat(m["diario_hasta"]))
+        app = self.abrir()
+        self.assertEqual(app.date_input(key="desde").value, esperado)
+        self.assertEqual(app.date_input(key="hasta").value, esperado)
+        self.assertEqual(app.radio(key="resolucion").value, "horaria")
+
+
 class Periodos(unittest.TestCase):
     def test_marcar_periodos(self):
         import pandas as pd
