@@ -1,6 +1,12 @@
-# Metodología — PML Explorer v0.1
+# Metodología — PML Explorer
 
-Documento actualizado: **2026-10-25**. El contrato v1 y el paquete derivado están recibidos y validados; su incorporación al repositorio por el pipeline está pendiente. La fecha de este documento no es un corte de precios.
+Documento revisado: **2026-11-01**. Describe el comportamiento de la aplicación pública vigente. La fecha de este documento no es un corte de precios.
+
+| Concepto | Valor vigente | Dónde se comprueba |
+| --- | --- | --- |
+| Versión de la aplicación | **v0.2 beta**: vista 1 (PML histórico), vista 2 (spread entre nodos) y vista 3 (componentes) | Título de la aplicación |
+| Esquema de datos | **v2** (v1 + componentes del PML), publicado por `pml-bot` desde el 2026-10-31 (commit `c62aa39`) | `version_esquema` en `data/metadata.json`; [contrato de datos](data-contract.md) |
+| Fecha del paquete | Cambia cada noche; no la fija este documento | «Actualización del paquete» en la cabecera de la aplicación (`generado_utc` convertido a Ciudad de México) |
 
 ## Fuente y alcance
 
@@ -23,7 +29,7 @@ Para N observaciones horarias válidas, `promedio = S/N`, con `S = suma(PML_h)`.
 
 Dentro de la ventana, las consultas horarias originales usan `AVG(pml)`. En el histórico diario, el equivalente para cualquier rango es `SUM(suma_pml)/SUM(horas_validas)`. **Nunca se calcula un promedio simple de promedios diarios.** Los meses incompletos se calculan solo con los días elegidos. La gráfica diaria/mensual representa esos promedios; la horaria requiere el rango completo en la ventana disponible.
 
-El SQL redondea el resultado a dos decimales. El indicador principal de promedio se muestra sin decimales, como en la vista validada; los acumuladores del pipeline no deben redondearse antes de la consulta.
+El SQL redondea el resultado a dos decimales y la aplicación muestra precios, indicadores y tablas con dos decimales. Los acumuladores del pipeline no se redondean antes de la consulta.
 
 ## Estadísticas de los precios horarios
 
@@ -36,7 +42,7 @@ El SQL redondea el resultado a dos decimales. El indicador principal de promedio
 | Mediana | `MEDIAN(pml)` | No disponible |
 | P10/P90 | `QUANTILE_CONT(pml, 0.10/0.90)` | No disponibles |
 
-Para `Q = suma(PML_h²)`, la desviación muestral es `sqrt((Q - S²/N)/(N-1))`, con N > 1. Con cero o una observación no está definida; no se reemplaza por cero. El lector protege de pequeños residuos negativos de coma flotante; el validador rechaza acumuladores materialmente inconsistentes. La precisión numérica de los tipos físicos y el redondeo a dos decimales deben contrastarse con la entrega final; equivalencia matemática no promete identidad binaria entre métodos de acumulación.
+Para `Q = suma(PML_h²)`, la desviación muestral es `sqrt((Q - S²/N)/(N-1))`, con N > 1. Con cero o una observación no está definida; no se reemplaza por cero. El lector protege de pequeños residuos negativos de coma flotante; el validador rechaza acumuladores materialmente inconsistentes. Equivalencia matemática no promete identidad binaria entre métodos de acumulación.
 
 La mediana y los percentiles describen la distribución de **todas las horas del rango**, aunque la gráfica sea diaria o mensual. `QUANTILE_CONT` interpola continuamente. No se obtienen cuantiles horarios exactos con promedios, medianas o percentiles diarios agregados. Por eso se muestran como **“No disponible”** si el rango no cae completo dentro de `horario_desde..horario_hasta`, sin estimarlos ni calcularlos sobre una parte del rango.
 
@@ -50,8 +56,23 @@ No se imputan horas, no se arrastran precios y un faltante nunca se convierte en
 
 El catálogo cambia con el tiempo. Un nodo puede incorporarse después de enero de 2023 y no se inventan observaciones anteriores a su alta. La vista conserva el porcentaje sobre el rango calendario completo y lo advierte en pantalla: **no es una tasa de integridad dentro de la vigencia del nodo**. Primera/última observación tampoco prueban una alta/baja oficial. El selector usa `nodes.parquet`, que incluye `primera_fecha` y `ultima_fecha` observadas; no fusiona claves similares ni inventa regiones o zonas. Esas fechas no acreditan vigencias oficiales del catálogo NodosP.
 
-## Trazabilidad y límites pendientes
+## Spread entre nodos (vista 2)
 
-La pantalla obtiene los límites diarios y horarios de `metadata.json`. Muestra `generado_utc`, instante de generación del paquete, convertido a `America/Mexico_City`; no lo infiere del reloj del servidor ni de Git, ni lo confunde con la extracción original de CENACE. El [contrato v1](data-contract.md) fija el esquema, las unidades, la convención horaria y el manifiesto con conteos y SHA-256. El lector comprueba ese manifiesto antes de mostrar cifras.
+Spread = **PML_A − PML_B**, hora por hora, solo en las horas en que los dos nodos tienen dato; después se promedia por día o mes. La cobertura común es horas coincidentes ÷ (24 × días del rango). Fuera de la ventana horaria se usan los días en que ambos nodos tienen las 24 horas; un día incompleto en algún nodo se excluye y se avisa.
 
-Los derivados recibidos, el cuadre de tres nodos (uno de alta posterior) y la interfaz pasaron la [validación de entrega](validation-delivery-2026-10-25.md). Antes del lanzamiento queda comprobar la versión que publique el pipeline, obtener aprobación de despliegue y medir tiempo/RAM en Community Cloud. No se ha ejecutado todavía el servicio desplegado. Los cambios de cálculo se aprueban y validan primero en `power-market-lab`; esta preparación no lo modifica.
+## Componentes del PML (vista 3)
+
+PML = energía + pérdidas + congestión, con los signos publicados por CENACE (pérdidas y congestión pueden ser negativas). Todos los componentes se promedian sobre las mismas horas que el PML. El descuadre es |PML − (energía + pérdidas + congestión)| por hora; viene del redondeo de CENACE y se avisa cuando supera 0.02 MXN/MWh.
+
+## Uso de la interfaz
+
+- **Vista y filtros:** vista, nodo(s), fechas y resolución están en el panel «Vista y filtros», cerrado al abrir la aplicación. Cerrarlo no cambia la selección.
+- **Fechas por defecto:** «Desde» y «Hasta» inician en el día de la consulta (fecha de Ciudad de México), en resolución horaria. Si el paquete todavía no incluye ese día, se usa el último día disponible. Los límites seleccionables siguen saliendo de `metadata.json`.
+- **Nodos:** se buscan por clave NodoP (por ejemplo `06ESC` encuentra `06ESC-115` y `06ESC-400`). El paquete público no contiene nombres de localidad ni regiones, así que una búsqueda por nombre (por ejemplo «Escobedo») no da resultados; no se añaden equivalencias que no estén en los datos.
+- **Mensajes de control:** fechas invertidas, resolución horaria fuera de la ventana y rangos sin datos muestran un aviso y ninguna cifra sustitutiva.
+
+## Trazabilidad y límites
+
+La pantalla obtiene los límites diarios y horarios de `metadata.json`. Muestra `generado_utc`, instante de generación del paquete, convertido a `America/Mexico_City`; no lo infiere del reloj del servidor ni de Git, ni lo confunde con la extracción original de CENACE. El [contrato de datos](data-contract.md) fija el esquema, las unidades, la convención horaria y el manifiesto con conteos y SHA-256. El lector comprueba ese manifiesto antes de mostrar cifras.
+
+La aplicación está publicada en Streamlit Community Cloud (https://pml-explorer.streamlit.app/) y `pml-bot` actualiza el paquete cada noche. **No hay mediciones verificadas** de memoria, tiempo de arranque en frío ni tiempo de consulta en Community Cloud; tampoco de la duración de la publicación nocturna con el esquema v2. Los cambios de cálculo se aprueban y validan primero en `power-market-lab`.

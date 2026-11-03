@@ -4,7 +4,7 @@
 
 `vista3.py` reutiliza la consulta validada de `power-market-lab/scripts/vista3.py` en la ventana horaria (umbral de descuadre 0.02 MXN/MWh; el conteo compara el descuadre redondeado a 6 decimales para no contar ruido de coma flotante). Fuera de la ventana usa los acumuladores v2 sobre las mismas `horas_validas` del PML.
 
-**El paquete público aún es v1**, así que la vista muestra «pendiente» (prueba `test_vista3_pendiente_con_paquete_v1`). La plomería v2 se probó en un entorno aislado con PML real y componentes **sintéticos** (nunca versionados ni publicados), 3 nodos, 2026-09-01 a 2026-10-30:
+*Estado al 2026-11-01: el paquete público es v2 desde el 2026-10-31 (`c62aa39`) y la vista 3 está activa; el párrafo siguiente describe la situación del 2026-10-30.* En esa fecha **el paquete público aún era v1**, así que la vista mostraba «pendiente» (prueba `test_vista3_pendiente_con_paquete_v1`). La plomería v2 se probó en un entorno aislado con PML real y componentes **sintéticos** (nunca versionados ni publicados), 3 nodos, 2026-09-01 a 2026-10-30:
 
 | Comprobación | Resultado |
 | --- | --- |

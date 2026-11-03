@@ -1,6 +1,8 @@
-# Contrato de datos públicos — esquema v1
+# Contrato de datos públicos — esquemas v1 y v2
 
-Contrato recibido de Claude por Lalo, fechado **2026-10-25**. Reemplaza la propuesta anterior de `data/public/`. El lector implementa este esquema; falta recibir y validar los archivos reales del pipeline. El ejemplo de metadata suministrado describe el formato y **no acredita una entrega ni sus conteos**.
+Contrato v1 fechado **2026-10-25**; ampliación v2 (componentes) del **2026-10-30**. Revisión de estado: **2026-11-01**.
+
+**Estado vigente:** el paquete publicado en `data/` es **esquema v2** desde el 2026-10-31 (commit `c62aa39` de `pml-bot`); antes, del 2026-10-26 al 2026-10-30, era v1. El lector acepta ambos. El número de esquema es independiente de la versión de la aplicación (v0.2 beta) y de la fecha del paquete, que se lee en `generado_utc`. Los ejemplos de metadata de este documento describen el formato y **no acreditan una entrega ni sus conteos**.
 
 Fuente: **CENACE SW-PML, MDA, SIN**. Unidades: **MXN/MWh**. Parquet con compresión **zstd**, filas ordenadas por `nodo`.
 
@@ -73,7 +75,7 @@ Toda hora con PML debe traer los tres componentes, finitos y no nulos: misma bas
 | `nodos` | Número de nodos del catálogo |
 | `archivos` | Mapa de ruta relativa → `filas` (entero) y `sha256` (64 dígitos hexadecimales) |
 
-La interfaz obtiene **todas las fechas del rango de metadata**, sin fechas fijas en código ni inferencia desde el reloj. Muestra `generado_utc` convertido con la zona IANA `America/Mexico_City`. Por ejemplo, el instante ilustrativo `2026-10-26T05:00:12Z` corresponde a `2026-10-25 23:00:12 CST`. Esa es la actualización del paquete; no se presenta como el instante de extracción original de CENACE.
+La interfaz obtiene **todos los límites de fechas de metadata**, sin fechas fijas en código ni inferencia desde el reloj. El reloj solo elige el valor inicial de los selectores (el día de la consulta en Ciudad de México, acotado a esos límites). Muestra `generado_utc` convertido con la zona IANA `America/Mexico_City`. Por ejemplo, el instante ilustrativo `2026-10-26T05:00:12Z` corresponde a `2026-10-25 23:00:12 CST`. Esa es la actualización del paquete; no se presenta como el instante de extracción original de CENACE.
 
 ## Reglas de consulta
 
@@ -88,8 +90,8 @@ La lista de nodos viene de `nodes.parquet`. Nunca se unen ambas fuentes para con
 
 ## Verificación de solo lectura
 
-Al cargar una nueva versión, `inspeccionar_paquete` comprueba metadata v1, inventario completo, SHA-256, conteos de filas/nodos, columnas, tipos y compresión. Una discrepancia detiene la vista. La caché incluye metadata y la lista/tamaño/fecha de modificación de los archivos; los hashes se comprueban cuando esa versión se carga.
+Al cargar una nueva versión, `inspeccionar_paquete` comprueba metadata v1/v2, inventario completo, SHA-256, conteos de filas/nodos, columnas, tipos y compresión. Una discrepancia detiene la vista. La caché incluye metadata y la lista/tamaño/fecha de modificación de los archivos; los hashes se comprueban cuando esa versión se carga.
 
 `scripts/validar_datos.py` añade comprobación de filas: orden por nodo, claves, fechas, horas, valores finitos, acumuladores, primeras/últimas observaciones y cuadre de horario contra diario en todo el solapamiento. Los hashes verifican consistencia con el manifiesto, no autentican por sí solos la procedencia oficial.
 
-Claude publica un paquete consistente, con metadata al final, en un único commit. Conserva exportación, revisión de seguridad, deploy key, commit/push y automatización. Work mantiene el visor. La prueba integral y de paquete dañado debe ejecutarse sobre la entrega real antes del despliegue aprobado por Lalo.
+Claude publica un paquete consistente, con metadata al final, en un único commit. Conserva exportación, revisión de seguridad, deploy key, commit/push y automatización. Work mantiene el visor. La prueba integral y la de paquete dañado se ejecutaron sobre la entrega real antes del primer despliegue ([informe](validation-delivery-2026-10-25.md)); se repiten cuando cambia el esquema.
