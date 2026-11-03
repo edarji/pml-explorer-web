@@ -1,5 +1,7 @@
 """Entrada pública de PML Explorer."""
+import base64
 from datetime import datetime
+from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import altair as alt
@@ -24,6 +26,19 @@ SIN_RESULTADOS = ("¿Sin resultados? Busca por clave, no por nombre (por ejemplo
 # H03: los st.caption de Streamlit 1.66 usan opacidad 0.6 (≈3.70:1 sobre blanco). Con 0.8 el texto
 # queda en ≈6.67:1 sobre blanco y ≈6.19:1 sobre gris claro, por debajo del texto principal (12.53:1).
 ESTILOS = "<style>[data-testid='stCaptionContainer']{opacity:0.8}</style>"
+ASSETS = Path(__file__).resolve().parent / "assets"
+
+
+def logo():
+    """Logo animado del saxofón (mismo diseño que la app del laboratorio); al pasar el mouse crece y brilla."""
+    svg = base64.b64encode((ASSETS / "logo_animado.svg").read_bytes()).decode()
+    st.markdown(
+        f'<img class="logo-pml" alt="PML Explorer: logo del saxofón" src="data:image/svg+xml;base64,{svg}">'
+        "<style>.logo-pml {width: 120px; max-width: 40vw; display: block; transition: transform .3s, filter .3s;}"
+        ".logo-pml:hover {transform: scale(1.12) rotate(-3deg); filter: drop-shadow(0 0 10px #FFB000);}"
+        "@media (prefers-reduced-motion: reduce) {.logo-pml, .logo-pml:hover {transition: none; transform: none;}}</style>",
+        unsafe_allow_html=True,
+    )
 
 
 @st.cache_data(max_entries=2, show_spinner=False)
@@ -406,10 +421,12 @@ def vista_3(limites, nodos, fechas_nodo, version, panel):
         st.dataframe(tabla, hide_index=True, width="stretch", column_config=formato)
 
 
-st.set_page_config(page_title="PML Explorer", layout="wide", initial_sidebar_state="collapsed")
+st.set_page_config(page_title="PML Explorer", page_icon=str(ASSETS / "logo.svg"), layout="wide",
+                   initial_sidebar_state="collapsed")
 st.html(ESTILOS)
 # H01: regreso explícito al sitio editorial, fuera de cualquier panel para que se vea en las tres vistas.
 st.markdown(f"[← Mercados · edarji.net]({SITIO_MERCADOS})")
+logo()
 st.title("PML Explorer v0.2 beta")
 st.caption("Precio Marginal Local, MDA del SIN (CENACE). Unidades: MXN/MWh.")
 
