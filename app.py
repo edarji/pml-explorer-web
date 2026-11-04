@@ -9,6 +9,7 @@ import duckdb
 import pandas as pd
 import streamlit as st
 
+from rangos import RANGOS_RAPIDOS, rango_rapido
 from vista2 import diferencial, resumen
 from vista3 import componentes, resumen_componentes
 from vista1 import (DATA_DIR, RESOLUCIONES, UMBRAL_DESCUADRE, DatosNoDisponibles, actualizado_cdmx, catalogo,
@@ -124,6 +125,7 @@ def metodologia():
 - **Spread (vista 2):** PML_A − PML_B hora por hora, solo en las horas en que los dos nodos tienen dato; después se promedia por día o mes. Fuera de la ventana horaria se usan los días en que ambos nodos tienen las 24 horas (ahí todas las horas coinciden y el cálculo es exacto); un día incompleto en algún nodo se excluye.
 - **Componentes (vista 3):** PML = energía + pérdidas + congestión, con sus signos (pérdidas y congestión pueden ser negativas). Todos se promedian sobre las mismas horas que el PML. El **descuadre** es |PML − (energía + pérdidas + congestión)| por hora y viene del redondeo de CENACE; se avisa cuando supera {UMBRAL_DESCUADRE} MXN/MWh.
 - **Histórico horario y diario:** mediana y percentiles requieren que todo el rango esté dentro de la ventana horaria (último año). Fuera de ella se usan acumuladores diarios exactos para promedio, extremos, desviación y horas negativas.
+- **Rangos rápidos:** se anclan en la última fecha de operación del paquete (igual para todos los nodos). *Último día* = ese día; *Últimos 7 días* = ese día y los 6 anteriores; *Mes en curso* = del día 1 de ese mes hasta ese día, por eso el mes aparece como parcial (▼). Solo cambian «Desde» y «Hasta».
 - **Fechas:** “Desde/Hasta” son **fechas de operación** del mercado. “Actualización” es cuándo se generó el paquete público, no cuándo CENACE publicó cada día.
 - **Precisión:** precios con dos decimales; la desviación estándar es muestral.
 
@@ -140,12 +142,27 @@ def dia_de_consulta(limites):
     return min(max(hoy, limites["desde"]), limites["hasta"])
 
 
+def aplicar_rango(opcion, limites):
+    """Callback de los botones: Streamlit lo ejecuta antes de volver a dibujar la página."""
+    st.session_state["desde"], st.session_state["hasta"] = rango_rapido(opcion, limites)
+
+
 def controles_rango(limites):
     """Fechas y resolución, compartidas entre vistas. Por defecto, el día de la consulta en resolución horaria."""
     dia = dia_de_consulta(limites)
+    # v0.4.1: rangos rápidos. El botón solo escribe «Desde» y «Hasta» en session_state antes del siguiente
+    # dibujo; nodo, resolución y cálculos no cambian. El ancla es la última fecha del paquete.
+    st.caption(f"Rangos rápidos (último día del paquete: {limites['hasta']})")
+    for columna, opcion in zip(st.columns(len(RANGOS_RAPIDOS)), RANGOS_RAPIDOS):
+        columna.button(opcion, key=f"rango_{opcion}", on_click=aplicar_rango, args=(opcion, limites),
+                       width="stretch")
+    # El valor inicial va en session_state y no como argumento del widget: así Streamlit no avisa de
+    # «valor por defecto y Session State a la vez» cuando un botón de rango rápido cambia las fechas.
+    st.session_state.setdefault("desde", dia)
+    st.session_state.setdefault("hasta", dia)
     c1, c2, c3 = st.columns(3)
-    inicio = c1.date_input("Desde", dia, min_value=limites["desde"], max_value=limites["hasta"], key="desde")
-    fin = c2.date_input("Hasta", dia, min_value=limites["desde"], max_value=limites["hasta"], key="hasta")
+    inicio = c1.date_input("Desde", min_value=limites["desde"], max_value=limites["hasta"], key="desde")
+    fin = c2.date_input("Hasta", min_value=limites["desde"], max_value=limites["hasta"], key="hasta")
     resolucion = c3.radio("Resolución de la gráfica", list(RESOLUCIONES), index=0, key="resolucion", horizontal=True,
                           help="Solo cambia la gráfica. Los indicadores siempre son horarios.")
     return inicio, fin, resolucion
