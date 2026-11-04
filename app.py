@@ -1,6 +1,6 @@
 """Entrada pública de PML Explorer."""
 import base64
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -26,8 +26,56 @@ SIN_RESULTADOS = ("¿Sin resultados? Busca por clave, no por nombre (por ejemplo
                   "Pulsa Esc o borra el texto para conservar el nodo elegido.")
 # H03: los st.caption de Streamlit 1.66 usan opacidad 0.6 (≈3.70:1 sobre blanco). Con 0.8 el texto
 # queda en ≈6.67:1 sobre blanco y ≈6.19:1 sobre gris claro, por debajo del texto principal (12.53:1).
-ESTILOS = "<style>[data-testid='stCaptionContainer']{opacity:0.8}</style>"
+ESTILOS = """<style>
+[data-testid='stCaptionContainer']{opacity:0.8}
+.block-container{max-width:1240px}
+/* v0.5 · Pestañas: el radio de vistas se dibuja como barra de pestañas subrayada. */
+.st-key-pestanas div[role=radiogroup]{gap:0;border-bottom:1px solid #E4DDD0;flex-wrap:nowrap;overflow-x:auto}
+.st-key-pestanas div[role=radiogroup] label{padding:.5rem 1.1rem .55rem;margin:0;border-bottom:3px solid transparent;
+  white-space:nowrap}
+.st-key-pestanas div[role=radiogroup] label > div > div:first-child{display:none}
+.st-key-pestanas div[role=radiogroup] label p{font-size:1.02rem}
+.st-key-pestanas label[data-selected=true]{box-shadow:inset 0 -3px 0 #1B1B1B}
+.st-key-pestanas label[data-selected=true] p{font-weight:600}
+/* Botones de rango: pastillas pequeñas; la activa en gris oscuro. */
+.st-key-rangos button{min-height:2rem;padding:.1rem .85rem;border:1px solid #D9D2C5;background:#FFFFFF}
+.st-key-rangos button p{font-size:.85rem}
+.st-key-rangos button[kind=primary]{background:#3A3A3A;border-color:#3A3A3A;color:#fff}
+/* Encabezado tipo ficha de mercado. */
+.precio{display:flex;flex-wrap:wrap;align-items:baseline;gap:.35rem .8rem;margin:-.4rem 0 .2rem}
+.precio .valor{font-size:2.6rem;font-weight:700;letter-spacing:-.02em;line-height:1.1}
+.precio .unidad{font-size:1rem;font-weight:600;color:#555}
+.precio .cambio{font-size:1.25rem;font-weight:600}
+.precio .fecha{font-size:.85rem;color:#6B6B6B}
+.sube{color:#2E7D32}.baja{color:#C62828}.igual{color:#6B6B6B}
+.linea-meta{font-size:.85rem;color:#4A4A4A;margin-bottom:.4rem}
+/* Tarjeta de gráfica + ficha de indicadores. */
+.st-key-tarjeta{background:#F5F1EA;border-radius:.8rem;padding:1rem 1.1rem .6rem}
+.st-key-ficha [data-testid=stMetric]{padding:0}
+.st-key-ficha [data-testid=stMetricLabel]{min-height:0;margin:0}
+.st-key-ficha [data-testid=stMetric] > div{display:flex;justify-content:space-between;align-items:baseline;gap:.5rem}
+.st-key-ficha [data-testid=stMetricLabel] p{font-size:.88rem}
+.st-key-ficha [data-testid=stMetricValue], .st-key-ficha [data-testid=stMetricValue] p{font-size:.92rem;font-weight:500;line-height:1.6;height:auto;min-height:0}
+.st-key-ficha [data-testid=stVerticalBlock]{gap:.1rem}
+.fila{display:flex;justify-content:space-between;font-size:.88rem;line-height:1.75}
+.rango{margin:.1rem 0 .7rem}.rango .et{font-size:.88rem}
+.rango .barra{position:relative;height:3px;background:#CFC8BB;margin:.55rem 0 .3rem;border-radius:2px}
+.rango .barra span{position:absolute;top:-4px;width:11px;height:11px;border-radius:50%;background:#555;
+  transform:translateX(-50%)}
+.rango .ext{display:flex;justify-content:space-between;font-size:.75rem;color:#555}
+</style>"""
 ASSETS = Path(__file__).resolve().parent / "assets"
+NARANJA = "#E8772E"
+# Fechas de los ejes en español (Vega-Lite usa inglés por defecto: «Thu 29», «November»).
+LOCALE_ES = {"time": {
+    "dateTime": "%A, %e de %B de %Y, %X", "date": "%d/%m/%Y", "time": "%H:%M:%S", "periods": ["AM", "PM"],
+    "days": ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"],
+    "shortDays": ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"],
+    "months": ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre",
+               "octubre", "noviembre", "diciembre"],
+    "shortMonths": ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"]},
+    "number": {"decimal": ".", "thousands": ",", "grouping": [3], "currency": ["$", ""]}}
+ETIQUETAS_RANGO = {"Último día": "1D", "Últimos 7 días": "7D", "Mes en curso": "Mes"}
 
 
 def logo():
@@ -35,7 +83,7 @@ def logo():
     svg = base64.b64encode((ASSETS / "logo_animado.svg").read_bytes()).decode()
     st.markdown(
         f'<img class="logo-pml" alt="PML Explorer: logo del saxofón" src="data:image/svg+xml;base64,{svg}">'
-        "<style>.logo-pml {width: 120px; max-width: 40vw; display: block; transition: transform .3s, filter .3s;}"
+        "<style>.logo-pml {width: 84px; max-width: 22vw; display: block; transition: transform .3s, filter .3s;}"
         ".logo-pml:hover {transform: scale(1.12) rotate(-3deg); filter: drop-shadow(0 0 10px #FFB000);}"
         "@media (prefers-reduced-motion: reduce) {.logo-pml, .logo-pml:hover {transition: none; transform: none;}}</style>",
         unsafe_allow_html=True,
@@ -85,23 +133,26 @@ def mxn(valor):
 def grafica(df, y, titulo_y, resolucion, color=None):
     """Línea con puntos; los periodos parciales se marcan con ▼ y se explican en el tooltip."""
     base = alt.Chart(df).encode(
-        x=alt.X("periodo:T", title=None),
-        y=alt.Y(f"{y}:Q", title=titulo_y),
+        x=alt.X("periodo:T", title=None, axis=alt.Axis(grid=False, domain=False, tickColor="#CFC8BB")),
+        y=alt.Y(f"{y}:Q", title=None, scale=alt.Scale(zero=False),
+                axis=alt.Axis(orient="right", domain=False, ticks=False, gridColor="#E4DDD0", tickCount=5)),
         tooltip=[alt.Tooltip("etiqueta:N", title="Periodo"),
                  alt.Tooltip(f"{y}:Q", title=titulo_y, format=",.2f"),
                  alt.Tooltip("horas:Q", title="Horas con dato", format=",")],
     )
-    linea = base.mark_line(color=color) if color else base.mark_line()
+    linea = base.mark_line(color=color or NARANJA, strokeWidth=1.8)
     capas = [linea]
     # Con muchos periodos solo se dibujan los puntos parciales, para no saturar la gráfica.
     puntos = base if len(df) <= 400 else base.transform_filter("datum.parcial")
     if resolucion != "horaria":
-        capas.append(puntos.mark_point(size=60, filled=True).encode(
+        capas.append(puntos.mark_point(size=50, filled=True, color=color or NARANJA).encode(
             shape=alt.Shape("parcial:N", title="Periodo",
                             scale=alt.Scale(domain=[False, True], range=["circle", "triangle-down"]),
                             legend=alt.Legend(labelExpr="datum.value ? 'parcial' : 'completo'")),
         ))
-    st.altair_chart(alt.layer(*capas), width="stretch")
+    st.altair_chart(alt.layer(*capas).properties(background="transparent")
+                    .configure_view(stroke=None).configure(locale=LOCALE_ES),
+                    width="stretch")
 
 
 def avisos_parciales(df, resolucion):
@@ -152,10 +203,6 @@ def controles_rango(limites):
     dia = dia_de_consulta(limites)
     # v0.4.1: rangos rápidos. El botón solo escribe «Desde» y «Hasta» en session_state antes del siguiente
     # dibujo; nodo, resolución y cálculos no cambian. El ancla es la última fecha del paquete.
-    st.caption(f"Rangos rápidos (último día del paquete: {limites['hasta']})")
-    for columna, opcion in zip(st.columns(len(RANGOS_RAPIDOS)), RANGOS_RAPIDOS):
-        columna.button(opcion, key=f"rango_{opcion}", on_click=aplicar_rango, args=(opcion, limites),
-                       width="stretch")
     # El valor inicial va en session_state y no como argumento del widget: así Streamlit no avisa de
     # «valor por defecto y Session State a la vez» cuando un botón de rango rápido cambia las fechas.
     st.session_state.setdefault("desde", dia)
@@ -166,6 +213,31 @@ def controles_rango(limites):
     resolucion = c3.radio("Resolución de la gráfica", list(RESOLUCIONES), index=0, key="resolucion", horizontal=True,
                           help="Solo cambia la gráfica. Los indicadores siempre son horarios.")
     return inicio, fin, resolucion
+
+
+def botones_rango(limites):
+    """v0.5: rangos rápidos como pastillas (1D, 7D, Mes) sobre el contenido; la activa va resaltada."""
+    actual = (st.session_state.get("desde"), st.session_state.get("hasta"))
+    with st.container(key="rangos", horizontal=True, horizontal_alignment="right", gap="small"):
+        for opcion in RANGOS_RAPIDOS:
+            st.button(ETIQUETAS_RANGO[opcion], key=f"rango_{opcion}", on_click=aplicar_rango, args=(opcion, limites),
+                      type="primary" if rango_rapido(opcion, limites) == actual else "secondary",
+                      help=f"{opcion} (ancla: último día del paquete, {limites['hasta']})")
+
+
+def flecha(cambio):
+    return "sube" if cambio > 0 else "baja" if cambio < 0 else "igual"
+
+
+def barra_rango(etiqueta, minimo, maximo, marca):
+    """Barra mínimo–máximo con un punto en `marca` (como el «52 Week Range» de una ficha bursátil)."""
+    pos = 50 if maximo == minimo else max(0, min(100, (marca - minimo) / (maximo - minimo) * 100))
+    return (f'<div class="rango"><div class="et">{etiqueta}</div><div class="barra"><span style="left:{pos:.1f}%">'
+            f'</span></div><div class="ext"><span>{mxn(minimo)}</span><span>{mxn(maximo)}</span></div></div>')
+
+
+def fila(etiqueta, valor):
+    return f'<div class="fila"><span>{etiqueta}</span><span>{valor}</span></div>'
 
 
 def selector_nodo(nodos, etiqueta, key, defecto):
@@ -211,8 +283,26 @@ def vista_1(limites, nodos, fechas_nodo, version, panel):
     st.subheader(f"{nodo}: {inicio} a {fin}")
     con_dato, del_rango = int(e["horas_con_dato"]), int(e["horas_del_rango"])
     desde_obs, hasta_obs = e["primera_fecha"].date(), e["ultima_fecha"].date()
-    st.write(f"**Cobertura:** {e['cobertura_pct']}% ({con_dato:,} de {del_rango:,} horas con dato). "
-             f"**Rango con observaciones:** {desde_obs} a {hasta_obs}.")
+
+    # v0.5 · Cabecera tipo ficha: el «precio» es el PML promedio del último día con dato del rango y el
+    # cambio se mide contra el día anterior (aunque quede fuera del rango elegido).
+    dia = consultar_estadisticas(nodo, hasta_obs, hasta_obs, str(DATA_DIR), version).iloc[0]
+    previo = None
+    if hasta_obs - timedelta(days=1) >= limites["desde"]:
+        p = consultar_estadisticas(nodo, hasta_obs - timedelta(days=1), hasta_obs - timedelta(days=1),
+                                   str(DATA_DIR), version).iloc[0]
+        previo = None if p["horas_con_dato"] == 0 else p["promedio"]
+    cambio_html = ""
+    if previo is not None:
+        cambio = dia["promedio"] - previo
+        pct = f" ({cambio / abs(previo):+.2%})" if previo else ""
+        cambio_html = f'<span class="cambio {flecha(cambio)}">{cambio:+,.2f}{pct}</span>'
+    st.markdown(
+        f'<div class="precio"><span class="valor">{mxn(dia["promedio"])}</span><span class="unidad">MXN/MWh</span>'
+        f'{cambio_html}<span class="fecha">PML promedio del {hasta_obs} vs. día anterior</span></div>',
+        unsafe_allow_html=True)
+    st.markdown(f"MDA · SIN · CENACE | **Cobertura:** {e['cobertura_pct']}% ({con_dato:,} de {del_rango:,} horas "
+                f"con dato) | **Rango con observaciones:** {desde_obs} a {hasta_obs}")
     if e["cobertura_pct"] < COBERTURA_ESCASA:
         motivo = (f" El nodo tiene datos desde {primera}." if primera and primera > inicio else "")
         st.warning(f"Cobertura escasa: los indicadores describen solo {con_dato:,} horas, entre {desde_obs} y "
@@ -220,26 +310,35 @@ def vista_1(limites, nodos, fechas_nodo, version, panel):
     elif e["cobertura_pct"] < 100:
         st.caption("Hay horas sin dato en el rango; los indicadores usan solo las horas con dato.")
 
-    st.caption(f"Indicadores calculados sobre las {con_dato:,} horas con dato, en MXN/MWh"
-               + ("." if resolucion == "horaria" else f", aunque la gráfica sea {resolucion}."))
-    c1, c2, c3, c4, c5 = st.columns(5)
-    c1.metric("Promedio horario", mxn(e["promedio"]), help="Promedio simple de las horas con dato.")
-    c2.metric("Mediana horaria", mxn(e["mediana"]) if horario_completo else "—",
-              help=None if horario_completo else
-              f"Requiere datos horarios: disponible solo si todo el rango está entre "
-              f"{limites['horario_desde']} y {limites['horario_hasta']}.")
-    c3.metric("Mínimo horario", mxn(e["minimo"]), help="Menor PML de una hora en el rango.")
-    c4.metric("Máximo horario", mxn(e["maximo"]), help="Mayor PML de una hora en el rango.")
-    c5.metric("Horas con PML < 0", f"{int(e['horas_negativas']):,}")
-    if not horario_completo:
-        st.caption("— Mediana, P10 y P90 requieren datos horarios: el rango excede la ventana horaria "
-                   f"({limites['horario_desde']} a {limites['horario_hasta']}). No se estiman.")
-
     df = marcar_periodos(df, inicio, fin, resolucion)
     titulo = {"horaria": "PML horario", "diaria": "PML promedio diario",
               "mensual": "PML promedio mensual"}[resolucion]
-    st.markdown(f"**{titulo} (MXN/MWh)**")
-    grafica(df, "pml_promedio", "MXN/MWh", resolucion)
+    with st.container(key="tarjeta"):
+        izq, der = st.columns([3.2, 1], gap="large")
+        with izq:
+            st.markdown(f"**{titulo} (MXN/MWh)**")
+            grafica(df, "pml_promedio", "MXN/MWh", resolucion)
+        with der, st.container(key="ficha"):
+            st.markdown(barra_rango("Rango horario del periodo", e["minimo"], e["maximo"], e["promedio"])
+                        + (barra_rango(f"Rango del {hasta_obs}", dia["minimo"], dia["maximo"], dia["promedio"])
+                           if dia["horas_con_dato"] else ""), unsafe_allow_html=True)
+            st.metric("Promedio horario", mxn(e["promedio"]), help="Promedio simple de las horas con dato.")
+            st.metric("Mediana horaria", mxn(e["mediana"]) if horario_completo else "—",
+                      help=None if horario_completo else
+                      f"Requiere datos horarios: disponible solo si todo el rango está entre "
+                      f"{limites['horario_desde']} y {limites['horario_hasta']}.")
+            st.metric("Mínimo horario", mxn(e["minimo"]), help="Menor PML de una hora en el rango.")
+            st.metric("Máximo horario", mxn(e["maximo"]), help="Mayor PML de una hora en el rango.")
+            st.metric("Horas con PML < 0", f"{int(e['horas_negativas']):,}")
+            st.markdown(fila("Desv. estándar", mxn(e["desv_std"]))
+                        + fila("Percentil 10", mxn(e["p10"]) if horario_completo else "—")
+                        + fila("Percentil 90", mxn(e["p90"]) if horario_completo else "—")
+                        + fila("Cobertura", f"{e['cobertura_pct']}%"), unsafe_allow_html=True)
+    st.caption(f"Indicadores calculados sobre las {con_dato:,} horas con dato, en MXN/MWh"
+               + ("." if resolucion == "horaria" else f", aunque la gráfica sea {resolucion}."))
+    if not horario_completo:
+        st.caption("— Mediana, P10 y P90 requieren datos horarios: el rango excede la ventana horaria "
+                   f"({limites['horario_desde']} a {limites['horario_hasta']}). No se estiman.")
     avisos_parciales(df, resolucion)
 
     with st.expander("Todas las estadísticas"):
@@ -443,9 +542,12 @@ st.set_page_config(page_title="PML Explorer", page_icon=str(ASSETS / "logo.svg")
 st.html(ESTILOS)
 # H01: regreso explícito al sitio editorial, fuera de cualquier panel para que se vea en las tres vistas.
 st.markdown(f"[← Mercados · edarji.net]({SITIO_MERCADOS})")
-logo()
-st.title("PML Explorer v0.2 beta")
-st.caption("Precio Marginal Local, MDA del SIN (CENACE). Unidades: MXN/MWh.")
+col_logo, col_titulo = st.columns([1, 9], vertical_alignment="center")
+with col_logo:
+    logo()
+with col_titulo:
+    st.title("PML Explorer")
+    st.caption("Precio Marginal Local · Mercado del Día en Adelanto · SIN (CENACE) · MXN/MWh")
 
 if not (DATA_DIR / "metadata.json").is_file():
     st.info("Los derivados públicos de CENACE todavía no están disponibles en esta publicación.")
@@ -462,15 +564,24 @@ if not nodos:
     st.warning("El paquete público no contiene nodos con datos.")
     st.stop()
 
-st.caption(f"Fechas de operación disponibles: {limites['desde']} a {limites['hasta']} (diario); "
-           f"{limites['horario_desde']} a {limites['horario_hasta']} (horario). "
-           f"Actualización del paquete: {actualizado_cdmx(limites['generado_utc'])}, Ciudad de México.")
 
 VISTAS = {"1. PML histórico": vista_1, "2. Comparar nodos (spread)": vista_2, "3. Componentes del PML": vista_3}
 # H07: vista y filtros en un panel con texto visible dentro del contenido, cerrado al iniciar, en vez de la
 # barra lateral (en móvil quedaba sobre los resultados o como un icono sin texto). Cerrarlo no borra la selección.
+# v0.5: las vistas son una barra de pestañas visible arriba; nodo, fechas y resolución siguen en el panel.
+col_pestanas, col_rangos = st.columns([3, 1], vertical_alignment="bottom")
+with col_pestanas, st.container(key="pestanas"):
+    vista = st.radio("Vista", list(VISTAS), key="vista", horizontal=True, label_visibility="collapsed",
+                     format_func=lambda v: v.split(". ", 1)[1])
+with col_rangos:
+    botones_rango(limites)
 panel = st.expander("Vista y filtros", expanded=False)
-with panel:
-    vista = st.radio("Vista", list(VISTAS), key="vista", horizontal=True)
+# El contenido va en un contenedor creado antes que el pie: si una vista se detiene con st.stop()
+# (sin datos, fechas invertidas), metodología y fechas disponibles siguen visibles debajo.
+contenido = st.container()
 metodologia()
-VISTAS[vista](limites, nodos, fechas_nodo, version, panel)
+st.caption(f"Fechas de operación disponibles: {limites['desde']} a {limites['hasta']} (diario); "
+           f"{limites['horario_desde']} a {limites['horario_hasta']} (horario). "
+           f"Actualización del paquete: {actualizado_cdmx(limites['generado_utc'])}, Ciudad de México.")
+with contenido:
+    VISTAS[vista](limites, nodos, fechas_nodo, version, panel)

@@ -6,13 +6,18 @@ enableXsrfProtection = true
 [browser]
 gatherUsageStats = false
 
-# Tema visual tipo terminal financiera (el mismo de la app del laboratorio, power-market-lab):
-# fondo negro, texto ámbar, letra monoespaciada.
+# Tema visual claro tipo «ficha de mercado» (v0.5): fondo crema, texto casi negro, línea naranja,
+# verde/rojo solo para cambios. Sustituye al tema oscuro tipo terminal (ámbar sobre negro).
 [theme]
-base = "dark"
-backgroundColor = "#000000"
-secondaryBackgroundColor = "#141414"
-textColor = "#FFB000"
-primaryColor = "#FF8C00"
-font = "monospace"
-chartCategoricalColors = ["#FFB000", "#00BFFF", "#FF4D4D", "#33CC66"]
+base = "light"
+backgroundColor = "#FBF8F2"
+secondaryBackgroundColor = "#F3EEE5"
+textColor = "#1B1B1B"
+primaryColor = "#E8772E"
+borderColor = "#E4DDD0"
+linkColor = "#1B1B1B"
+font = "sans-serif"
+baseRadius = "0.5rem"
+greenColor = "#2E7D32"
+redColor = "#C62828"
+chartCategoricalColors = ["#E8772E", "#2F6FB0", "#8E8E8E", "#2E7D32"]

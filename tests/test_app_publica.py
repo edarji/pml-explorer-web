@@ -89,7 +89,9 @@ class AuditoriaUxV03(unittest.TestCase):
         panel = app.expander[0]
         self.assertEqual(panel.label, "Vista y filtros")
         self.assertFalse(panel.proto.expanded)
-        self.assertEqual(panel.radio(key="vista").value, "1. PML histórico")
+        # v0.5: la vista se elige en la barra de pestañas; el panel conserva nodo, fechas y resolución.
+        self.assertEqual(app.radio(key="vista").value, "1. PML histórico")
+        self.assertEqual(panel.selectbox(key="nodo").label, "Buscar por clave de nodo")
 
     def test_busqueda_por_clave_con_ayuda(self):
         app = self.abrir()
