@@ -120,6 +120,69 @@ class AuditoriaUxV03(unittest.TestCase):
         self.assertIn("'Desde' debe ser anterior", app.error[0].value)
 
 
+@unittest.skipUnless((v.DATA_DIR / "metadata.json").is_file(), "Sin paquete público en data/")
+class RangosRapidosApp(unittest.TestCase):
+    """v0.4.1: los botones solo cambian Desde/Hasta, en las tres vistas, con el último día del paquete."""
+    VISTAS = (("1. PML histórico", "nodo"), ("2. Comparar nodos (spread)", "nodo_a"), ("3. Componentes del PML", "nodo"))
+
+    def setUp(self):
+        from rangos import rango_rapido
+        m = v.metadata()
+        self.lim = {"desde": date.fromisoformat(m["diario_desde"]), "hasta": date.fromisoformat(m["diario_hasta"])}
+        self.esperado = {o: rango_rapido(o, self.lim) for o in ("Último día", "Últimos 7 días", "Mes en curso")}
+
+    def pulsar(self, vista, clave_nodo, opcion, resolucion):
+        from streamlit.testing.v1 import AppTest
+        app = AppTest.from_file(APP, default_timeout=120).run()
+        app.radio(key="vista").set_value(vista).run()
+        app.selectbox(key=clave_nodo).set_value("01AGU-230" if clave_nodo == "nodo" else "01AAN-85")
+        app.radio(key="resolucion").set_value(resolucion).run()
+        app.button(key=f"rango_{opcion}").click().run()
+        self.assertFalse(app.exception)
+        return app
+
+    def test_tres_rangos_en_tres_vistas_conservan_filtros(self):
+        for vista, clave in self.VISTAS:
+            for opcion, (inicio, fin) in self.esperado.items():
+                with self.subTest(vista=vista, opcion=opcion):
+                    app = self.pulsar(vista, clave, opcion, "diaria")
+                    self.assertEqual(app.date_input(key="desde").value, inicio)
+                    self.assertEqual(app.date_input(key="hasta").value, fin)
+                    self.assertEqual(app.radio(key="vista").value, vista)
+                    self.assertEqual(app.radio(key="resolucion").value, "diaria")
+                    nodo = "01AGU-230" if clave == "nodo" else "01AAN-85"
+                    self.assertEqual(app.selectbox(key=clave).value, nodo)
+                    self.assertEqual(len(app.error), 0)
+                    self.assertGreater(len(app.metric), 0)
+                    self.assertIn(f"{inicio} a {fin}", app.subheader[0].value)
+
+    def test_rangos_caben_en_la_ventana_horaria(self):
+        for opcion, (inicio, fin) in self.esperado.items():
+            with self.subTest(opcion=opcion):
+                self.assertTrue(v.cobertura_horaria(inicio, fin))
+                app = self.pulsar("1. PML histórico", "nodo", opcion, "horaria")
+                self.assertNotIn("resolución horaria requiere", " ".join(w.value for w in app.warning))
+                self.assertNotEqual(app.metric[1].value, "—")  # la mediana horaria sí se calcula
+
+    def test_mes_en_curso_se_marca_parcial(self):
+        inicio, fin = self.esperado["Mes en curso"]
+        app = self.pulsar("1. PML histórico", "nodo", "Mes en curso", "mensual")
+        textos = " ".join(c.value for c in app.caption)
+        if fin.day < 28 or inicio.day > 1:
+            self.assertIn("▼ Periodos parciales", textos)
+
+    def test_mismas_cifras_que_con_fechas_manuales(self):
+        inicio, fin = self.esperado["Últimos 7 días"]
+        rapido = self.pulsar("1. PML histórico", "nodo", "Últimos 7 días", "diaria")
+        from streamlit.testing.v1 import AppTest
+        manual = AppTest.from_file(APP, default_timeout=120).run()
+        manual.selectbox(key="nodo").set_value("01AGU-230")
+        manual.date_input(key="desde").set_value(inicio)
+        manual.date_input(key="hasta").set_value(fin)
+        manual.radio(key="resolucion").set_value("diaria").run()
+        self.assertEqual([m.value for m in rapido.metric], [m.value for m in manual.metric])
+
+
 class Periodos(unittest.TestCase):
     def test_marcar_periodos(self):
         import pandas as pd
