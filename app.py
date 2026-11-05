@@ -236,6 +236,41 @@ def barra_rango(etiqueta, minimo, maximo, marca):
             f'</span></div><div class="ext"><span>{mxn(minimo)}</span><span>{mxn(maximo)}</span></div></div>')
 
 
+def cabecera(valor_del_dia, dia, limites, texto, porcentaje=True):
+    """v0.5 · Número grande del último día con dato y su cambio contra el día anterior.
+
+    `valor_del_dia(fecha)` devuelve el valor de ese día o None si no hay horas con dato. El día anterior puede
+    quedar fuera del rango elegido; si no hay dato ese día, no se muestra cambio (nunca se compara contra cero).
+    `porcentaje=False` para el spread: un % sobre una base cercana a cero no significa nada.
+    """
+    valor = valor_del_dia(dia)
+    previo = valor_del_dia(dia - timedelta(days=1)) if dia - timedelta(days=1) >= limites["desde"] else None
+    cambio_html = ""
+    if valor is not None and previo is not None:
+        cambio = valor - previo
+        pct = f" ({cambio / abs(previo):+.2%})" if porcentaje and previo else ""
+        cambio_html = f'<span class="cambio {flecha(cambio)}">{cambio:+,.2f}{pct}</span>'
+    st.markdown(
+        f'<div class="precio"><span class="valor">{mxn(valor)}</span><span class="unidad">MXN/MWh</span>'
+        f'{cambio_html}<span class="fecha">{texto} del {dia} vs. día anterior</span></div>',
+        unsafe_allow_html=True)
+    return valor
+
+
+def grafica_series(df, columnas, colores):
+    """Varias curvas con el mismo estilo que `grafica` (eje derecho, sin rejilla vertical, fechas en español)."""
+    largo = df.melt(id_vars=["periodo"], value_vars=columnas, var_name="serie", value_name="valor").dropna()
+    st.altair_chart(alt.Chart(largo).mark_line(strokeWidth=1.6).encode(
+        x=alt.X("periodo:T", title=None, axis=alt.Axis(grid=False, domain=False, tickColor="#CFC8BB")),
+        y=alt.Y("valor:Q", title=None, scale=alt.Scale(zero=False),
+                axis=alt.Axis(orient="right", domain=False, ticks=False, gridColor="#E4DDD0", tickCount=5)),
+        color=alt.Color("serie:N", title=None, sort=columnas, scale=alt.Scale(domain=columnas, range=colores),
+                        legend=alt.Legend(orient="top-left", direction="horizontal")),
+        tooltip=[alt.Tooltip("periodo:T", title="Periodo"), alt.Tooltip("serie:N", title="Serie"),
+                 alt.Tooltip("valor:Q", title="MXN/MWh", format=",.2f")],
+    ).properties(background="transparent").configure_view(stroke=None).configure(locale=LOCALE_ES), width="stretch")
+
+
 def fila(etiqueta, valor):
     return f'<div class="fila"><span>{etiqueta}</span><span>{valor}</span></div>'
 
@@ -284,23 +319,12 @@ def vista_1(limites, nodos, fechas_nodo, version, panel):
     con_dato, del_rango = int(e["horas_con_dato"]), int(e["horas_del_rango"])
     desde_obs, hasta_obs = e["primera_fecha"].date(), e["ultima_fecha"].date()
 
-    # v0.5 · Cabecera tipo ficha: el «precio» es el PML promedio del último día con dato del rango y el
-    # cambio se mide contra el día anterior (aunque quede fuera del rango elegido).
+    # v0.5 · Cabecera tipo ficha: el «precio» es el PML promedio del último día con dato del rango.
+    def pml_del_dia(d):
+        x = consultar_estadisticas(nodo, d, d, str(DATA_DIR), version).iloc[0]
+        return None if x["horas_con_dato"] == 0 else x["promedio"]
+    cabecera(pml_del_dia, hasta_obs, limites, "PML promedio")
     dia = consultar_estadisticas(nodo, hasta_obs, hasta_obs, str(DATA_DIR), version).iloc[0]
-    previo = None
-    if hasta_obs - timedelta(days=1) >= limites["desde"]:
-        p = consultar_estadisticas(nodo, hasta_obs - timedelta(days=1), hasta_obs - timedelta(days=1),
-                                   str(DATA_DIR), version).iloc[0]
-        previo = None if p["horas_con_dato"] == 0 else p["promedio"]
-    cambio_html = ""
-    if previo is not None:
-        cambio = dia["promedio"] - previo
-        pct = f" ({cambio / abs(previo):+.2%})" if previo else ""
-        cambio_html = f'<span class="cambio {flecha(cambio)}">{cambio:+,.2f}{pct}</span>'
-    st.markdown(
-        f'<div class="precio"><span class="valor">{mxn(dia["promedio"])}</span><span class="unidad">MXN/MWh</span>'
-        f'{cambio_html}<span class="fecha">PML promedio del {hasta_obs} vs. día anterior</span></div>',
-        unsafe_allow_html=True)
     st.markdown(f"MDA · SIN · CENACE | **Cobertura:** {e['cobertura_pct']}% ({con_dato:,} de {del_rango:,} horas "
                 f"con dato) | **Rango con observaciones:** {desde_obs} a {hasta_obs}")
     if e["cobertura_pct"] < COBERTURA_ESCASA:
@@ -413,35 +437,48 @@ def vista_2(limites, nodos, fechas_nodo, version, panel):
     st.subheader(f"{nodo_a} − {nodo_b}: {inicio} a {fin}")
     comunes, del_rango = int(r["horas_coincidentes"]), int(r["horas_del_rango"])
     desde_obs, hasta_obs = r["primera_fecha"].date(), r["ultima_fecha"].date()
-    st.write(f"**Cobertura común:** {r['cobertura_pct']}% ({comunes:,} de {del_rango:,} horas con dato en los dos nodos). "
-             f"**Rango común con observaciones:** {desde_obs} a {hasta_obs}.")
+
+    # v0.5 · Cabecera: spread promedio del último día común, cambio en MXN/MWh (sin %).
+    def spread_del_dia(dia):
+        x = consultar_resumen(nodo_a, nodo_b, dia, dia, str(DATA_DIR), version).iloc[0]
+        return None if x["horas_coincidentes"] == 0 else x["promedio"]
+    cabecera(spread_del_dia, hasta_obs, limites, "Spread A − B promedio", porcentaje=False)
+    st.markdown(f"Positivo: {nodo_a} más caro que {nodo_b} | **Cobertura común:** {r['cobertura_pct']}% ({comunes:,} de "
+                f"{del_rango:,} horas con dato en los dos nodos) | **Rango común con observaciones:** {desde_obs} a {hasta_obs}")
     if r["cobertura_pct"] < COBERTURA_ESCASA:
         st.warning(f"Cobertura común escasa: el spread describe solo {comunes:,} horas, entre {desde_obs} y {hasta_obs}. "
                    "Las horas en que falta alguno de los dos nodos se excluyen, no se imputan.")
     if r["dias_no_comparables"]:
         st.warning(f"{int(r['dias_no_comparables']):,} días con horas incompletas en algún nodo se excluyeron: "
                    "fuera de la ventana horaria no se puede saber qué horas coinciden.")
+
+    curvas = pd.merge(a[["periodo", "pml_promedio"]].rename(columns={"pml_promedio": nodo_a}),
+                      b[["periodo", "pml_promedio"]].rename(columns={"pml_promedio": nodo_b}),
+                      on="periodo", how="outer")
+    d = marcar_periodos(d, inicio, fin, resolucion)
+    with st.container(key="tarjeta"):
+        izq, der = st.columns([3.2, 1], gap="large")
+        with izq:
+            st.markdown("**Spread A − B (MXN/MWh)** · solo horas coincidentes")
+            grafica(d, "dif_promedio", "Spread A − B (MXN/MWh)", resolucion)
+            st.markdown("**PML de cada nodo (MXN/MWh)** · cada curva con todas sus horas con dato")
+            grafica_series(curvas, [nodo_a, nodo_b], [NARANJA, "#2F6FB0"])
+        with der, st.container(key="ficha"):
+            if pd.notna(r["minimo"]) and pd.notna(r["maximo"]):
+                st.markdown(barra_rango("Rango horario del spread", r["minimo"], r["maximo"], r["promedio"]),
+                            unsafe_allow_html=True)
+            st.metric("Spread promedio", mxn(r["promedio"]),
+                      help="Promedio horario simple de PML_A − PML_B en las horas coincidentes.")
+            st.metric("Mediana horaria", mxn(r["mediana"]))
+            st.metric("Mínimo horario", mxn(r["minimo"]))
+            st.metric("Máximo horario", mxn(r["maximo"]))
+            st.metric("Horas con A más caro", "—" if pd.isna(r["pct_a_mas_caro"]) else f"{r['pct_a_mas_caro']}%")
+            st.markdown(fila("Horas coincidentes", f"{comunes:,}") + fila("Cobertura común", f"{r['cobertura_pct']}%")
+                        + fila("Días excluidos", f"{int(r['dias_no_comparables'] or 0):,}"), unsafe_allow_html=True)
     if not horario_completo:
         st.caption("Fuera de la ventana horaria el spread se calcula con los días en que ambos nodos tienen las 24 horas. "
                    f"Mediana, mínimo, máximo y % de horas con A más caro requieren el rango entre "
                    f"{limites['horario_desde']} y {limites['horario_hasta']}.")
-
-    c1, c2, c3, c4, c5 = st.columns(5)
-    c1.metric("Spread promedio", mxn(r["promedio"]), help="Promedio horario simple de PML_A − PML_B en las horas coincidentes.")
-    c2.metric("Mediana horaria", mxn(r["mediana"]))
-    c3.metric("Mínimo horario", mxn(r["minimo"]))
-    c4.metric("Máximo horario", mxn(r["maximo"]))
-    c5.metric("Horas con A más caro", "—" if pd.isna(r["pct_a_mas_caro"]) else f"{r['pct_a_mas_caro']}%")
-
-    st.markdown(f"**PML de cada nodo (MXN/MWh)** · cada curva con todas sus horas con dato")
-    curvas = pd.merge(a[["periodo", "pml_promedio"]].rename(columns={"pml_promedio": nodo_a}),
-                      b[["periodo", "pml_promedio"]].rename(columns={"pml_promedio": nodo_b}),
-                      on="periodo", how="outer")
-    st.line_chart(curvas, x="periodo", y=[nodo_a, nodo_b], y_label="MXN/MWh", x_label="")
-
-    d = marcar_periodos(d, inicio, fin, resolucion)
-    st.markdown("**Spread A − B (MXN/MWh)** · solo horas coincidentes")
-    grafica(d, "dif_promedio", "Spread A − B (MXN/MWh)", resolucion)
     avisos_parciales(d, resolucion)
 
     with st.expander("Tabla del spread"):
@@ -492,40 +529,56 @@ def vista_3(limites, nodos, fechas_nodo, version, panel):
 
     st.subheader(f"{nodo}: componentes del PML, {inicio} a {fin}")
     con_dato = int(r["horas_con_dato"])
-    st.write(f"**Cobertura:** {r['cobertura_pct']}% ({con_dato:,} de {int(r['horas_del_rango']):,} horas con dato). "
-             f"**Rango con observaciones:** {r['primera_fecha'].date()} a {r['ultima_fecha'].date()}.")
+    hasta_obs = r["ultima_fecha"].date()
+
+    # v0.5 · Cabecera: PML promedio del último día con dato, igual que en la vista 1.
+    def pml_del_dia(dia):
+        x = consultar_resumen_componentes(nodo, dia, dia, str(DATA_DIR), version).iloc[0]
+        return None if x["horas_con_dato"] == 0 else x["pml"]
+    cabecera(pml_del_dia, hasta_obs, limites, "PML promedio")
+    st.markdown(f"MDA · SIN · CENACE | **Cobertura:** {r['cobertura_pct']}% ({con_dato:,} de "
+                f"{int(r['horas_del_rango']):,} horas con dato) | **Rango con observaciones:** "
+                f"{r['primera_fecha'].date()} a {hasta_obs}")
     if r["cobertura_pct"] < COBERTURA_ESCASA:
         st.warning(f"Cobertura escasa: los promedios describen solo {con_dato:,} horas. Las horas sin dato no se tratan como cero.")
-    st.caption(f"Promedios horarios simples sobre las mismas {con_dato:,} horas para el PML y cada componente.")
-
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric("PML promedio", mxn(r["pml"]))
-    c2.metric("Energía", mxn(r["energia"]))
-    c3.metric("Pérdidas", mxn(r["perdidas"]))
-    c4.metric("Congestión", mxn(r["congestion"]))
-    c5, c6, c7 = st.columns(3)
-    c5.metric("Horas con congestión > 0", f"{int(r['horas_congestion_positiva']):,}")
-    c6.metric("Horas con congestión < 0", f"{int(r['horas_congestion_negativa']):,}")
-    c7.metric("Descuadre máximo", f"{r['descuadre_max']:,.4f}",
-              help="Máximo de |PML − (energía + pérdidas + congestión)| en una hora. Viene del redondeo de CENACE.")
     if r["horas_descuadre"] > 0:
         st.warning(f"{int(r['horas_descuadre']):,} horas con descuadre mayor a {UMBRAL_DESCUADRE} MXN/MWh.")
-    else:
-        st.caption(f"Ninguna hora con descuadre mayor a {UMBRAL_DESCUADRE} MXN/MWh.")
 
     df = marcar_periodos(df, inicio, fin, resolucion)
     nombres = {"energia": "Energía", "perdidas": "Pérdidas", "congestion": "Congestión"}
+    colores = [NARANJA, "#2F6FB0", "#8E8E8E"]
     largo = df.melt(id_vars=["periodo", "etiqueta"], value_vars=list(nombres), var_name="componente", value_name="valor")
     largo["componente"] = largo["componente"].map(nombres)
-    st.markdown("**Componentes del PML (barras apiladas, MXN/MWh)** · los negativos quedan debajo del cero")
-    st.altair_chart(alt.Chart(largo).mark_bar().encode(
-        x=alt.X("periodo:T", title=None), y=alt.Y("valor:Q", title="MXN/MWh", stack="zero"),
-        color=alt.Color("componente:N", title=None, sort=list(nombres.values())),
-        tooltip=[alt.Tooltip("etiqueta:N", title="Periodo"), alt.Tooltip("componente:N", title="Componente"),
-                 alt.Tooltip("valor:Q", title="MXN/MWh", format=",.2f")]), width="stretch")
-    st.markdown("**Pérdidas y congestión (MXN/MWh)** · la parte propia del nodo, a su escala")
-    st.line_chart(df.rename(columns={"perdidas": "Pérdidas", "congestion": "Congestión"}),
-                  x="periodo", y=["Pérdidas", "Congestión"], y_label="MXN/MWh", x_label="")
+    with st.container(key="tarjeta"):
+        izq, der = st.columns([3.2, 1], gap="large")
+        with izq:
+            st.markdown("**Componentes del PML (barras apiladas, MXN/MWh)** · los negativos quedan debajo del cero")
+            st.altair_chart(alt.Chart(largo).mark_bar().encode(
+                x=alt.X("periodo:T", title=None, axis=alt.Axis(grid=False, domain=False, tickColor="#CFC8BB")),
+                y=alt.Y("valor:Q", title=None, stack="zero",
+                        axis=alt.Axis(orient="right", domain=False, ticks=False, gridColor="#E4DDD0", tickCount=5)),
+                color=alt.Color("componente:N", title=None, sort=list(nombres.values()),
+                                scale=alt.Scale(domain=list(nombres.values()), range=colores),
+                                legend=alt.Legend(orient="top-left", direction="horizontal")),
+                tooltip=[alt.Tooltip("etiqueta:N", title="Periodo"), alt.Tooltip("componente:N", title="Componente"),
+                         alt.Tooltip("valor:Q", title="MXN/MWh", format=",.2f")])
+                .properties(background="transparent").configure_view(stroke=None).configure(locale=LOCALE_ES),
+                width="stretch")
+            st.markdown("**Pérdidas y congestión (MXN/MWh)** · la parte propia del nodo, a su escala")
+            grafica_series(df.rename(columns={"perdidas": "Pérdidas", "congestion": "Congestión"}),
+                           ["Pérdidas", "Congestión"], colores[1:])
+        with der, st.container(key="ficha"):
+            st.metric("PML promedio", mxn(r["pml"]))
+            st.metric("Energía", mxn(r["energia"]))
+            st.metric("Pérdidas", mxn(r["perdidas"]))
+            st.metric("Congestión", mxn(r["congestion"]))
+            st.metric("Horas con congestión > 0", f"{int(r['horas_congestion_positiva']):,}")
+            st.metric("Horas con congestión < 0", f"{int(r['horas_congestion_negativa']):,}")
+            st.metric("Descuadre máximo", f"{r['descuadre_max']:,.4f}",
+                      help="Máximo de |PML − (energía + pérdidas + congestión)| en una hora. Viene del redondeo de CENACE.")
+            st.markdown(fila("Cobertura", f"{r['cobertura_pct']}%"), unsafe_allow_html=True)
+    st.caption(f"Promedios horarios simples sobre las mismas {con_dato:,} horas para el PML y cada componente."
+               + ("" if r["horas_descuadre"] > 0 else f" Ninguna hora con descuadre mayor a {UMBRAL_DESCUADRE} MXN/MWh."))
     avisos_parciales(df, resolucion)
 
     with st.expander("Tabla de componentes y descuadre"):
