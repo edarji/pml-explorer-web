@@ -2,12 +2,13 @@
 
 Módulo de **Electricity Markets Monitor** para consultar el Precio Marginal Local (PML) por nodo: histórico, spread entre nodos y componentes, Mercado del Día en Adelanto (MDA), Sistema Interconectado Nacional (SIN) de México. Fuente: CENACE. Unidades: MXN/MWh.
 
-**Estado al 1 de noviembre de 2026:** aplicación pública **v0.2 beta** en https://pml-explorer.streamlit.app/ con las tres vistas (PML histórico, spread entre nodos y componentes), enlazada desde [edarji.net/mercados](https://edarji.net/mercados/). Datos con **esquema v2**, actualizados cada noche por `pml-bot` (23:00, Ciudad de México); la fecha de cada paquete aparece en la aplicación. Ver [metodología](docs/methodology.md) y [validación](docs/validation.md).
+**Estado al 5 de noviembre de 2026:** aplicación pública **v0.5.1 beta** en https://pml-explorer.streamlit.app/ con las tres vistas (PML histórico, spread entre nodos y componentes) y enlaces compartibles, enlazada desde [edarji.net/mercados](https://edarji.net/mercados/). Datos con **esquema v2**, actualizados cada noche por `pml-bot` (23:00, Ciudad de México); la fecha de cada paquete aparece en la aplicación. Ver [metodología](docs/methodology.md) y [validación](docs/validation.md).
 
 ## Estructura aprobada
 
 ```text
 app.py                     # explorer.py adaptado, misma vista 1
+enlaces.py                 # enlaces compartibles: lee y escribe vista y filtros en la URL
 vista1.py                  # consultas validadas + lectura del resumen diario
 requirements.txt
 .streamlit/config.toml

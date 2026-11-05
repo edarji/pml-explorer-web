@@ -3,7 +3,7 @@
 Usan solo los derivados reales publicados por pml-bot; se omiten si el paquete no está.
 Casos tomados de la auditoría del 2026-10-30.
 """
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 import sys
 import unittest
@@ -183,6 +183,106 @@ class RangosRapidosApp(unittest.TestCase):
         manual.date_input(key="hasta").set_value(fin)
         manual.radio(key="resolucion").set_value("diaria").run()
         self.assertEqual([m.value for m in rapido.metric], [m.value for m in manual.metric])
+
+
+@unittest.skipUnless((v.DATA_DIR / "metadata.json").is_file(), "Sin paquete público en data/")
+class EnlacesCompartibles(unittest.TestCase):
+    """v0.5.1: un enlace abre vista y filtros en una sesión nueva; los filtros se reflejan en la URL."""
+
+    def setUp(self):
+        m = v.metadata()
+        self.hasta = date.fromisoformat(m["diario_hasta"])
+        self.desde = self.hasta - timedelta(days=6)
+        self.esquema = m["version_esquema"]
+
+    def abrir(self, **parametros):
+        """Cada AppTest es una sesión nueva, sin session_state previo (AC-08)."""
+        from streamlit.testing.v1 import AppTest
+        app = AppTest.from_file(APP, default_timeout=120)
+        for clave, valor in parametros.items():
+            app.query_params[clave] = valor
+        app.run()
+        self.assertFalse(app.exception)
+        return app
+
+    def fechas(self):
+        return {"desde": str(self.desde), "hasta": str(self.hasta)}
+
+    def test_historico_restaura_todo(self):  # AC-01, AC-04
+        enlace = {"vista": "historico", "nodo": "01AGU-230", **self.fechas(), "resolucion": "diaria"}
+        app = self.abrir(**enlace)
+        self.assertEqual(app.radio(key="vista").value, "1. PML histórico")
+        self.assertEqual(app.selectbox(key="nodo").value, "01AGU-230")
+        self.assertEqual((app.date_input(key="desde").value, app.date_input(key="hasta").value), (self.desde, self.hasta))
+        self.assertEqual(app.radio(key="resolucion").value, "diaria")
+        self.assertEqual(app.subheader[0].value, f"01AGU-230: {self.desde} a {self.hasta}")
+        self.assertEqual(dict(app.query_params), enlace)
+
+    def test_comparacion_conserva_a_menos_b(self):  # AC-02
+        enlace = {"vista": "comparacion", "nodo_a": "01AGU-230", "nodo_b": "01AAN-85", **self.fechas(),
+                  "resolucion": "horaria"}
+        app = self.abrir(**enlace)
+        self.assertEqual(app.radio(key="vista").value, "2. Comparar nodos (spread)")
+        self.assertEqual(app.subheader[0].value, f"01AGU-230 − 01AAN-85: {self.desde} a {self.hasta}")
+        self.assertEqual(dict(app.query_params), enlace)
+
+    def test_componentes_restaura_todo(self):  # AC-03
+        enlace = {"vista": "componentes", "nodo": "01AGU-230", **self.fechas(), "resolucion": "mensual"}
+        app = self.abrir(**enlace)
+        self.assertEqual(app.radio(key="vista").value, "3. Componentes del PML")
+        self.assertIn(f"01AGU-230: componentes del PML, {self.desde} a {self.hasta}", app.subheader[0].value)
+        self.assertEqual(app.radio(key="resolucion").value, "mensual")
+
+    def test_cambiar_filtros_actualiza_la_url(self):  # AC-05
+        app = self.abrir()
+        app.selectbox(key="nodo").set_value("01AGU-230").run()
+        self.assertEqual(app.query_params["nodo"], "01AGU-230")
+        app.radio(key="vista").set_value("2. Comparar nodos (spread)").run()
+        self.assertEqual(app.query_params["vista"], "comparacion")
+        self.assertNotIn("nodo", app.query_params)  # solo los parámetros de la vista activa
+        self.assertIn("nodo_b", app.query_params)
+
+    def test_rango_rapido_deja_fechas_absolutas(self):  # AC-06
+        app = self.abrir()
+        app.button(key="rango_Últimos 7 días").click().run()
+        self.assertEqual((app.query_params["desde"], app.query_params["hasta"]), (str(self.desde), str(self.hasta)))
+
+    def test_mismas_cifras_que_con_filtros_manuales(self):  # AC-13
+        enlazado = self.abrir(vista="historico", nodo="01AGU-230", **self.fechas(), resolucion="diaria")
+        manual = self.abrir()
+        manual.selectbox(key="nodo").set_value("01AGU-230")
+        manual.date_input(key="desde").set_value(self.desde)
+        manual.date_input(key="hasta").set_value(self.hasta)
+        manual.radio(key="resolucion").set_value("diaria").run()
+        self.assertEqual([m.value for m in enlazado.metric], [m.value for m in manual.metric])
+
+    def test_nodo_inexistente_avisa_y_no_muestra_cifras(self):  # AC-07
+        app = self.abrir(vista="historico", nodo="99XXX-999", **self.fechas(), resolucion="diaria")
+        self.assertEqual(len(app.metric), 0)
+        self.assertIn("«99XXX-999»", app.error[0].value)
+        self.assertEqual(app.query_params["nodo"], "99XXX-999")  # la URL recibida no se reescribe
+        next(b for b in app.button if b.label.startswith("Continuar")).click().run()
+        self.assertEqual(len(app.error), 0)
+        self.assertGreater(len(app.metric), 0)
+        self.assertEqual(app.query_params["nodo"], app.selectbox(key="nodo").value)
+
+    def test_periodo_fuera_de_cobertura_y_vista_desconocida(self):  # AC-07
+        app = self.abrir(vista="mapa", nodo="01AGU-230", desde="2020-01-01", hasta="2020-01-31", resolucion="diaria")
+        self.assertEqual(len(app.metric), 0)
+        errores = app.error[0].value
+        self.assertIn("«mapa» no existe", errores)
+        self.assertIn("no está en el paquete público", errores)
+
+    def test_enlace_incompleto_lo_dice(self):  # AC-07
+        app = self.abrir(vista="comparacion", nodo_a="01AGU-230")
+        self.assertIn("nodo_b", app.info[0].value)
+        self.assertEqual(app.selectbox(key="nodo_a").value, "01AGU-230")
+
+    def test_version_esquema_y_fecha_separados(self):  # AC-12
+        app = self.abrir()
+        pie = " ".join(c.value for c in app.caption)
+        self.assertIn(f"PML Explorer v0.5.1 beta · Datos: esquema v{self.esquema}", pie)
+        self.assertIn("Actualización del paquete:", pie)
 
 
 class Periodos(unittest.TestCase):
