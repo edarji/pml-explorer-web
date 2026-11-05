@@ -1,12 +1,12 @@
 # Metodología — PML Explorer
 
-Documento revisado: **2026-11-01**. Describe el comportamiento de la aplicación pública vigente. La fecha de este documento no es un corte de precios.
+Documento revisado: **2026-11-05**. Describe el comportamiento de la aplicación pública vigente. La fecha de este documento no es un corte de precios.
 
 | Concepto | Valor vigente | Dónde se comprueba |
 | --- | --- | --- |
-| Versión de la aplicación | **v0.2 beta**: vista 1 (PML histórico), vista 2 (spread entre nodos) y vista 3 (componentes) | Título de la aplicación |
+| Versión de la aplicación | **v0.5.1 beta**: vista 1 (PML histórico), vista 2 (spread entre nodos) y vista 3 (componentes), con enlaces compartibles | Pie de la aplicación («PML Explorer v0.5.1 beta · Datos: esquema v2 · …») |
 | Esquema de datos | **v2** (v1 + componentes del PML), publicado por `pml-bot` desde el 2026-10-31 (commit `c62aa39`) | `version_esquema` en `data/metadata.json`; [contrato de datos](data-contract.md) |
-| Fecha del paquete | Cambia cada noche; no la fija este documento | «Actualización del paquete» en la cabecera de la aplicación (`generado_utc` convertido a Ciudad de México) |
+| Fecha del paquete | Cambia cada noche; no la fija este documento | «Actualización del paquete» en el pie de la aplicación (`generado_utc` convertido a Ciudad de México) |
 
 ## Fuente y alcance
 
@@ -70,6 +70,7 @@ PML = energía + pérdidas + congestión, con los signos publicados por CENACE (
 - **Fechas por defecto:** «Desde» y «Hasta» inician en el día de la consulta (fecha de Ciudad de México), en resolución horaria. Si el paquete todavía no incluye ese día, se usa el último día disponible. Los límites seleccionables siguen saliendo de `metadata.json`.
 - **Nodos:** se buscan por clave NodoP (por ejemplo `06ESC` encuentra `06ESC-115` y `06ESC-400`). El paquete público no contiene nombres de localidad ni regiones, así que una búsqueda por nombre (por ejemplo «Escobedo») no da resultados; no se añaden equivalencias que no estén en los datos.
 - **Rangos rápidos (v0.4.1):** tres botones encima de «Desde/Hasta», compartidos por las tres vistas. Se anclan en `diario_hasta` de `metadata.json` (la última fecha de operación del paquete, igual para todos los nodos), no en el reloj. *Último día* = `diario_hasta`; *Últimos 7 días* = `diario_hasta − 6` a `diario_hasta`; *Mes en curso* = día 1 del mes de `diario_hasta` a `diario_hasta`. Si el inicio calculado queda antes de `diario_desde`, se recorta. Solo escriben las dos fechas: nodo, resolución, fórmulas, signos, agregaciones y faltantes no cambian. Un nodo con menos datos muestra el aviso de cobertura habitual.
+- **Enlaces compartibles (v0.5.1):** la URL guarda la vista y los filtros, nunca los datos. Parámetros: `vista` (`historico`, `comparacion` o `componentes`), `nodo` (vistas 1 y 3) o `nodo_a` y `nodo_b` (vista 2), `desde` y `hasta` en formato `AAAA-MM-DD`, y `resolucion` (`horaria`, `diaria` o `mensual`). Las fechas siempre son absolutas, también después de un rango rápido: un enlace no cambia de periodo cuando llega el paquete nocturno. Ejemplo: `?vista=comparacion&nodo_a=01AAN-85&nodo_b=01AGU-230&desde=2026-10-30&hasta=2026-11-05&resolucion=diaria`. La URL solo se lee al abrir la aplicación; cada cambio de filtro la actualiza. Un enlace con una vista, nodo, fecha o resolución inválidos, con un parámetro repetido o con un periodo fuera del paquete no se corrige en silencio: se explica el problema y no se muestran cifras hasta que el usuario cambie un filtro o pulse «Continuar con la configuración mostrada». Si faltan parámetros, se usan los valores predeterminados y se avisa.
 - **Mensajes de control:** fechas invertidas, resolución horaria fuera de la ventana y rangos sin datos muestran un aviso y ninguna cifra sustitutiva.
 
 ## Trazabilidad y límites

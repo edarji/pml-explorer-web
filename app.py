@@ -9,13 +9,15 @@ import duckdb
 import pandas as pd
 import streamlit as st
 
+from enlaces import PARAMETROS, VISTAS_URL, construir_enlace, leer_enlace
 from rangos import RANGOS_RAPIDOS, rango_rapido
 from vista2 import diferencial, resumen
 from vista3 import componentes, resumen_componentes
 from vista1 import (DATA_DIR, RESOLUCIONES, UMBRAL_DESCUADRE, DatosNoDisponibles, actualizado_cdmx, catalogo,
                     cobertura_horaria, estadisticas, huella_paquete,
-                    inspeccionar_paquete, marcar_periodos, observado, serie)
+                    inspeccionar_paquete, marcar_periodos, metadata, observado, serie)
 
+VERSION_APP = "v0.5.1 beta"  # versión de la aplicación; el esquema de datos y la fecha vienen del paquete
 REPO = "https://github.com/edarji/pml-explorer-web/blob/main"
 COBERTURA_ESCASA = 80  # % de horas con dato bajo el cual se advierte explícitamente
 SITIO_MERCADOS = "https://edarji.net/mercados/"
@@ -225,6 +227,55 @@ def botones_rango(limites):
                       help=f"{opcion} (ancla: último día del paquete, {limites['hasta']})")
 
 
+def leer_url(nodos, limites):
+    """v0.5.1 · Una sola vez por sesión y antes de dibujar los filtros: copia el enlace recibido a session_state.
+
+    Los widgets toman su valor de session_state por su clave, así que basta con escribirlo antes de crearlos.
+    Lo inválido no se copia: queda anotado en «enlace_avisos» para explicarlo al usuario.
+    """
+    if "enlace_leido" in st.session_state:
+        return
+    st.session_state["enlace_leido"] = True
+    parametros = {clave: st.query_params.get_all(clave) for clave in st.query_params}
+    estado, problemas, faltantes = leer_enlace(parametros, nodos, limites)
+    st.session_state.update(estado)
+    st.session_state["enlace_avisos"] = (problemas, faltantes)
+    st.session_state["panel_abierto"] = bool(problemas)  # fijo en la sesión: el panel no se cierra solo
+
+
+def descartar_avisos():
+    """Callback del botón «Continuar»: el usuario acepta la configuración que ve en el panel."""
+    st.session_state["enlace_avisos"] = ([], [])
+
+
+def actualizar_url(vista):
+    """v0.5.1 · Refleja los filtros actuales en la URL. Se llama después del panel, antes de los avisos de la vista.
+
+    Escribir st.query_params no provoca un rerun, y la URL solo se lee al abrir la sesión: no hay ciclos.
+    Si el enlace recibido tenía problemas, la vista se detiene aquí sin cifras (y sin tocar la URL original)
+    hasta que el usuario cambie un filtro o pulse «Continuar».
+    """
+    enlace = construir_enlace({clave: st.session_state.get(clave) for clave in PARAMETROS} | {"vista": vista})
+    problemas, faltantes = st.session_state.get("enlace_avisos", ([], []))
+    if problemas or faltantes:
+        if enlace != st.session_state.setdefault("enlace_inicial", enlace):
+            problemas, faltantes = [], []  # el usuario ya cambió un filtro: el aviso cumplió su función
+            descartar_avisos()
+    if problemas:
+        st.error("Este enlace no se puede abrir tal cual:\n\n" + "\n".join(f"- {p}" for p in problemas)
+                 + "\n\nNo se muestra ninguna cifra para no presentar un análisis distinto del compartido. "
+                 "Corrige los filtros en «Vista y filtros» o continúa con la configuración que se ve ahí.")
+        st.button("Continuar con la configuración mostrada", on_click=descartar_avisos)
+        st.stop()
+    if faltantes:
+        st.info(f"El enlace no indicaba: {', '.join(faltantes)}. Se usan los valores predeterminados que ves "
+                "en «Vista y filtros».")
+    actual = st.query_params.to_dict()
+    nuevo = {k: v for k, v in actual.items() if k not in PARAMETROS} | enlace  # conserva parámetros ajenos
+    if nuevo != actual:
+        st.query_params.from_dict(nuevo)
+
+
 def flecha(cambio):
     return "sube" if cambio > 0 else "baja" if cambio < 0 else "igual"
 
@@ -277,7 +328,10 @@ def fila(etiqueta, valor):
 
 def selector_nodo(nodos, etiqueta, key, defecto):
     """Selector con búsqueda por clave NodoP (H05). No hay nombres oficiales en el paquete público."""
-    return st.selectbox(etiqueta, nodos, index=nodos.index(defecto) if defecto in nodos else 0, key=key,
+    # v0.5.1: el valor inicial va en session_state, como las fechas, porque un enlace compartido puede haberlo
+    # escrito antes; con `index=` Streamlit avisaría de «valor por defecto y Session State a la vez».
+    st.session_state.setdefault(key, defecto if defecto in nodos else nodos[0])
+    return st.selectbox(etiqueta, nodos, key=key,
                         placeholder="Clave, p. ej. 06ESC", help=AYUDA_NODO)
 
 
@@ -290,6 +344,7 @@ def vista_1(limites, nodos, fechas_nodo, version, panel):
         primera, ultima = fechas_nodo.get(nodo, (None, None))
         if primera:
             st.caption(f"{nodo} tiene datos del {primera} al {ultima}.")
+    actualizar_url(st.session_state["vista"])
 
     if inicio > fin:
         st.error("La fecha 'Desde' debe ser anterior a 'Hasta'.")
@@ -404,6 +459,7 @@ def vista_2(limites, nodos, fechas_nodo, version, panel):
         for n in (nodo_a, nodo_b):
             if n in fechas_nodo:
                 st.caption(f"{n} tiene datos del {fechas_nodo[n][0]} al {fechas_nodo[n][1]}.")
+    actualizar_url(st.session_state["vista"])
 
     st.markdown("**Spread = PML_A − PML_B** (MXN/MWh). Positivo: A más caro que B. "
                 "Solo se comparan las horas en que los dos nodos tienen dato; después se agrega por día o mes.")
@@ -498,6 +554,7 @@ def vista_3(limites, nodos, fechas_nodo, version, panel):
         primera, ultima = fechas_nodo.get(nodo, (None, None))
         if primera:
             st.caption(f"{nodo} tiene datos del {primera} al {ultima}.")
+    actualizar_url(st.session_state["vista"])
 
     st.markdown("**PML = energía + pérdidas + congestión** (MXN/MWh). La energía es igual en todos los nodos a la "
                 "misma hora; pérdidas y congestión son lo propio del nodo y pueden ser negativas.")
@@ -618,7 +675,9 @@ if not nodos:
     st.stop()
 
 
-VISTAS = {"1. PML histórico": vista_1, "2. Comparar nodos (spread)": vista_2, "3. Componentes del PML": vista_3}
+VISTAS = {VISTAS_URL["historico"]: vista_1, VISTAS_URL["comparacion"]: vista_2, VISTAS_URL["componentes"]: vista_3}
+# v0.5.1: un enlace compartido elige vista y filtros antes de que se dibujen (ver enlaces.py).
+leer_url(nodos, limites)
 # H07: vista y filtros en un panel con texto visible dentro del contenido, cerrado al iniciar, en vez de la
 # barra lateral (en móvil quedaba sobre los resultados o como un icono sin texto). Cerrarlo no borra la selección.
 # v0.5: las vistas son una barra de pestañas visible arriba; nodo, fechas y resolución siguen en el panel.
@@ -628,12 +687,14 @@ with col_pestanas, st.container(key="pestanas"):
                      format_func=lambda v: v.split(". ", 1)[1])
 with col_rangos:
     botones_rango(limites)
-panel = st.expander("Vista y filtros", expanded=False)
+# Si el enlace trae problemas, el panel abre solo para corregirlos.
+panel = st.expander("Vista y filtros", expanded=st.session_state["panel_abierto"])
 # El contenido va en un contenedor creado antes que el pie: si una vista se detiene con st.stop()
 # (sin datos, fechas invertidas), metodología y fechas disponibles siguen visibles debajo.
 contenido = st.container()
 metodologia()
-st.caption(f"Fechas de operación disponibles: {limites['desde']} a {limites['hasta']} (diario); "
+st.caption(f"PML Explorer {VERSION_APP} · Datos: esquema v{metadata()['version_esquema']} · "
+           f"Fechas de operación disponibles: {limites['desde']} a {limites['hasta']} (diario); "
            f"{limites['horario_desde']} a {limites['horario_hasta']} (horario). "
            f"Actualización del paquete: {actualizado_cdmx(limites['generado_utc'])}, Ciudad de México.")
 with contenido:
