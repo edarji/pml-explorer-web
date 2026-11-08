@@ -2,7 +2,7 @@
 
 Contrato v1 fechado **2026-10-25**; ampliación v2 (componentes) del **2026-10-30**. Revisión de estado: **2026-11-01**.
 
-**Estado vigente:** el paquete publicado en `data/` es **esquema v2** desde el 2026-10-31 (commit `c62aa39` de `pml-bot`); antes, del 2026-10-26 al 2026-10-30, era v1. El lector acepta ambos. El número de esquema es independiente de la versión de la aplicación (v0.2 beta) y de la fecha del paquete, que se lee en `generado_utc`. Los ejemplos de metadata de este documento describen el formato y **no acreditan una entrega ni sus conteos**.
+**Estado vigente:** el paquete publicado en `data/` es **esquema v2** desde el 2026-10-31 (commit `c62aa39` de `pml-bot`); antes, del 2026-10-26 al 2026-10-30, era v1. El lector acepta ambos. El número de esquema es independiente de la versión de la aplicación (v0.5.1 beta) y de la fecha del paquete, que se lee en `generado_utc`. Los ejemplos de metadata de este documento describen el formato y **no acreditan una entrega ni sus conteos**.
 
 Fuente: **CENACE SW-PML, MDA, SIN**. Unidades: **MXN/MWh**. Parquet con compresión **zstd**, filas ordenadas por `nodo`.
 
