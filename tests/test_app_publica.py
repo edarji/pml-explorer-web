@@ -285,6 +285,20 @@ class EnlacesCompartibles(unittest.TestCase):
         self.assertIn("Actualización del paquete:", pie)
 
 
+class PestanasMovil(unittest.TestCase):
+    """v0.5.1: en pantallas angostas la barra de pestañas se parte en filas; ninguna vista queda fuera de la pantalla.
+
+    AppTest no dibuja CSS: esta prueba fija la regla. La comprobación visual (320 y 390 px) se hace en navegador.
+    """
+    def test_regla_de_pestanas_en_varias_filas(self):
+        import re
+        css = Path(APP).read_text(encoding="utf-8")
+        bloque = re.search(r"@media \(max-width:(\d+)px\)\{(.*?)\n\}", css, re.S)
+        self.assertIsNotNone(bloque, "Falta la regla móvil de las pestañas")
+        self.assertGreaterEqual(int(bloque.group(1)), 560)  # la barra mide ≈526 px en una fila
+        self.assertIn(".st-key-pestanas div[role=radiogroup]{flex-wrap:wrap", bloque.group(2))
+
+
 class Periodos(unittest.TestCase):
     def test_marcar_periodos(self):
         import pandas as pd
