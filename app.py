@@ -39,6 +39,13 @@ ESTILOS = """<style>
 .st-key-pestanas div[role=radiogroup] label p{font-size:1.02rem}
 .st-key-pestanas label[data-selected=true]{box-shadow:inset 0 -3px 0 #1B1B1B}
 .st-key-pestanas label[data-selected=true] p{font-weight:600}
+/* v0.5.1 · Móvil: las tres pestañas no caben en una fila (≈526 px) y «Componentes» quedaba fuera de la
+   pantalla. En pantallas angostas la barra pasa a dos filas en vez de desplazarse: todas siempre visibles. */
+@media (max-width:640px){
+.st-key-pestanas div[role=radiogroup]{flex-wrap:wrap;overflow-x:visible}
+.st-key-pestanas div[role=radiogroup] label{padding:.45rem .6rem .5rem}
+.st-key-pestanas div[role=radiogroup] label p{font-size:.92rem}
+}
 /* Botones de rango: pastillas pequeñas; la activa en gris oscuro. */
 .st-key-rangos button{min-height:2rem;padding:.1rem .85rem;border:1px solid #D9D2C5;background:#FFFFFF}
 .st-key-rangos button p{font-size:.85rem}
