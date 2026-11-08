@@ -46,6 +46,9 @@ ESTILOS = """<style>
 .st-key-pestanas div[role=radiogroup] label{padding:.45rem .6rem .5rem}
 .st-key-pestanas div[role=radiogroup] label p{font-size:.92rem}
 }
+/* v0.5.1 · Recuadro al pasar el mouse: pequeño para no tapar la gráfica. */
+#vg-tooltip-element{font-size:11px;padding:4px 7px}
+#vg-tooltip-element td.key{padding-right:6px}
 /* Botones de rango: pastillas pequeñas; la activa en gris oscuro. */
 .st-key-rangos button{min-height:2rem;padding:.1rem .85rem;border:1px solid #D9D2C5;background:#FFFFFF}
 .st-key-rangos button p{font-size:.85rem}
@@ -139,15 +142,40 @@ def mxn(valor):
     return "—" if pd.isna(valor) else f"{valor:,.2f}"
 
 
-def grafica(df, y, titulo_y, resolucion, color=None):
-    """Línea con puntos; los periodos parciales se marcan con ▼ y se explican en el tooltip."""
+def campos_recuadro(df, resolucion, nodo):
+    """Columnas de texto para el recuadro que aparece al pasar el mouse. No tocan los valores.
+
+    Convención de CENACE (hora final): el punto de las 00:00 es la hora 1, de 00:00 a 01:00.
+    """
+    df = df.copy()
+    df["nodo_txt"] = nodo
+    if resolucion == "horaria":
+        horas = pd.to_datetime(df["periodo"]).dt.hour
+        df["fecha_txt"] = pd.to_datetime(df["periodo"]).dt.strftime("%Y-%m-%d")
+        df["hora_txt"] = [f"{h + 1} ({h:02d}:00–{h + 1:02d}:00)" for h in horas]
+    else:
+        df["fecha_txt"] = df["etiqueta"]  # día, o mes con su nota de periodo parcial
+    return df
+
+
+def grafica(df, y, titulo_y, resolucion, color=None, nodo=""):
+    """Línea con puntos; los periodos parciales se marcan con ▼.
+
+    v0.5.1: al pasar el mouse cerca de la línea se marca el punto más cercano y aparece un recuadro pequeño
+    con nodo, valor, fecha y hora (horaria) u horas con dato (diaria y mensual).
+    """
+    df = campos_recuadro(df, resolucion, nodo)
+    recuadro = [alt.Tooltip("nodo_txt:N", title="Nodos" if " − " in nodo else "Nodo"),
+                alt.Tooltip("fecha_txt:N", title="Fecha")]
+    if resolucion == "horaria":
+        recuadro.append(alt.Tooltip("hora_txt:N", title="Hora"))
+    recuadro.append(alt.Tooltip(f"{y}:Q", title=titulo_y, format=",.2f"))
+    if resolucion != "horaria":
+        recuadro.append(alt.Tooltip("horas:Q", title="Horas con dato", format=","))
     base = alt.Chart(df).encode(
         x=alt.X("periodo:T", title=None, axis=alt.Axis(grid=False, domain=False, tickColor="#CFC8BB")),
         y=alt.Y(f"{y}:Q", title=None, scale=alt.Scale(zero=False),
                 axis=alt.Axis(orient="right", domain=False, ticks=False, gridColor="#E4DDD0", tickCount=5)),
-        tooltip=[alt.Tooltip("etiqueta:N", title="Periodo"),
-                 alt.Tooltip(f"{y}:Q", title=titulo_y, format=",.2f"),
-                 alt.Tooltip("horas:Q", title="Horas con dato", format=",")],
     )
     linea = base.mark_line(color=color or NARANJA, strokeWidth=1.8)
     capas = [linea]
@@ -159,6 +187,12 @@ def grafica(df, y, titulo_y, resolucion, color=None):
                             scale=alt.Scale(domain=[False, True], range=["circle", "triangle-down"]),
                             legend=alt.Legend(labelExpr="datum.value ? 'parcial' : 'completo'")),
         ))
+    # Punto más cercano al mouse: invisible hasta que se acerca el cursor, y lleva el recuadro.
+    cerca = alt.selection_point(on="pointerover", nearest=True, fields=["periodo"], empty=False,
+                                clear="pointerout")
+    capas.append(base.mark_point(size=70, filled=True, color=color or NARANJA, stroke="white", strokeWidth=1.5)
+                 .encode(opacity=alt.condition(cerca, alt.value(1), alt.value(0)), tooltip=recuadro)
+                 .add_params(cerca))
     st.altair_chart(alt.layer(*capas).properties(background="transparent")
                     .configure_view(stroke=None).configure(locale=LOCALE_ES),
                     width="stretch")
@@ -315,18 +349,32 @@ def cabecera(valor_del_dia, dia, limites, texto, porcentaje=True):
     return valor
 
 
-def grafica_series(df, columnas, colores):
-    """Varias curvas con el mismo estilo que `grafica` (eje derecho, sin rejilla vertical, fechas en español)."""
+def grafica_series(df, columnas, colores, resolucion, titulo_serie="Serie", nodo=None):
+    """Varias curvas con el mismo estilo que `grafica` (eje derecho, sin rejilla vertical, fechas en español).
+
+    v0.5.1: el mismo recuadro pequeño al pasar el mouse (punto más cercano de cada curva).
+    """
     largo = df.melt(id_vars=["periodo"], value_vars=columnas, var_name="serie", value_name="valor").dropna()
-    st.altair_chart(alt.Chart(largo).mark_line(strokeWidth=1.6).encode(
+    largo["etiqueta"] = pd.to_datetime(largo["periodo"]).dt.strftime("%Y-%m" if resolucion == "mensual" else "%Y-%m-%d")
+    largo = campos_recuadro(largo, resolucion, nodo or "")
+    recuadro = ([alt.Tooltip("nodo_txt:N", title="Nodo")] if nodo else []) + [
+        alt.Tooltip("serie:N", title=titulo_serie), alt.Tooltip("fecha_txt:N", title="Fecha")]
+    if resolucion == "horaria":
+        recuadro.append(alt.Tooltip("hora_txt:N", title="Hora"))
+    recuadro.append(alt.Tooltip("valor:Q", title="MXN/MWh", format=",.2f"))
+    base = alt.Chart(largo).encode(
         x=alt.X("periodo:T", title=None, axis=alt.Axis(grid=False, domain=False, tickColor="#CFC8BB")),
         y=alt.Y("valor:Q", title=None, scale=alt.Scale(zero=False),
                 axis=alt.Axis(orient="right", domain=False, ticks=False, gridColor="#E4DDD0", tickCount=5)),
         color=alt.Color("serie:N", title=None, sort=columnas, scale=alt.Scale(domain=columnas, range=colores),
                         legend=alt.Legend(orient="top-left", direction="horizontal")),
-        tooltip=[alt.Tooltip("periodo:T", title="Periodo"), alt.Tooltip("serie:N", title="Serie"),
-                 alt.Tooltip("valor:Q", title="MXN/MWh", format=",.2f")],
-    ).properties(background="transparent").configure_view(stroke=None).configure(locale=LOCALE_ES), width="stretch")
+    )
+    cerca = alt.selection_point(on="pointerover", nearest=True, fields=["periodo", "serie"], empty=False,
+                                clear="pointerout")
+    puntos = (base.mark_point(size=70, filled=True, stroke="white", strokeWidth=1.5)
+              .encode(opacity=alt.condition(cerca, alt.value(1), alt.value(0)), tooltip=recuadro).add_params(cerca))
+    st.altair_chart(alt.layer(base.mark_line(strokeWidth=1.6), puntos).properties(background="transparent")
+                    .configure_view(stroke=None).configure(locale=LOCALE_ES), width="stretch")
 
 
 def fila(etiqueta, valor):
@@ -403,7 +451,7 @@ def vista_1(limites, nodos, fechas_nodo, version, panel):
         izq, der = st.columns([3.2, 1], gap="large")
         with izq:
             st.markdown(f"**{titulo} (MXN/MWh)**")
-            grafica(df, "pml_promedio", "MXN/MWh", resolucion)
+            grafica(df, "pml_promedio", "PML (MXN/MWh)", resolucion, nodo=nodo)
         with der, st.container(key="ficha"):
             st.markdown(barra_rango("Rango horario del periodo", e["minimo"], e["maximo"], e["promedio"])
                         + (barra_rango(f"Rango del {hasta_obs}", dia["minimo"], dia["maximo"], dia["promedio"])
@@ -523,9 +571,9 @@ def vista_2(limites, nodos, fechas_nodo, version, panel):
         izq, der = st.columns([3.2, 1], gap="large")
         with izq:
             st.markdown("**Spread A − B (MXN/MWh)** · solo horas coincidentes")
-            grafica(d, "dif_promedio", "Spread A − B (MXN/MWh)", resolucion)
+            grafica(d, "dif_promedio", "Spread A − B (MXN/MWh)", resolucion, nodo=f"{nodo_a} − {nodo_b}")
             st.markdown("**PML de cada nodo (MXN/MWh)** · cada curva con todas sus horas con dato")
-            grafica_series(curvas, [nodo_a, nodo_b], [NARANJA, "#2F6FB0"])
+            grafica_series(curvas, [nodo_a, nodo_b], [NARANJA, "#2F6FB0"], resolucion, titulo_serie="Nodo")
         with der, st.container(key="ficha"):
             if pd.notna(r["minimo"]) and pd.notna(r["maximo"]):
                 st.markdown(barra_rango("Rango horario del spread", r["minimo"], r["maximo"], r["promedio"]),
@@ -630,7 +678,7 @@ def vista_3(limites, nodos, fechas_nodo, version, panel):
                 width="stretch")
             st.markdown("**Pérdidas y congestión (MXN/MWh)** · la parte propia del nodo, a su escala")
             grafica_series(df.rename(columns={"perdidas": "Pérdidas", "congestion": "Congestión"}),
-                           ["Pérdidas", "Congestión"], colores[1:])
+                           ["Pérdidas", "Congestión"], colores[1:], resolucion, titulo_serie="Componente", nodo=nodo)
         with der, st.container(key="ficha"):
             st.metric("PML promedio", mxn(r["pml"]))
             st.metric("Energía", mxn(r["energia"]))

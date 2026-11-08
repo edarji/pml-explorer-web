@@ -285,6 +285,46 @@ class EnlacesCompartibles(unittest.TestCase):
         self.assertIn("Actualización del paquete:", pie)
 
 
+@unittest.skipUnless((v.DATA_DIR / "metadata.json").is_file(), "Sin paquete público en data/")
+class RecuadroGrafica(unittest.TestCase):
+    """v0.5.1: al pasar el mouse, la gráfica muestra nodo, fecha, hora (CENACE, hora final) y valor."""
+
+    def specs(self, **parametros):
+        import json
+        from streamlit.testing.v1 import AppTest
+        app = AppTest.from_file(APP, default_timeout=120)
+        for clave, valor in parametros.items():
+            app.query_params[clave] = valor
+        app.run()
+        self.assertFalse(app.exception)
+        return [e.proto for e in app.get("vega_lite_chart")], app
+
+    def campos(self, proto):
+        """Títulos del recuadro (capa del punto más cercano) y los datos que recibe la gráfica."""
+        import json
+        import pyarrow as pa
+        spec = json.loads(proto.spec)
+        capa = next(c for c in spec["layer"] if "tooltip" in c.get("encoding", {}))
+        datos = pa.ipc.open_stream(proto.datasets[0].data.data).read_all().to_pandas()
+        return [t["title"] for t in capa["encoding"]["tooltip"]], datos
+
+    def test_horaria_muestra_nodo_fecha_hora_y_pml(self):
+        hasta = v.metadata()["diario_hasta"]
+        specs, _ = self.specs(vista="historico", nodo="01AGU-230", desde=hasta, hasta=hasta, resolucion="horaria")
+        titulos, datos = self.campos(specs[0])
+        self.assertEqual(titulos, ["Nodo", "Fecha", "Hora", "PML (MXN/MWh)"])
+        self.assertEqual(datos["hora_txt"].iloc[0], "1 (00:00–01:00)")  # el punto de las 00:00 es la hora 1
+        self.assertEqual(datos["nodo_txt"].iloc[0], "01AGU-230")
+
+    def test_spread_nombra_a_menos_b(self):
+        hasta = v.metadata()["diario_hasta"]
+        specs, _ = self.specs(vista="comparacion", nodo_a="01AGU-230", nodo_b="01AAN-85", desde=hasta, hasta=hasta,
+                              resolucion="diaria")
+        titulos, datos = self.campos(specs[0])
+        self.assertEqual(titulos, ["Nodos", "Fecha", "Spread A − B (MXN/MWh)", "Horas con dato"])
+        self.assertEqual(datos["nodo_txt"].iloc[0], "01AGU-230 − 01AAN-85")
+
+
 class PestanasMovil(unittest.TestCase):
     """v0.5.1: en pantallas angostas la barra de pestañas se parte en filas; ninguna vista queda fuera de la pantalla.
 

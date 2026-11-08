@@ -6,11 +6,11 @@ enableXsrfProtection = true
 [browser]
 gatherUsageStats = false
 
-# Tema visual claro tipo «ficha de mercado» (v0.5): fondo crema, texto casi negro, línea naranja,
+# Tema visual claro tipo «ficha de mercado» (v0.5; fondo blanco desde v0.5.1), texto casi negro, línea naranja,
 # verde/rojo solo para cambios. Sustituye al tema oscuro tipo terminal (ámbar sobre negro).
 [theme]
 base = "light"
-backgroundColor = "#FBF8F2"
+backgroundColor = "#FFFFFF"  # v0.5.1: fondo blanco alrededor de la app (antes crema #FBF8F2)
 secondaryBackgroundColor = "#F3EEE5"
 textColor = "#1B1B1B"
 primaryColor = "#E8772E"
