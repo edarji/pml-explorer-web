@@ -38,3 +38,8 @@ data/**
 !data/daily/[0-9][0-9][0-9][0-9]-[0-9][0-9].parquet
 !data/nodes.parquet
 !data/metadata.json
+
+# v0.6.0 · Catálogo de NodosP: datos de referencia publicados por PR (no por pml-bot).
+!referencia/
+!referencia/nodos_catalogo.parquet
+!referencia/nodos_catalogo.json
