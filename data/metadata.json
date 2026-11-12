@@ -1,13 +1,13 @@
 {
   "version_esquema": "2",
-  "generado_utc": "2026-11-05T05:00:02Z",
+  "generado_utc": "2026-11-12T21:16:07Z",
   "fuente": "CENACE SW-PML, MDA, SIN",
   "unidades": "MXN/MWh",
   "convencion_hora": "1-24 hora final",
-  "horario_desde": "2025-11-06",
-  "horario_hasta": "2026-11-05",
+  "horario_desde": "2025-11-13",
+  "horario_hasta": "2026-11-12",
   "diario_desde": "2023-01-01",
-  "diario_hasta": "2026-11-05",
+  "diario_hasta": "2026-11-12",
   "nodos": 2459,
   "archivos": {
     "daily/2023-01.parquet": {
@@ -195,36 +195,8 @@
       "sha256": "dfa0345ecd4510c88e6b659853e1472c68466b677dc6d777b03db782ce03365b"
     },
     "daily/2026-11.parquet": {
-      "filas": 12295,
-      "sha256": "1d8e1c61b9ee8ccf2f6dd5f7da56d3c5c72d94f53045db51e42f3f0efacedf44"
-    },
-    "hourly/2025-11-06.parquet": {
-      "filas": 58440,
-      "sha256": "00c50bbd187d280367a49a3611692d7f2f06024b362936366305babd32b57175"
-    },
-    "hourly/2025-11-07.parquet": {
-      "filas": 58440,
-      "sha256": "9ec631f901f76a611e46e896aff695897b344ed52bd0cb8f4f3e98f34aa4575d"
-    },
-    "hourly/2025-11-08.parquet": {
-      "filas": 58440,
-      "sha256": "b073694d6db8c5f37278ef7257fe04f5be3556e0b794b37a44957dce2ee34f84"
-    },
-    "hourly/2025-11-09.parquet": {
-      "filas": 58440,
-      "sha256": "628b0bbb588b924c21610a557d51d84107d7eb62150b45c96a256a7d6d13d24e"
-    },
-    "hourly/2025-11-10.parquet": {
-      "filas": 58440,
-      "sha256": "60db02d05c60ad838b0abeb2fad9142a7d8e8611b80bc42393aacf18d61749ff"
-    },
-    "hourly/2025-11-11.parquet": {
-      "filas": 58440,
-      "sha256": "bccc0b5343f2d9822bc77ce897f90b1f9bcb1981e699bd99dc4918f8ecefd1d3"
-    },
-    "hourly/2025-11-12.parquet": {
-      "filas": 58440,
-      "sha256": "6d8341a088ec2e09bd13f3c0b3b5c571c261c73ade163fae431820cdf7155f44"
+      "filas": 29508,
+      "sha256": "573a59d75187e532b46341e8747235b7ea2c5841fb4dae13c245b6987be9502e"
     },
     "hourly/2025-11-13.parquet": {
       "filas": 58440,
@@ -1658,9 +1630,37 @@
       "filas": 59016,
       "sha256": "6e02e9dc8bde9b91baaafbece1122c24416c425e0a9fa83f74b17c2925690992"
     },
+    "hourly/2026-11-06.parquet": {
+      "filas": 59016,
+      "sha256": "5c5ef0bf25394262a2bc0f12485ff8f7d8367764240ed455b3a8311a63704c23"
+    },
+    "hourly/2026-11-07.parquet": {
+      "filas": 59016,
+      "sha256": "da5ca7ce8eb9ae2ea907627261f3261bcb510413709466d2e0429de556fcaa4b"
+    },
+    "hourly/2026-11-08.parquet": {
+      "filas": 59016,
+      "sha256": "5c6e02ec057b9c055b57afc7f88de71c118ba6c61e5f810db688598a5104907c"
+    },
+    "hourly/2026-11-09.parquet": {
+      "filas": 59016,
+      "sha256": "bb505066c2b91862a22791c51b53fb1ef6153a09cf20ee999a3d0fc75f849798"
+    },
+    "hourly/2026-11-10.parquet": {
+      "filas": 59016,
+      "sha256": "350d818218d2dcf143e5550a0e33ec0c0d538c5f9eb554838c4450790eefbda8"
+    },
+    "hourly/2026-11-11.parquet": {
+      "filas": 59016,
+      "sha256": "9e247591298d772b82272255cfdc38f7f1ca48f3c5d280972e369beb00108a69"
+    },
+    "hourly/2026-11-12.parquet": {
+      "filas": 59016,
+      "sha256": "b1e28e75b56d6a72feb8f4ab0c26be091ab2dd624b01730098d181bec6d98105"
+    },
     "nodes.parquet": {
       "filas": 2459,
-      "sha256": "527cf9655dd3982817942c64ffd0fe6f3f1654d94dbc358bac65b81d28c77ca4"
+      "sha256": "ec72828cf29b3011e7c363ee92190403d9815398dc4318d7c3a134ecc8780f73"
     }
   }
 }
