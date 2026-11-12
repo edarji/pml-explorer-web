@@ -49,9 +49,9 @@ def validar(df, manifiesto):
             raise CatalogoInvalido(f"Falta «{campo}» en el manifiesto.")
 
 
-def cargar(directorio=REFERENCIA_DIR):
+def cargar(directorio=None):
     """Lee y valida el catálogo. Devuelve (DataFrame, manifiesto) o lanza CatalogoInvalido."""
-    directorio = Path(directorio)
+    directorio = Path(REFERENCIA_DIR if directorio is None else directorio)
     ruta, ruta_m = directorio / ARCHIVO, directorio / MANIFIESTO
     if not ruta.is_file() or not ruta_m.is_file():
         raise CatalogoInvalido("No hay catálogo de referencia publicado.")
