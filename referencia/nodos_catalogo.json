@@ -1,0 +1,28 @@
+{
+  "fuente": "CENACE · Catálogo de NodosP",
+  "pagina": "https://www.cenace.gob.mx/Paginas/SIM/NodosP.aspx",
+  "archivo_origen": "Catalogo_NodosP_SEN_v2026-10-23.xlsx",
+  "version_catalogo": "2026-10-23",
+  "sha256_origen": "6f0273a0d6ce3d8647c86fc86201deb348586198587ff5fb5a5b30e68402216c",
+  "sistema": "SIN",
+  "filas": 2459,
+  "sin_region": [
+    "05ASC-115",
+    "05DIA-115",
+    "06EAP-138",
+    "06LAA-138",
+    "06RRD-138",
+    "08BEL-115",
+    "09LBR-230"
+  ],
+  "reglas": [
+    "Solo sistema SIN",
+    "Espacios recortados y espacios dobles del nombre unidos",
+    "«No Aplica» convertido en vacío",
+    "Clave INEGI con 2 dígitos",
+    "Claves sin cambios; nombres sin corregir"
+  ],
+  "aviso": "La versión del catálogo no es la vigencia de cada NodoP (CENACE). La clasificación corresponde a esta versión y no se aplica hacia atrás.",
+  "sha256_parquet": "274e7475dc454b5684cbca8c069cb74fda40a895d6babe175b4e7ec61190259c",
+  "generado_utc": "2026-11-12T16:19:55Z"
+}

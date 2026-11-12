@@ -95,3 +95,19 @@ Al cargar una nueva versión, `inspeccionar_paquete` comprueba metadata v1/v2, i
 `scripts/validar_datos.py` añade comprobación de filas: orden por nodo, claves, fechas, horas, valores finitos, acumuladores, primeras/últimas observaciones y cuadre de horario contra diario en todo el solapamiento. Los hashes verifican consistencia con el manifiesto, no autentican por sí solos la procedencia oficial.
 
 Claude publica un paquete consistente, con metadata al final, en un único commit. Conserva exportación, revisión de seguridad, deploy key, commit/push y automatización. Work mantiene el visor. La prueba integral y la de paquete dañado se ejecutaron sobre la entrega real antes del primer despliegue ([informe](validation-delivery-2026-10-25.md)); se repiten cuando cambia el esquema.
+
+## Catálogo de NodosP (referencia, v0.6.0)
+
+El catálogo geográfico es **información de referencia**, separada del paquete de precios: vive en `referencia/`, no en `data/`, no aparece en `metadata.json` y no lo escribe pml-bot. Se publica por PR revisado.
+
+| Archivo | Contenido |
+| --- | --- |
+| `referencia/nodos_catalogo.parquet` | Una fila por NodoP del SIN: `nodo`, `nombre`, `region_control`, `zona_carga`, `tension_kv`, `estado_inegi`, `estado` |
+| `referencia/nodos_catalogo.json` | Procedencia: fuente, página, versión del catálogo, SHA-256 del Excel y del Parquet, filas, nodos sin región, reglas de limpieza |
+
+Se genera con `scripts/preparar_catalogo.py` a partir del Excel oficial de [CENACE](https://www.cenace.gob.mx/Paginas/SIM/NodosP.aspx), descargado a mano (la nube no puede entrar a cenace.gob.mx). El script requiere `openpyxl`, que la app no necesita. Reglas: solo SIN; espacios recortados; «No Aplica» → vacío; claves y nombres sin corregir.
+
+- La versión del catálogo **no es la vigencia** de cada NodoP (lo aclara CENACE). La clasificación corresponde a esa versión y no se aplica hacia atrás.
+- La app une la lista de nodos del paquete con el catálogo mediante un *left join* por clave: ningún nodo con precios desaparece. Sin fila o sin región = «sin clasificación verificada».
+- El catálogo nunca entra en un cálculo: las vistas reciben solo la clave elegida.
+- `catalogo.cargar()` valida columnas, claves únicas sin espacios, región y zona juntas, filas y SHA-256. Si falla, la app debe seguir funcionando solo con claves.
