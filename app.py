@@ -26,7 +26,7 @@ SITIO_MERCADOS = "https://edarji.net/mercados/"
 ZONA_MERCADO = ZoneInfo("America/Mexico_City")
 AYUDA_NODO = ("Escribe la clave NodoP (por ejemplo 06ESC) o parte del nombre oficial. La clave identifica "
               "el nodo; el nombre solo ayuda a encontrarlo y puede repetirse en varias claves.")
-SIN_RESULTADOS = ("¿Sin resultados? Prueba con la clave (por ejemplo 06ESC) o revisa Región y Zona. "
+SIN_RESULTADOS = ("¿Sin resultados? Prueba con la clave (por ejemplo 06ESC) o revisa Región, Estado y Zona. "
                   "Pulsa Esc o borra el texto para conservar el nodo elegido.")
 # v0.6.0 · Sin catálogo de referencia válido la app vuelve al comportamiento de v0.5.1: solo claves.
 AYUDA_SOLO_CLAVE = ("Escribe la clave NodoP o parte de ella, por ejemplo 06ESC. El catálogo de nombres y "
@@ -229,7 +229,7 @@ def metodologia():
 - **Rangos rápidos:** se anclan en la última fecha de operación del paquete (igual para todos los nodos). *Último día* = ese día; *Últimos 7 días* = ese día y los 6 anteriores; *Mes en curso* = del día 1 de ese mes hasta ese día, por eso el mes aparece como parcial (▼). Solo cambian «Desde» y «Hasta».
 - **Fechas:** “Desde/Hasta” son **fechas de operación** del mercado. “Actualización” es cuándo se generó el paquete público, no cuándo CENACE publicó cada día.
 - **Precisión:** precios con dos decimales; la desviación estándar es muestral.
-- **Nombres y ubicación (v0.6.0):** nombre oficial, Región de Control y Zona de carga vienen del [Catálogo de NodosP de CENACE](https://www.cenace.gob.mx/Paginas/SIM/NodosP.aspx), en la versión indicada al pie. CENACE aclara que la versión no es la vigencia de cada nodo: la clasificación corresponde a esa versión y no se aplica hacia atrás. Sirve para **localizar** nodos; no determina el nodo de liquidación de una instalación. Los nodos de interconexión internacional no tienen región ni zona («sin clasificación verificada»). Región y zona no intervienen en ningún cálculo.
+- **Nombres y ubicación (v0.6.0):** nombre oficial, Región de Control y Zona de carga vienen del [Catálogo de NodosP de CENACE](https://www.cenace.gob.mx/Paginas/SIM/NodosP.aspx), en la versión indicada al pie. CENACE aclara que la versión no es la vigencia de cada nodo: la clasificación corresponde a esa versión y no se aplica hacia atrás. Sirve para **localizar** nodos; no determina el nodo de liquidación de una instalación. El **estado** es la entidad federativa (clave INEGI) donde CENACE ubica cada nodo; se filtra nodo por nodo, porque una zona de carga puede abarcar varios estados, y no indica dónde está una instalación ni su nodo de liquidación. Los nodos de interconexión internacional no tienen región, zona ni estado («sin clasificación verificada»). Región, zona y estado no intervienen en ningún cálculo.
 
 Documento completo: [metodología]({REPO}/docs/methodology.md) · [contrato de datos]({REPO}/docs/data-contract.md).
 """)
@@ -410,33 +410,39 @@ def firma_catalogo():
 
 
 def limpiar_ubicacion(key):
-    """Callback de «Limpiar ubicación»: vuelve Región y Zona a «Todas» sin tocar el nodo elegido."""
-    st.session_state[f"{key}_region"] = TODAS
-    st.session_state[f"{key}_zona"] = TODAS
+    """Callback de «Limpiar ubicación»: vuelve Región, Estado y Zona a «Todas» sin tocar el nodo elegido."""
+    for filtro in ("region", "estado", "zona"):
+        st.session_state[f"{key}_{filtro}"] = TODAS
+
+
+def _elegir(etiqueta, opciones, clave):
+    """Selectbox de un filtro; si su valor anterior ya no existe con los otros filtros, vuelve a «Todas»."""
+    opciones = [TODAS] + opciones
+    if st.session_state.get(clave, TODAS) not in opciones:
+        st.session_state[clave] = TODAS
+    valor = st.selectbox(etiqueta, opciones, key=clave)
+    return None if valor == TODAS else valor
 
 
 def filtros_ubicacion(key, nodos, en_columnas):
-    """v0.6.0 · Región de Control y Zona de carga (catálogo CENACE) antes del selector de nodo.
+    """v0.6.0 · Región de Control, Estado y Zona de carga (catálogo CENACE) antes del selector de nodo.
 
     Solo acotan la lista de opciones. Nunca cambian el nodo elegido: si queda fuera del filtro se
     conserva al inicio de la lista con un aviso (decisión aprobada 2026-11-12). No van en la URL.
+    El estado es un filtro paralelo (fase 2, aprobado 2026-11-12): se aplica nodo por nodo, porque
+    una zona de carga puede abarcar varios estados.
     """
     union = UBICACION["union"]
-    kr, kz = f"{key}_region", f"{key}_zona"
-    regiones = [TODAS] + cat_nodos.regiones(union)
-    if st.session_state.get(kr, TODAS) not in regiones:
-        st.session_state[kr] = TODAS
-    c1, c2 = st.columns(2) if en_columnas else (st.container(), st.container())
+    c1, c2, c3 = st.columns(3) if en_columnas else (st.container(), st.container(), st.container())
     with c1:
-        region = st.selectbox("Región de Control", regiones, key=kr)
-    zonas = [TODAS] + cat_nodos.zonas(union, None if region == TODAS else region)
-    if st.session_state.get(kz, TODAS) not in zonas:  # la zona elegida no existe en la región nueva
-        st.session_state[kz] = TODAS
+        region = _elegir("Región de Control", cat_nodos.regiones(union), f"{key}_region")
     with c2:
-        zona = st.selectbox("Zona de carga", zonas, key=kz)
-    if region == TODAS and zona == TODAS:
+        estado = _elegir("Estado", cat_nodos.estados(union, region), f"{key}_estado")
+    with c3:
+        zona = _elegir("Zona de carga", cat_nodos.zonas(union, region, estado), f"{key}_zona")
+    if region is None and estado is None and zona is None:
         return nodos
-    filtrados = cat_nodos.filtrar(union, None if region == TODAS else region, None if zona == TODAS else zona)
+    filtrados = cat_nodos.filtrar(union, region, zona, estado)
     actual = st.session_state[key]
     if actual not in filtrados:
         st.caption(f"{actual} está fuera de este filtro; se conserva hasta que elijas otro nodo.")
@@ -446,11 +452,12 @@ def filtros_ubicacion(key, nodos, en_columnas):
 
 
 def ubicacion_de(nodo):
-    """Texto bajo el selector: región y zona del nodo, o «sin clasificación verificada»."""
+    """Texto bajo el selector: región, zona y estado del nodo, o «sin clasificación verificada»."""
     fila = UBICACION["union"].set_index("nodo").loc[nodo]
     if not fila["clasificado"]:
         return f"{nodo}: {cat_nodos.SIN_CLASIFICACION.lower()} en el catálogo CENACE; disponible por su clave."
-    return f"Región {fila['region_control'].title()} · Zona de carga {fila['zona_carga'].title()}"
+    texto = f"Región {fila['region_control'].title()} · Zona de carga {fila['zona_carga'].title()}"
+    return texto + (f" · {fila['estado'].title()}" if isinstance(fila["estado"], str) else "")
 
 
 def selector_nodo(nodos, etiqueta, key, defecto, en_columnas=True):

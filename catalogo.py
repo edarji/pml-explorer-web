@@ -88,21 +88,35 @@ def regiones(union):
     return sorted(union["region_control"].dropna().unique())
 
 
-def zonas(union, region=None):
-    """Zonas de carga de los nodos de una región (o de todas).
-
-    Se calcula desde los nodos y no con una tabla zona -> región: en CENACE una misma zona puede
-    tener nodos en dos regiones (CENTRO ORIENTE, v2026-10-23).
-    """
-    filas = union if region is None else union[union["region_control"] == region]
-    return sorted(filas["zona_carga"].dropna().unique())
-
-
-def filtrar(union, region=None, zona=None):
-    """Claves que cumplen los filtros; None en un filtro significa «Todas»."""
+def _acotar(union, region=None, estado=None):
     filas = union
     if region is not None:
         filas = filas[filas["region_control"] == region]
+    if estado is not None:
+        filas = filas[filas["estado"] == estado]
+    return filas
+
+
+def estados(union, region=None):
+    """Estados (INEGI, según CENACE) con nodos en la región elegida (o en todas).
+
+    El estado es un dato por nodo: una región o una zona de carga puede abarcar varios estados.
+    """
+    return sorted(_acotar(union, region)["estado"].dropna().unique())
+
+
+def zonas(union, region=None, estado=None):
+    """Zonas de carga de los nodos que cumplen región y estado (None = «Todas»).
+
+    Se calcula desde los nodos y no con una tabla zona -> región: en CENACE una misma zona puede
+    tener nodos en dos regiones (CENTRO ORIENTE, v2026-10-23) y en varios estados.
+    """
+    return sorted(_acotar(union, region, estado)["zona_carga"].dropna().unique())
+
+
+def filtrar(union, region=None, zona=None, estado=None):
+    """Claves que cumplen los filtros; None en un filtro significa «Todas»."""
+    filas = _acotar(union, region, estado)
     if zona is not None:
         filas = filas[filas["zona_carga"] == zona]
     return filas["nodo"].tolist()
