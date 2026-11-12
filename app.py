@@ -9,6 +9,8 @@ import duckdb
 import pandas as pd
 import streamlit as st
 
+import catalogo as cat_nodos
+
 from enlaces import PARAMETROS, VISTAS_URL, construir_enlace, leer_enlace
 from rangos import RANGOS_RAPIDOS, rango_rapido
 from vista2 import diferencial, resumen
@@ -17,15 +19,20 @@ from vista1 import (DATA_DIR, RESOLUCIONES, UMBRAL_DESCUADRE, DatosNoDisponibles
                     cobertura_horaria, estadisticas, huella_paquete,
                     inspeccionar_paquete, marcar_periodos, metadata, observado, serie)
 
-VERSION_APP = "v0.5.1 beta"  # versión de la aplicación; el esquema de datos y la fecha vienen del paquete
+VERSION_APP = "v0.6.0 beta"  # versión de la aplicación; el esquema de datos y la fecha vienen del paquete
 REPO = "https://github.com/edarji/pml-explorer-web/blob/main"
 COBERTURA_ESCASA = 80  # % de horas con dato bajo el cual se advierte explícitamente
 SITIO_MERCADOS = "https://edarji.net/mercados/"
 ZONA_MERCADO = ZoneInfo("America/Mexico_City")
-AYUDA_NODO = ("Escribe la clave NodoP o parte de ella, por ejemplo 06ESC. El paquete público "
-              "solo contiene claves: no incluye nombres de localidad ni regiones.")
-SIN_RESULTADOS = ("¿Sin resultados? Busca por clave, no por nombre (por ejemplo 06ESC, no Escobedo). "
+AYUDA_NODO = ("Escribe la clave NodoP (por ejemplo 06ESC) o parte del nombre oficial. La clave identifica "
+              "el nodo; el nombre solo ayuda a encontrarlo y puede repetirse en varias claves.")
+SIN_RESULTADOS = ("¿Sin resultados? Prueba con la clave (por ejemplo 06ESC) o revisa Región y Zona. "
                   "Pulsa Esc o borra el texto para conservar el nodo elegido.")
+# v0.6.0 · Sin catálogo de referencia válido la app vuelve al comportamiento de v0.5.1: solo claves.
+AYUDA_SOLO_CLAVE = ("Escribe la clave NodoP o parte de ella, por ejemplo 06ESC. El catálogo de nombres y "
+                    "ubicaciones no está disponible en esta publicación.")
+TODAS = "Todas"
+UBICACION = {}  # se llena al cargar el paquete: {"union": DataFrame, "nombres": dict, "manifiesto": dict}
 # H03: los st.caption de Streamlit 1.66 usan opacidad 0.6 (≈3.70:1 sobre blanco). Con 0.8 el texto
 # queda en ≈6.67:1 sobre blanco y ≈6.19:1 sobre gris claro, por debajo del texto principal (12.53:1).
 ESTILOS = """<style>
@@ -222,6 +229,7 @@ def metodologia():
 - **Rangos rápidos:** se anclan en la última fecha de operación del paquete (igual para todos los nodos). *Último día* = ese día; *Últimos 7 días* = ese día y los 6 anteriores; *Mes en curso* = del día 1 de ese mes hasta ese día, por eso el mes aparece como parcial (▼). Solo cambian «Desde» y «Hasta».
 - **Fechas:** “Desde/Hasta” son **fechas de operación** del mercado. “Actualización” es cuándo se generó el paquete público, no cuándo CENACE publicó cada día.
 - **Precisión:** precios con dos decimales; la desviación estándar es muestral.
+- **Nombres y ubicación (v0.6.0):** nombre oficial, Región de Control y Zona de carga vienen del [Catálogo de NodosP de CENACE](https://www.cenace.gob.mx/Paginas/SIM/NodosP.aspx), en la versión indicada al pie. CENACE aclara que la versión no es la vigencia de cada nodo: la clasificación corresponde a esa versión y no se aplica hacia atrás. Sirve para **localizar** nodos; no determina el nodo de liquidación de una instalación. Los nodos de interconexión internacional no tienen región ni zona («sin clasificación verificada»). Región y zona no intervienen en ningún cálculo.
 
 Documento completo: [metodología]({REPO}/docs/methodology.md) · [contrato de datos]({REPO}/docs/data-contract.md).
 """)
@@ -381,20 +389,93 @@ def fila(etiqueta, valor):
     return f'<div class="fila"><span>{etiqueta}</span><span>{valor}</span></div>'
 
 
-def selector_nodo(nodos, etiqueta, key, defecto):
-    """Selector con búsqueda por clave NodoP (H05). No hay nombres oficiales en el paquete público."""
+@st.cache_data(max_entries=2, show_spinner=False)
+def cargar_ubicacion(nodos, firma):
+    """v0.6.0 · Catálogo de referencia unido a la lista de nodos (left join: no se pierde ninguno).
+
+    `firma` (tamaño y fecha del archivo) solo sirve para que la caché se renueve si cambia el catálogo.
+    Devuelve {} si el catálogo falta o no pasa su validación: la app sigue funcionando solo con claves.
+    """
+    try:
+        df, manifiesto = cat_nodos.cargar()
+    except (cat_nodos.CatalogoInvalido, OSError, ValueError):
+        return {}
+    union = cat_nodos.unir(nodos, df)
+    return {"union": union, "nombres": dict(zip(union["nodo"], union["nombre"])), "manifiesto": manifiesto}
+
+
+def firma_catalogo():
+    ruta = cat_nodos.REFERENCIA_DIR / cat_nodos.ARCHIVO
+    return f"{ruta.stat().st_size}:{ruta.stat().st_mtime_ns}" if ruta.is_file() else ""
+
+
+def limpiar_ubicacion(key):
+    """Callback de «Limpiar ubicación»: vuelve Región y Zona a «Todas» sin tocar el nodo elegido."""
+    st.session_state[f"{key}_region"] = TODAS
+    st.session_state[f"{key}_zona"] = TODAS
+
+
+def filtros_ubicacion(key, nodos, en_columnas):
+    """v0.6.0 · Región de Control y Zona de carga (catálogo CENACE) antes del selector de nodo.
+
+    Solo acotan la lista de opciones. Nunca cambian el nodo elegido: si queda fuera del filtro se
+    conserva al inicio de la lista con un aviso (decisión aprobada 2026-11-12). No van en la URL.
+    """
+    union = UBICACION["union"]
+    kr, kz = f"{key}_region", f"{key}_zona"
+    regiones = [TODAS] + cat_nodos.regiones(union)
+    if st.session_state.get(kr, TODAS) not in regiones:
+        st.session_state[kr] = TODAS
+    c1, c2 = st.columns(2) if en_columnas else (st.container(), st.container())
+    with c1:
+        region = st.selectbox("Región de Control", regiones, key=kr)
+    zonas = [TODAS] + cat_nodos.zonas(union, None if region == TODAS else region)
+    if st.session_state.get(kz, TODAS) not in zonas:  # la zona elegida no existe en la región nueva
+        st.session_state[kz] = TODAS
+    with c2:
+        zona = st.selectbox("Zona de carga", zonas, key=kz)
+    if region == TODAS and zona == TODAS:
+        return nodos
+    filtrados = cat_nodos.filtrar(union, None if region == TODAS else region, None if zona == TODAS else zona)
+    actual = st.session_state[key]
+    if actual not in filtrados:
+        st.caption(f"{actual} está fuera de este filtro; se conserva hasta que elijas otro nodo.")
+        filtrados = [actual] + filtrados
+    st.button("Limpiar ubicación", key=f"{key}_limpiar", on_click=limpiar_ubicacion, args=(key,))
+    return filtrados
+
+
+def ubicacion_de(nodo):
+    """Texto bajo el selector: región y zona del nodo, o «sin clasificación verificada»."""
+    fila = UBICACION["union"].set_index("nodo").loc[nodo]
+    if not fila["clasificado"]:
+        return f"{nodo}: {cat_nodos.SIN_CLASIFICACION.lower()} en el catálogo CENACE; disponible por su clave."
+    return f"Región {fila['region_control'].title()} · Zona de carga {fila['zona_carga'].title()}"
+
+
+def selector_nodo(nodos, etiqueta, key, defecto, en_columnas=True):
+    """Selector de NodoP: búsqueda directa por clave o nombre y, si hay catálogo, filtros de ubicación.
+
+    El valor del widget es siempre la clave (la URL y los cálculos no cambian); el nombre solo se muestra.
+    """
     # v0.5.1: el valor inicial va en session_state, como las fechas, porque un enlace compartido puede haberlo
     # escrito antes; con `index=` Streamlit avisaría de «valor por defecto y Session State a la vez».
     st.session_state.setdefault(key, defecto if defecto in nodos else nodos[0])
-    return st.selectbox(etiqueta, nodos, key=key,
-                        placeholder="Clave, p. ej. 06ESC", help=AYUDA_NODO)
+    if not UBICACION:
+        return st.selectbox(etiqueta, nodos, key=key, placeholder="Clave, p. ej. 06ESC", help=AYUDA_SOLO_CLAVE)
+    opciones = filtros_ubicacion(key, nodos, en_columnas)
+    nombres = UBICACION["nombres"]
+    nodo = st.selectbox(etiqueta, opciones, key=key, format_func=lambda n: cat_nodos.etiqueta(n, nombres),
+                        placeholder="Clave o nombre, p. ej. 06ESC", help=AYUDA_NODO)
+    st.caption(ubicacion_de(nodo))
+    return nodo
 
 
 def vista_1(limites, nodos, fechas_nodo, version, panel):
     """Vista 1: PML histórico de un nodo."""
     with panel:
         st.caption(SIN_RESULTADOS)  # encima: la lista «No results» de Streamlit taparía un texto inferior
-        nodo = selector_nodo(nodos, "Buscar por clave de nodo", "nodo", "01AAN-85")
+        nodo = selector_nodo(nodos, "Nodo · clave o nombre", "nodo", "01AAN-85")
         inicio, fin, resolucion = controles_rango(limites)
         primera, ultima = fechas_nodo.get(nodo, (None, None))
         if primera:
@@ -507,9 +588,9 @@ def vista_2(limites, nodos, fechas_nodo, version, panel):
         st.caption(SIN_RESULTADOS)
         ca, cb = st.columns(2)
         with ca:
-            nodo_a = selector_nodo(nodos, "Nodo A · buscar por clave", "nodo_a", "01AAN-85")
+            nodo_a = selector_nodo(nodos, "Nodo A · clave o nombre", "nodo_a", "01AAN-85", en_columnas=False)
         with cb:
-            nodo_b = selector_nodo(nodos, "Nodo B · buscar por clave", "nodo_b", defecto_b)
+            nodo_b = selector_nodo(nodos, "Nodo B · clave o nombre", "nodo_b", defecto_b, en_columnas=False)
         inicio, fin, resolucion = controles_rango(limites)
         for n in (nodo_a, nodo_b):
             if n in fechas_nodo:
@@ -604,7 +685,7 @@ def vista_3(limites, nodos, fechas_nodo, version, panel):
     """Vista 3: PML descompuesto en energía, pérdidas y congestión, con su signo."""
     with panel:
         st.caption(SIN_RESULTADOS)  # encima: la lista «No results» de Streamlit taparía un texto inferior
-        nodo = selector_nodo(nodos, "Buscar por clave de nodo", "nodo", "01AAN-85")
+        nodo = selector_nodo(nodos, "Nodo · clave o nombre", "nodo", "01AAN-85")
         inicio, fin, resolucion = controles_rango(limites)
         primera, ultima = fechas_nodo.get(nodo, (None, None))
         if primera:
@@ -728,6 +809,7 @@ except (DatosNoDisponibles, duckdb.Error):
 if not nodos:
     st.warning("El paquete público no contiene nodos con datos.")
     st.stop()
+UBICACION.update(cargar_ubicacion(tuple(nodos), firma_catalogo()))
 
 
 VISTAS = {VISTAS_URL["historico"]: vista_1, VISTAS_URL["comparacion"]: vista_2, VISTAS_URL["componentes"]: vista_3}
@@ -751,6 +833,8 @@ metodologia()
 st.caption(f"PML Explorer {VERSION_APP} · Datos: esquema v{metadata()['version_esquema']} · "
            f"Fechas de operación disponibles: {limites['desde']} a {limites['hasta']} (diario); "
            f"{limites['horario_desde']} a {limites['horario_hasta']} (horario). "
-           f"Actualización del paquete: {actualizado_cdmx(limites['generado_utc'])}, Ciudad de México.")
+           f"Actualización del paquete: {actualizado_cdmx(limites['generado_utc'])}, Ciudad de México."
+           + (f" · Nombres y ubicación: Catálogo de NodosP de CENACE, versión "
+              f"{UBICACION['manifiesto']['version_catalogo']}." if UBICACION else ""))
 with contenido:
     VISTAS[vista](limites, nodos, fechas_nodo, version, panel)

@@ -91,15 +91,16 @@ class AuditoriaUxV03(unittest.TestCase):
         self.assertFalse(panel.proto.expanded)
         # v0.5: la vista se elige en la barra de pestañas; el panel conserva nodo, fechas y resolución.
         self.assertEqual(app.radio(key="vista").value, "1. PML histórico")
-        self.assertEqual(panel.selectbox(key="nodo").label, "Buscar por clave de nodo")
+        self.assertEqual(panel.selectbox(key="nodo").label, "Nodo · clave o nombre")
 
     def test_busqueda_por_clave_con_ayuda(self):
         app = self.abrir()
-        self.assertEqual(app.selectbox(key="nodo").label, "Buscar por clave de nodo")
-        self.assertIn("no incluye nombres", app.selectbox(key="nodo").help)
-        self.assertIn("Busca por clave, no por nombre", " ".join(c.value for c in app.caption))
+        # v0.6.0: la búsqueda directa acepta clave o nombre oficial; el valor sigue siendo la clave.
+        self.assertEqual(app.selectbox(key="nodo").label, "Nodo · clave o nombre")
+        self.assertIn("La clave identifica el nodo", app.selectbox(key="nodo").help)
+        self.assertIn("Prueba con la clave", " ".join(c.value for c in app.caption))
         app2 = self.abrir("2. Comparar nodos (spread)")
-        self.assertTrue(app2.selectbox(key="nodo_a").label.startswith("Nodo A · buscar por clave"))
+        self.assertTrue(app2.selectbox(key="nodo_a").label.startswith("Nodo A · clave o nombre"))
 
     def test_fechas_por_defecto_en_el_dia_de_la_consulta(self):
         from datetime import datetime
@@ -281,7 +282,7 @@ class EnlacesCompartibles(unittest.TestCase):
     def test_version_esquema_y_fecha_separados(self):  # AC-12
         app = self.abrir()
         pie = " ".join(c.value for c in app.caption)
-        self.assertIn(f"PML Explorer v0.5.1 beta · Datos: esquema v{self.esquema}", pie)
+        self.assertIn(f"PML Explorer v0.6.0 beta · Datos: esquema v{self.esquema}", pie)
         self.assertIn("Actualización del paquete:", pie)
 
 
