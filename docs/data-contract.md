@@ -102,7 +102,7 @@ El catálogo geográfico es **información de referencia**, separada del paquete
 
 | Archivo | Contenido |
 | --- | --- |
-| `referencia/nodos_catalogo.parquet` | Una fila por NodoP del SIN: `nodo`, `nombre`, `region_control`, `zona_carga`, `tension_kv`, `estado_inegi`, `estado` |
+| `referencia/nodos_catalogo.parquet` | Una fila por NodoP del SIN: `nodo`, `nombre`, `region_control`, `zona_carga`, `tension_kv`, `estado_inegi`, `estado` (entidad federativa INEGI donde CENACE ubica el nodo; filtro paralelo desde v0.6.0) |
 | `referencia/nodos_catalogo.json` | Procedencia: fuente, página, versión del catálogo, SHA-256 del Excel y del Parquet, filas, nodos sin región, reglas de limpieza |
 
 Se genera con `scripts/preparar_catalogo.py` a partir del Excel oficial de [CENACE](https://www.cenace.gob.mx/Paginas/SIM/NodosP.aspx), descargado a mano (la nube no puede entrar a cenace.gob.mx). El script requiere `openpyxl`, que la app no necesita. Reglas: solo SIN; espacios recortados; «No Aplica» → vacío; claves y nombres sin corregir.

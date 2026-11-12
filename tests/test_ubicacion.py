@@ -39,7 +39,7 @@ class Ubicacion(unittest.TestCase):
         self.assertEqual(nodo.value, "01AAN-85")  # el valor es la clave
         self.assertEqual(len(nodo.options), len(v.catalogo()))
         self.assertIn("01AAN-85 · Actopan", nodo.options)
-        self.assertIn("Región Central · Zona de carga Centro Oriente", self.textos(app))
+        self.assertIn("Región Central · Zona de carga Centro Oriente · Hidalgo", self.textos(app))
         self.assertIn("Catálogo de NodosP de CENACE, versión 2026-10-23", self.textos(app))
 
     def test_region_y_zona_acotan_y_conservan_el_nodo(self):
@@ -66,6 +66,24 @@ class Ubicacion(unittest.TestCase):
         self.assertEqual(app.selectbox(key="nodo_region").value, "Todas")
         self.assertEqual(app.selectbox(key="nodo").value, "01AAN-85")
 
+    def test_estado_acota_zonas_y_nodos(self):
+        """Fase 2: Estado es paralelo; la zona Saltillo tiene nodos en Coahuila y Nuevo León."""
+        app = self.abrir()
+        app.selectbox(key="nodo_estado").set_value("NUEVO LEON").run()
+        zonas = app.selectbox(key="nodo_zona").options
+        self.assertIn("SALTILLO", zonas)
+        self.assertNotIn("GUADALAJARA", zonas)
+        app.selectbox(key="nodo_zona").set_value("SALTILLO").run()
+        con_estado = len(app.selectbox(key="nodo").options) - 1  # menos el nodo conservado
+        app.selectbox(key="nodo_estado").set_value("Todas").run()
+        sin_estado = len(app.selectbox(key="nodo").options) - 1
+        self.assertLess(con_estado, sin_estado)
+        app.selectbox(key="nodo_region").set_value("OCCIDENTAL").run()
+        self.assertEqual(app.selectbox(key="nodo_zona").value, "Todas")  # Saltillo no está en Occidental
+        app.button(key="nodo_limpiar").click().run()
+        self.assertEqual(app.selectbox(key="nodo_estado").value, "Todas")
+        self.assertFalse(app.exception)
+
     def test_nodo_internacional_sin_clasificacion(self):
         app = self.abrir()
         app.selectbox(key="nodo").set_value("09LBR-230").run()
@@ -77,7 +95,8 @@ class Ubicacion(unittest.TestCase):
         app = self.abrir()
         app.selectbox(key="nodo_region").set_value("NORESTE").run()
         self.assertEqual(app.query_params["nodo"], "01AAN-85")
-        self.assertFalse(any("region" in k or "zona" in k for k in app.query_params))
+        app.selectbox(key="nodo_estado").set_value("NUEVO LEON").run()
+        self.assertFalse(any(f in k for k in app.query_params for f in ("region", "zona", "estado")))
 
     def test_comparar_regiones_distintas(self):
         """AC-08: Nodo A y Nodo B tienen filtros independientes."""

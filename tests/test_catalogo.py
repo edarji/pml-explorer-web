@@ -76,6 +76,18 @@ class Reglas(unittest.TestCase):
         self.assertEqual(cat.filtrar(u, None, "CENTRO ORIENTE"), ["01AAA-85", "02BBB-85"])
         self.assertEqual(len(cat.filtrar(u)), 4)  # «Todas» incluye los sin clasificación
 
+    def test_estado_es_filtro_por_nodo(self):
+        """Fase 2: el estado se aplica nodo por nodo; una zona puede abarcar varios estados."""
+        df = EJEMPLO.copy()
+        df.loc[1, ["estado_inegi", "estado"]] = ["21", "PUEBLA"]  # misma zona que 01AAA-85, otro estado
+        u = cat.unir(df["nodo"], df)
+        self.assertEqual(cat.estados(u), ["NUEVO LEON", "PUEBLA"])
+        self.assertEqual(cat.estados(u, "CENTRAL"), ["NUEVO LEON"])
+        self.assertEqual(cat.zonas(u, None, "PUEBLA"), ["CENTRO ORIENTE"])
+        self.assertEqual(cat.filtrar(u, zona="CENTRO ORIENTE"), ["01AAA-85", "02BBB-85"])
+        self.assertEqual(cat.filtrar(u, zona="CENTRO ORIENTE", estado="PUEBLA"), ["02BBB-85"])
+        self.assertNotIn("09ZZZ-230", cat.filtrar(u, estado="NUEVO LEON"))  # internacional: sin estado
+
     def test_etiqueta(self):
         nombres = {"01AAA-85": "Alfa"}
         self.assertEqual(cat.etiqueta("01AAA-85", nombres), "01AAA-85 · Alfa")
