@@ -111,3 +111,14 @@ Se genera con `scripts/preparar_catalogo.py` a partir del Excel oficial de [CENA
 - La app une la lista de nodos del paquete con el catálogo mediante un *left join* por clave: ningún nodo con precios desaparece. Sin fila o sin región = «sin clasificación verificada».
 - El catálogo nunca entra en un cálculo: las vistas reciben solo la clave elegida.
 - `catalogo.cargar()` valida columnas, claves únicas sin espacios, región y zona juntas, filas y SHA-256. Si falla, la app debe seguir funcionando solo con claves.
+
+### Ciclo de actualización (v0.6.1)
+
+Se automatiza la **detección y la validación**, no la aprobación.
+
+1. **Revisión semanal** (`scripts/revisar_catalogo.py`, lunes 08:15 en el Mac mini, desde un clon de solo lectura y sin credenciales). Detecta en tres niveles: versión en el nombre del archivo más reciente de la página de CENACE, SHA-256 del Excel y huella del contenido limpio (`catalogo_diferencias.huella_contenido`).
+2. **Validación y comparación** con el catálogo aprobado en `referencia/` y con `data/nodes.parquet`. Bloquean la propuesta: formato o contrato inválido, versión de la hoja distinta a la del archivo, un nodo con precios que sale del catálogo, un nodo clasificado que pasa a «No Aplica», un internacional que recibe región o estado, y más de 2 % de nodos con región, zona o estado distinto. Son advertencias: altas, bajas o reclasificaciones que «Control de Cambios» no menciona, y cambios de nombre o tensión.
+3. **Propuesta**: si nada bloquea, escribe `~/catalogo-nodosp/pendiente/` (Parquet, manifiesto e `informe.md`) y `PENDIENTE_DE_REVISION.txt`. Nada sale del Mac mini.
+4. **Aprobación humana**: Lalo revisa el informe; los archivos se suben a una rama `catalogo/vAAAA-MM-DD` y se publican por PR, que se fusiona solo con su aprobación expresa.
+
+`--simular RUTA.xlsx` corre todo sin internet con un Excel local; también es el respaldo manual si la página de CENACE cambia. Resultados: `sin_cambios`, `archivo_distinto_mismo_contenido`, `propuesta`, `bloqueado`, `error`.

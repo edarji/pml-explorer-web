@@ -14,6 +14,10 @@ Qué hace, en orden:
 7. Solo con --escribir: guarda referencia/nodos_catalogo.parquet y su manifiesto .json.
 
 No descarga nada de internet, no toca data/ y no corrige claves. Sale con código 1 si algo falla.
+
+v0.6.1: las funciones lanzan cat.CatalogoInvalido en vez de terminar el programa, para que
+scripts/revisar_catalogo.py (la revisión semanal en el Mac mini) las reutilice y registre el motivo.
+El uso manual no cambia.
 """
 import argparse
 import hashlib
@@ -48,21 +52,25 @@ def version_de(nombre_hoja, archivo):
     """Versión del catálogo: sale del nombre de la hoja («... V20261023») y se coteja con el archivo."""
     m = re.search(r"V(\d{4})(\d{2})(\d{2})\s*$", nombre_hoja)
     if not m:
-        raise SystemExit(f"No encuentro la versión en el nombre de la hoja: «{nombre_hoja}».")
+        raise cat.CatalogoInvalido(f"No encuentro la versión en el nombre de la hoja: «{nombre_hoja}».")
     version = "-".join(m.groups())
     en_archivo = re.search(r"v(\d{4}-\d{2}-\d{2})", archivo.name)
     if en_archivo and en_archivo.group(1) != version:
-        raise SystemExit(f"La hoja dice {version} y el archivo dice {en_archivo.group(1)}.")
+        raise cat.CatalogoInvalido(f"La hoja dice {version} y el archivo dice {en_archivo.group(1)}.")
     return version
 
 
 def leer_excel(ruta):
-    hojas = pd.ExcelFile(ruta)
+    try:
+        hojas = pd.ExcelFile(ruta)
+    except Exception as e:  # p. ej. una página de error HTML guardada como .xlsx
+        raise cat.CatalogoInvalido(f"El archivo no es un Excel legible: {e}") from e
     hoja = hojas.sheet_names[0]
     crudo = pd.read_excel(ruta, sheet_name=hoja, header=1, dtype=str)
     faltan = [c for c in ORIGEN if c not in crudo.columns]
     if faltan:
-        raise SystemExit(f"El Excel no trae las columnas esperadas {faltan}. ¿Cambió el formato de CENACE?")
+        raise cat.CatalogoInvalido(f"El Excel no trae las columnas esperadas {faltan}. "
+                                   "¿Cambió el formato de CENACE?")
     return crudo[list(ORIGEN)].rename(columns=ORIGEN), version_de(hoja, ruta), len(crudo)
 
 
@@ -84,7 +92,7 @@ def revisar_tension(df):
     sufijo = pd.to_numeric(df["nodo"].str.extract(r"-(\d+(?:\.\d+)?)$")[0], errors="coerce")
     malas = df[sufijo.notna() & (sufijo != df["tension_kv"])]
     if len(malas):
-        raise SystemExit(f"Tensión distinta del sufijo de la clave en {malas['nodo'].tolist()[:5]}.")
+        raise cat.CatalogoInvalido(f"Tensión distinta del sufijo de la clave en {malas['nodo'].tolist()[:5]}.")
 
 
 def comparar_con_paquete(df, ruta_nodos):
@@ -122,26 +130,26 @@ def comparar_con_anterior(df, directorio):
             print(f"  ... y {len(cambios) - 10} cambios más de {campo}")
 
 
-def main(argv=None):
-    p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    p.add_argument("excel", type=Path, help="Archivo .xlsx descargado de CENACE")
-    p.add_argument("--nodos", type=Path, default=RAIZ / "data" / "nodes.parquet")
-    p.add_argument("--salida", type=Path, default=cat.REFERENCIA_DIR)
-    p.add_argument("--escribir", action="store_true", help="Escribe referencia/ si todo pasa")
-    args = p.parse_args(argv)
+def construir(ruta_excel):
+    """Lee, limpia y valida un Excel de CENACE. Devuelve (df, manifiesto, filas_excel, conteo_sistemas).
 
-    crudo, version, filas_excel = leer_excel(args.excel)
-    print(f"Catálogo CENACE v{version}: {filas_excel:,} filas en el Excel "
-          f"({', '.join(f'{k} {v:,}' for k, v in crudo['sistema'].value_counts().items())})")
-    df = limpiar(crudo[crudo["sistema"].str.strip() == "SIN"]).drop(columns="sistema")
+    Lanza cat.CatalogoInvalido con el motivo si algo no cumple el contrato. No escribe nada.
+    """
+    ruta_excel = Path(ruta_excel)
+    crudo, version, filas_excel = leer_excel(ruta_excel)
+    sistemas = crudo["sistema"].str.strip().value_counts().to_dict()
+    try:
+        df = limpiar(crudo[crudo["sistema"].str.strip() == "SIN"]).drop(columns="sistema")
+    except ValueError as e:  # tensión no numérica
+        raise cat.CatalogoInvalido(f"Tensión no numérica: {e}") from e
     df = df.sort_values("nodo").reset_index(drop=True)[list(cat.COLUMNAS)]
     revisar_tension(df)
     manifiesto = {
         "fuente": "CENACE · Catálogo de NodosP",
         "pagina": PAGINA,
-        "archivo_origen": args.excel.name,
+        "archivo_origen": ruta_excel.name,
         "version_catalogo": version,
-        "sha256_origen": hashlib.sha256(args.excel.read_bytes()).hexdigest(),
+        "sha256_origen": hashlib.sha256(ruta_excel.read_bytes()).hexdigest(),
         "sistema": "SIN",
         "filas": len(df),
         "sin_region": sorted(df.loc[df["region_control"].isna(), "nodo"]),
@@ -151,10 +159,39 @@ def main(argv=None):
         "aviso": "La versión del catálogo no es la vigencia de cada NodoP (CENACE). La clasificación "
                  "corresponde a esta versión y no se aplica hacia atrás.",
     }
+    cat.validar(df, manifiesto)
+    return df, manifiesto, filas_excel, sistemas
+
+
+def escribir(df, manifiesto, salida):
+    """Escribe el Parquet y su manifiesto en `salida` y los relee con la misma validación de la app."""
+    salida = Path(salida)
+    salida.mkdir(parents=True, exist_ok=True)
+    ruta = salida / cat.ARCHIVO
+    df.to_parquet(ruta, compression="zstd", index=False)
+    manifiesto = dict(manifiesto)
+    manifiesto["sha256_parquet"] = hashlib.sha256(ruta.read_bytes()).hexdigest()
+    manifiesto["generado_utc"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    (salida / cat.MANIFIESTO).write_text(json.dumps(manifiesto, ensure_ascii=False, indent=2) + "\n",
+                                         encoding="utf-8")
+    cat.cargar(salida)  # relectura: lo escrito debe pasar la misma validación que usará la app
+    return ruta
+
+
+def main(argv=None):
+    p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    p.add_argument("excel", type=Path, help="Archivo .xlsx descargado de CENACE")
+    p.add_argument("--nodos", type=Path, default=RAIZ / "data" / "nodes.parquet")
+    p.add_argument("--salida", type=Path, default=cat.REFERENCIA_DIR)
+    p.add_argument("--escribir", action="store_true", help="Escribe referencia/ si todo pasa")
+    args = p.parse_args(argv)
+
     try:
-        cat.validar(df, manifiesto)
+        df, manifiesto, filas_excel, sistemas = construir(args.excel)
     except cat.CatalogoInvalido as e:
         raise SystemExit(f"Catálogo inválido: {e}")
+    print(f"Catálogo CENACE v{manifiesto['version_catalogo']}: {filas_excel:,} filas en el Excel "
+          f"({', '.join(f'{k} {v:,}' for k, v in sistemas.items())})")
     print(f"SIN: {len(df):,} nodos, {df['region_control'].nunique()} regiones, "
           f"{df['zona_carga'].nunique()} zonas, {df['estado'].nunique()} estados; "
           f"{len(manifiesto['sin_region'])} sin región: {manifiesto['sin_region']}")
@@ -164,14 +201,7 @@ def main(argv=None):
     if not args.escribir:
         print("Solo revisión: no se escribió nada. Repite con --escribir para guardar referencia/.")
         return
-    args.salida.mkdir(exist_ok=True)
-    ruta = args.salida / cat.ARCHIVO
-    df.to_parquet(ruta, compression="zstd", index=False)
-    manifiesto["sha256_parquet"] = hashlib.sha256(ruta.read_bytes()).hexdigest()
-    manifiesto["generado_utc"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    (args.salida / cat.MANIFIESTO).write_text(json.dumps(manifiesto, ensure_ascii=False, indent=2) + "\n",
-                                              encoding="utf-8")
-    cat.cargar(args.salida)  # relectura: lo escrito debe pasar la misma validación que usará la app
+    ruta = escribir(df, manifiesto, args.salida)
     print(f"Escrito {ruta} ({ruta.stat().st_size:,} bytes) y {cat.MANIFIESTO}.")
 
 
