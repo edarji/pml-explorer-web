@@ -338,15 +338,17 @@ def descarga_csv(vista_url, tabla, nodos_csv, inicio, fin, resolucion):
     """v0.6.2 · «Descargar CSV» y el enlace de la consulta, debajo de la tarjeta de cada vista.
 
     `tabla` sale de los DataFrames que la vista ya dibujó (exportar.tabla_*), así que el archivo trae los
-    mismos valores sin consultas nuevas. El CSV se arma solo al pulsar (`data` es una función) y la
-    descarga no vuelve a ejecutar la página (`on_click="ignore"`): pestaña, filtros y URL no cambian.
+    mismos valores sin consultas nuevas. El CSV se entrega ya armado (bytes): con `data` como función
+    Streamlit Cloud respondía «Failed to generate file for download» (v0.6.2, 2026-11-13); armarlo cuesta
+    milisegundos y pocos cientos de KB. La descarga no vuelve a ejecutar la página (`on_click="ignore"`):
+    pestaña, filtros y URL no cambian.
     Solo se llama cuando la vista ya mostró resultados; una vista sin datos se detiene antes.
     """
     nombre = exportar.nombre_archivo(vista_url, nodos_csv, inicio, fin, resolucion)
     enlace = construir_enlace({clave: st.session_state.get(clave) for clave in PARAMETROS}
                               | {"vista": st.session_state["vista"]})
     with st.container(key="descarga", horizontal=True, vertical_alignment="center", gap="small"):
-        st.download_button("Descargar CSV", data=lambda: exportar.a_csv(tabla), file_name=nombre,
+        st.download_button("Descargar CSV", data=exportar.a_csv(tabla), file_name=nombre,
                            mime="text/csv", on_click="ignore", icon=":material/download:", key=f"csv_{vista_url}",
                            help="Los datos de esta gráfica: fecha, hora (si es horaria), nodo y precios en MXN/MWh.")
         with st.popover("Enlace de esta consulta"):
