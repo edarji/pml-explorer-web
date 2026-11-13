@@ -10,7 +10,12 @@ from vista1 import RESOLUCIONES, _archivos, _consulta, _rango, cobertura_horaria
 
 
 def diferencial(nodo_a, nodo_b, inicio, fin, resolucion, data_dir=DATA_DIR):
-    """Spread A − B promedio por periodo y horas coincidentes de cada periodo."""
+    """Spread A − B promedio por periodo y horas coincidentes de cada periodo.
+
+    v0.6.2: también PML A y PML B promediados sobre esas mismas horas coincidentes (`pml_a`, `pml_b`),
+    para que el CSV permita reconstruir el spread. `dif_promedio` no cambia: se sigue calculando hora por
+    hora y redondeando al final, por eso `pml_a − pml_b` puede diferir de él en ±0.01.
+    """
     inicio, fin = _rango(inicio, fin)
     unidad = RESOLUCIONES[resolucion]
     if not cobertura_horaria(inicio, fin, data_dir):
@@ -20,7 +25,9 @@ def diferencial(nodo_a, nodo_b, inicio, fin, resolucion, data_dir=DATA_DIR):
             WITH d AS (SELECT * FROM read_parquet(?) WHERE fecha BETWEEN ? AND ?)
             SELECT date_trunc('{unidad}', a.fecha) AS periodo,
                    ROUND(SUM(a.suma_pml - b.suma_pml) / SUM(a.horas_validas), 2) AS dif_promedio,
-                   SUM(a.horas_validas)::BIGINT AS horas
+                   SUM(a.horas_validas)::BIGINT AS horas,
+                   ROUND(SUM(a.suma_pml) / SUM(a.horas_validas), 2) AS pml_a,
+                   ROUND(SUM(b.suma_pml) / SUM(b.horas_validas), 2) AS pml_b
             FROM d a JOIN d b ON a.fecha = b.fecha
             WHERE a.nodo = ? AND b.nodo = ? AND a.horas_validas = 24 AND b.horas_validas = 24
             GROUP BY periodo ORDER BY periodo
@@ -28,7 +35,9 @@ def diferencial(nodo_a, nodo_b, inicio, fin, resolucion, data_dir=DATA_DIR):
     consulta = f"""
     SELECT date_trunc('{unidad}', a.fecha + to_hours(a.hora - 1)) AS periodo,
            ROUND(AVG(a.pml - b.pml), 2) AS dif_promedio,
-           COUNT(*) AS horas
+           COUNT(*) AS horas,
+           ROUND(AVG(a.pml), 2) AS pml_a,
+           ROUND(AVG(b.pml), 2) AS pml_b
     FROM read_parquet(?) a
     JOIN read_parquet(?) b
       ON a.fecha = b.fecha AND a.hora = b.hora

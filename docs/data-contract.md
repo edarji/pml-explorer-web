@@ -122,3 +122,7 @@ Se automatiza la **detección y la validación**, no la aprobación.
 4. **Aprobación humana**: Lalo revisa el informe; los archivos se suben a una rama `catalogo/vAAAA-MM-DD` y se publican por PR, que se fusiona solo con su aprobación expresa.
 
 `--simular RUTA.xlsx` corre todo sin internet con un Excel local; también es el respaldo manual si la página de CENACE cambia. Resultados: `sin_cambios`, `archivo_distinto_mismo_contenido`, `propuesta`, `bloqueado`, `error`.
+
+## Exportación CSV (v0.6.2)
+
+El CSV que descarga la aplicación es un derivado de este contrato, no forma parte del paquete `data/`: se arma en el navegador del usuario a partir de los resultados ya calculados (`exportar.py`) y nunca se escribe en el repositorio. Columnas y reglas: [metodología](methodology.md#exportación-csv-v062).
