@@ -1,10 +1,10 @@
 # Metodología — PML Explorer
 
-Documento revisado: **2026-11-05**. Describe el comportamiento de la aplicación pública vigente. La fecha de este documento no es un corte de precios.
+Documento revisado: **2026-11-13**. Describe el comportamiento de la aplicación pública vigente. La fecha de este documento no es un corte de precios.
 
 | Concepto | Valor vigente | Dónde se comprueba |
 | --- | --- | --- |
-| Versión de la aplicación | **v0.6.0 beta**: vista 1 (PML histórico), vista 2 (spread entre nodos) y vista 3 (componentes), con enlaces compartibles y selector por ubicación | Pie de la aplicación («PML Explorer v0.6.0 beta · Datos: esquema v2 · …») |
+| Versión de la aplicación | **v0.6.2 beta**: vista 1 (PML histórico), vista 2 (spread entre nodos) y vista 3 (componentes), con enlaces compartibles, selector por ubicación y descarga CSV | Pie de la aplicación («PML Explorer v0.6.2 beta · Datos: esquema v2 · …») |
 | Esquema de datos | **v2** (v1 + componentes del PML), publicado por `pml-bot` desde el 2026-10-31 (commit `c62aa39`) | `version_esquema` en `data/metadata.json`; [contrato de datos](data-contract.md) |
 | Fecha del paquete | Cambia cada noche; no la fija este documento | «Actualización del paquete» en el pie de la aplicación (`generado_utc` convertido a Ciudad de México) |
 
@@ -74,6 +74,18 @@ PML = energía + pérdidas + congestión, con los signos publicados por CENACE (
 - **Recuadro de la gráfica (v0.5.1):** al pasar el mouse (o tocar en móvil) se marca el punto más cercano y un recuadro pequeño muestra nodo (o «A − B» en el spread), fecha, hora en convención CENACE —la hora 1 es 00:00–01:00— solo en resolución horaria, el valor en MXN/MWh y, en diaria o mensual, las horas con dato. Solo muestra valores ya calculados.
 - **Pestañas en móvil (v0.5.1):** en pantallas de 640 px o menos la barra de pestañas ocupa dos filas, para que las tres vistas estén siempre visibles sin desplazarse.
 - **Mensajes de control:** fechas invertidas, resolución horaria fuera de la ventana y rangos sin datos muestran un aviso y ninguna cifra sustitutiva.
+
+## Exportación CSV (v0.6.2)
+
+Cada vista tiene «Descargar CSV» debajo de la gráfica. El archivo contiene **la serie que dibuja la gráfica**, en la resolución elegida, con los mismos valores que la aplicación: no se recalcula nada ni se añade detalle horario a una consulta diaria o mensual. Los indicadores de la ficha (mediana, percentiles, extremos) no se exportan porque se calculan sobre horas aunque la gráfica sea diaria o mensual.
+
+- **Formato:** coma como separador, punto decimal, UTF-8 con BOM, una fila de encabezados en `snake_case`. Se abre directamente con `pandas.read_csv`. En Excel con configuración regional de México se abre con doble clic; con una región que usa coma decimal (por ejemplo España), Excel espera `;` y conviene usar Datos → Desde texto/CSV.
+- **Tiempo:** horaria = `fecha_operacion` + `hora_cenace` (1–24, hora final); diaria = `fecha_operacion`; mensual = `mes`, `fecha_desde`, `fecha_hasta` (parte del mes dentro de la consulta). Diaria y mensual añaden `horas_con_dato` (vista 2: `horas_comunes`), `horas_posibles` y `periodo_parcial`.
+- **Valores:** vista 1 `nodo`, `pml`; vista 2 `nodo_a`, `nodo_b`, `pml_a`, `pml_b`, `spread_a_menos_b`; vista 3 `nodo`, `pml`, `energia`, `perdidas`, `congestion`, `descuadre_promedio` (con signo, 4 decimales). En la vista 2, `pml_a` y `pml_b` se promedian sobre las **mismas horas comunes** que el spread (no son las curvas de la gráfica, que usan todas las horas de cada nodo); como el spread se redondea después de restar, `pml_a − pml_b` puede diferir de él en ±0.01.
+- **Faltantes:** un periodo sin dato no tiene fila; una celda vacía significa sin valor, nunca cero.
+- **Contexto:** columnas constantes `vista`, `resolucion`, `consulta_desde`, `consulta_hasta`, `observado_desde`, `observado_hasta`, `cobertura_consulta_pct`, `unidad`, `fuente`, `mercado`, `sistema`, `paquete_generado_utc` (cuándo se generó el paquete, no una fecha de operación), `esquema_datos` y `version_app`. La URL no va en el archivo: sus parámetros son esas columnas, y junto al botón está «Enlace de esta consulta» para copiarla.
+- **Nombre:** `pml_<historico|spread|componentes>_<nodos>_<desde>[_<hasta>]_<resolucion>.csv` con las fechas de la consulta.
+- Un texto que Excel leería como fórmula (empieza con `= + - @`) se guarda precedido de `'`; los números negativos no se tocan.
 
 ## Trazabilidad y límites
 

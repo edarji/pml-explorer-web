@@ -2,6 +2,7 @@
 import base64
 from datetime import datetime, timedelta
 from pathlib import Path
+from urllib.parse import urlencode
 from zoneinfo import ZoneInfo
 
 import altair as alt
@@ -10,6 +11,7 @@ import pandas as pd
 import streamlit as st
 
 import catalogo as cat_nodos
+import exportar
 
 from enlaces import PARAMETROS, VISTAS_URL, construir_enlace, leer_enlace
 from rangos import RANGOS_RAPIDOS, rango_rapido
@@ -19,10 +21,11 @@ from vista1 import (DATA_DIR, RESOLUCIONES, UMBRAL_DESCUADRE, DatosNoDisponibles
                     cobertura_horaria, estadisticas, huella_paquete,
                     inspeccionar_paquete, marcar_periodos, metadata, observado, serie)
 
-VERSION_APP = "v0.6.0 beta"  # versión de la aplicación; el esquema de datos y la fecha vienen del paquete
+VERSION_APP = "v0.6.2 beta"  # versión de la aplicación; el esquema de datos y la fecha vienen del paquete
 REPO = "https://github.com/edarji/pml-explorer-web/blob/main"
 COBERTURA_ESCASA = 80  # % de horas con dato bajo el cual se advierte explícitamente
 SITIO_MERCADOS = "https://edarji.net/mercados/"
+URL_APP = "https://pml-explorer.streamlit.app/"  # base del enlace copiable junto a «Descargar CSV»
 ZONA_MERCADO = ZoneInfo("America/Mexico_City")
 AYUDA_NODO = ("Escribe la clave NodoP (por ejemplo 06ESC) o parte del nombre oficial. La clave identifica "
               "el nodo; el nombre solo ayuda a encontrarlo y puede repetirse en varias claves.")
@@ -52,6 +55,11 @@ ESTILOS = """<style>
 .st-key-pestanas div[role=radiogroup]{flex-wrap:wrap;overflow-x:visible}
 .st-key-pestanas div[role=radiogroup] label{padding:.45rem .6rem .5rem}
 .st-key-pestanas div[role=radiogroup] label p{font-size:.92rem}
+}
+/* v0.6.2 · Descarga: en pantallas angostas el botón y el enlace ocupan todo el ancho, uno bajo otro. */
+@media (max-width:640px){
+.st-key-descarga{flex-direction:column;align-items:stretch}
+.st-key-descarga button{width:100%}
 }
 /* v0.5.1 · Recuadro al pasar el mouse: pequeño para no tapar la gráfica. */
 #vg-tooltip-element{font-size:11px;padding:4px 7px}
@@ -229,6 +237,7 @@ def metodologia():
 - **Rangos rápidos:** se anclan en la última fecha de operación del paquete (igual para todos los nodos). *Último día* = ese día; *Últimos 7 días* = ese día y los 6 anteriores; *Mes en curso* = del día 1 de ese mes hasta ese día, por eso el mes aparece como parcial (▼). Solo cambian «Desde» y «Hasta».
 - **Fechas:** “Desde/Hasta” son **fechas de operación** del mercado. “Actualización” es cuándo se generó el paquete público, no cuándo CENACE publicó cada día.
 - **Precisión:** precios con dos decimales; la desviación estándar es muestral.
+- **Descargar CSV (v0.6.2):** la serie de la gráfica en la resolución elegida, con los mismos valores, unidad, fuente, periodo y versión en columnas. Coma como separador y punto decimal; una celda vacía no es cero. En la vista 2, PML A y PML B se promedian sobre las mismas horas comunes que el spread.
 - **Nombres y ubicación (v0.6.0):** nombre oficial, Región de Control y Zona de carga vienen del [Catálogo de NodosP de CENACE](https://www.cenace.gob.mx/Paginas/SIM/NodosP.aspx), en la versión indicada al pie. CENACE aclara que la versión no es la vigencia de cada nodo: la clasificación corresponde a esa versión y no se aplica hacia atrás. Sirve para **localizar** nodos; no determina el nodo de liquidación de una instalación. El **estado** es la entidad federativa (clave INEGI) donde CENACE ubica cada nodo; se filtra nodo por nodo, porque una zona de carga puede abarcar varios estados, y no indica dónde está una instalación ni su nodo de liquidación. Los nodos de interconexión internacional no tienen región, zona ni estado («sin clasificación verificada»). Región, zona y estado no intervienen en ningún cálculo.
 
 Documento completo: [metodología]({REPO}/docs/methodology.md) · [contrato de datos]({REPO}/docs/data-contract.md).
@@ -323,6 +332,30 @@ def actualizar_url(vista):
     nuevo = {k: v for k, v in actual.items() if k not in PARAMETROS} | enlace  # conserva parámetros ajenos
     if nuevo != actual:
         st.query_params.from_dict(nuevo)
+
+
+def descarga_csv(vista_url, tabla, nodos_csv, inicio, fin, resolucion, observado, cobertura_pct):
+    """v0.6.2 · «Descargar CSV» y el enlace de la consulta, debajo de la tarjeta de cada vista.
+
+    `tabla` sale de los DataFrames que la vista ya dibujó (exportar.tabla_*), así que el archivo trae los
+    mismos valores sin consultas nuevas. El CSV se arma solo al pulsar (`data` es una función) y la
+    descarga no vuelve a ejecutar la página (`on_click="ignore"`): pestaña, filtros y URL no cambian.
+    Solo se llama cuando la vista ya mostró resultados; una vista sin datos se detiene antes.
+    """
+    meta = exportar.metadatos(vista_url, resolucion, inicio, fin, observado[0], observado[1], cobertura_pct,
+                              metadata(), VERSION_APP)
+    nombre = exportar.nombre_archivo(vista_url, nodos_csv, inicio, fin, resolucion)
+    enlace = construir_enlace({clave: st.session_state.get(clave) for clave in PARAMETROS}
+                              | {"vista": st.session_state["vista"]})
+    with st.container(key="descarga", horizontal=True, vertical_alignment="center", gap="small"):
+        st.download_button("Descargar CSV", data=lambda: exportar.a_csv(tabla, meta), file_name=nombre,
+                           mime="text/csv", on_click="ignore", icon=":material/download:", key=f"csv_{vista_url}",
+                           help="Los datos de esta gráfica con su contexto: unidad, fuente, periodo y versión.")
+        with st.popover("Enlace de esta consulta"):
+            st.code(URL_APP + "?" + urlencode(enlace), language=None, wrap_lines=True)
+            st.caption("Copia el enlace con el botón de la esquina. Abre esta misma vista con estos filtros.")
+    st.caption(f"{nombre} · resolución {resolucion}, {len(tabla):,} filas · coma como separador, punto decimal, "
+               "UTF-8. Un periodo sin dato no tiene fila; una celda vacía no es cero.")
 
 
 def flecha(cambio):
@@ -556,6 +589,8 @@ def vista_1(limites, nodos, fechas_nodo, version, panel):
                         + fila("Percentil 10", mxn(e["p10"]) if horario_completo else "—")
                         + fila("Percentil 90", mxn(e["p90"]) if horario_completo else "—")
                         + fila("Cobertura", f"{e['cobertura_pct']}%"), unsafe_allow_html=True)
+    descarga_csv("historico", exportar.tabla_historico(df, nodo, resolucion), [nodo], inicio, fin, resolucion,
+                 (desde_obs, hasta_obs), e["cobertura_pct"])
     st.caption(f"Indicadores calculados sobre las {con_dato:,} horas con dato, en MXN/MWh"
                + ("." if resolucion == "horaria" else f", aunque la gráfica sea {resolucion}."))
     if not horario_completo:
@@ -674,6 +709,8 @@ def vista_2(limites, nodos, fechas_nodo, version, panel):
             st.metric("Horas con A más caro", "—" if pd.isna(r["pct_a_mas_caro"]) else f"{r['pct_a_mas_caro']}%")
             st.markdown(fila("Horas coincidentes", f"{comunes:,}") + fila("Cobertura común", f"{r['cobertura_pct']}%")
                         + fila("Días excluidos", f"{int(r['dias_no_comparables'] or 0):,}"), unsafe_allow_html=True)
+    descarga_csv("comparacion", exportar.tabla_spread(d, nodo_a, nodo_b, resolucion), [nodo_a, nodo_b], inicio, fin,
+                 resolucion, (desde_obs, hasta_obs), r["cobertura_pct"])
     if not horario_completo:
         st.caption("Fuera de la ventana horaria el spread se calcula con los días en que ambos nodos tienen las 24 horas. "
                    f"Mediana, mínimo, máximo y % de horas con A más caro requieren el rango entre "
@@ -777,6 +814,8 @@ def vista_3(limites, nodos, fechas_nodo, version, panel):
             st.metric("Descuadre máximo", f"{r['descuadre_max']:,.4f}",
                       help="Máximo de |PML − (energía + pérdidas + congestión)| en una hora. Viene del redondeo de CENACE.")
             st.markdown(fila("Cobertura", f"{r['cobertura_pct']}%"), unsafe_allow_html=True)
+    descarga_csv("componentes", exportar.tabla_componentes(df, nodo, resolucion), [nodo], inicio, fin, resolucion,
+                 (r["primera_fecha"].date(), hasta_obs), r["cobertura_pct"])
     st.caption(f"Promedios horarios simples sobre las mismas {con_dato:,} horas para el PML y cada componente."
                + ("" if r["horas_descuadre"] > 0 else f" Ninguna hora con descuadre mayor a {UMBRAL_DESCUADRE} MXN/MWh."))
     avisos_parciales(df, resolucion)
