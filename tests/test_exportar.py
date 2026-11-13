@@ -13,10 +13,6 @@ import vista1 as v
 import vista2 as v2
 import vista3 as v3
 
-PAQUETE = {"fuente": "CENACE SW-PML, MDA, SIN", "unidades": "MXN/MWh", "generado_utc": "2026-11-13T05:00:04Z",
-           "version_esquema": "2"}
-META = x.metadatos("historico", "diaria", date(2026, 11, 1), date(2026, 11, 3), date(2026, 11, 1),
-                   date(2026, 11, 2), 66.7, PAQUETE, "v0.6.2 beta")
 HAY_DATOS = (v.DATA_DIR / "metadata.json").is_file()
 
 
@@ -42,70 +38,69 @@ class FuncionesPuras(unittest.TestCase):
         self.assertEqual(list(x.tabla_historico(horaria, "06ESC-115", "horaria").columns),
                          ["fecha_operacion", "hora_cenace", "nodo", "pml"])
         self.assertEqual(list(x.tabla_historico(diaria, "06ESC-115", "diaria").columns),
-                         ["fecha_operacion", "nodo", "pml", "horas_con_dato", "horas_posibles", "periodo_parcial"])
+                         ["fecha_operacion", "nodo", "pml"])
         t = x.tabla_historico(mensual, "06ESC-115", "mensual")
-        self.assertEqual(list(t.columns), ["mes", "fecha_desde", "fecha_hasta", "nodo", "pml", "horas_con_dato",
-                                           "horas_posibles", "periodo_parcial"])
-        self.assertEqual(t.iloc[0][["mes", "fecha_desde", "fecha_hasta", "periodo_parcial"]].tolist(),
-                         ["2026-10", "2026-10-15", "2026-10-31", "true"])
+        self.assertEqual(list(t.columns), ["mes", "nodo", "pml"])
+        self.assertEqual(t["mes"].tolist(), ["2026-10", "2026-11"])
+
+    def test_columnas_spread_y_componentes(self):
+        d = serie_falsa("horaria", date(2026, 11, 1), date(2026, 11, 1), [("2026-11-01 00:00", -5.0, 1)])
+        d = d.rename(columns={"pml_promedio": "dif_promedio"}).assign(pml_a=100.0, pml_b=105.0)
+        self.assertEqual(list(x.tabla_spread(d, "A", "B", "horaria").columns),
+                         ["fecha_operacion", "hora_cenace", "nodo_a", "nodo_b", "pml_a", "pml_b", "spread_a_menos_b"])
+        c = d.assign(pml=1.0, energia=1.0, perdidas=0.5, congestion=-0.5, descuadre=0.0)
+        self.assertEqual(list(x.tabla_componentes(c, "N", "horaria").columns),
+                         ["fecha_operacion", "hora_cenace", "nodo", "pml", "energia", "perdidas", "congestion",
+                          "descuadre_promedio"])
 
     def test_hora_cenace_es_hora_final(self):
         df = serie_falsa("horaria", date(2026, 11, 1), date(2026, 11, 1),
                          [("2026-11-01 00:00", 1.0, 1), ("2026-11-01 23:00", 2.0, 1)])
         self.assertEqual(x.tabla_historico(df, "N", "horaria")["hora_cenace"].tolist(), [1, 24])
 
-    def test_parcial_por_horas_faltantes(self):
-        df = serie_falsa("diaria", date(2026, 11, 1), date(2026, 11, 2),
-                         [("2026-11-01", 500.0, 24), ("2026-11-02", 480.0, 20)])
-        t = leer(x.a_csv(x.tabla_historico(df, "N", "diaria"), META))
-        self.assertEqual(t["horas_con_dato"].tolist(), [24, 20])
-        self.assertEqual(t["periodo_parcial"].tolist(), [False, True])
-
     def test_vacio_no_es_cero(self):
         tabla = pd.DataFrame({"fecha_operacion": ["2026-11-01", "2026-11-02"], "pml": [0.0, float("nan")]})
-        texto = x.a_csv(tabla, META).decode("utf-8-sig").splitlines()
-        self.assertTrue(texto[1].startswith("2026-11-01,0.0,"))
-        self.assertTrue(texto[2].startswith("2026-11-02,,"))
-        leido = leer(x.a_csv(tabla, META))
+        texto = x.a_csv(tabla).decode("utf-8-sig").splitlines()
+        self.assertEqual(texto[1:], ["2026-11-01,0.0", "2026-11-02,"])
+        leido = leer(x.a_csv(tabla))
         self.assertEqual(leido["pml"].iloc[0], 0.0)
         self.assertTrue(pd.isna(leido["pml"].iloc[1]))
 
     def test_negativos_siguen_siendo_numeros(self):
         tabla = pd.DataFrame({"nodo": ["06ESC-115"], "congestion": [-105.88], "descuadre_promedio": [-0.0006]})
-        leido = leer(x.a_csv(tabla, META))
+        leido = leer(x.a_csv(tabla))
         self.assertEqual(leido["congestion"].iloc[0], -105.88)
         self.assertEqual(leido["descuadre_promedio"].iloc[0], -0.0006)
 
+    def test_cero_negativo_se_escribe_cero(self):
+        texto = x.a_csv(pd.DataFrame({"descuadre_promedio": [-0.0, -0.0001]})).decode("utf-8-sig")
+        self.assertEqual(texto.splitlines()[1:], ["0.0", "-0.0001"])
+
     def test_texto_con_formula_se_neutraliza(self):
         tabla = pd.DataFrame({"nodo": ["=HYPERLINK(1)", "-1+2", "@SUM", "08CHB-34.5"], "pml": [1.0, -2.0, 3.0, 4.0]})
-        leido = leer(x.a_csv(tabla, META))
+        leido = leer(x.a_csv(tabla))
         self.assertEqual(leido["nodo"].tolist(), ["'=HYPERLINK(1)", "'-1+2", "'@SUM", "08CHB-34.5"])
         self.assertEqual(leido["pml"].tolist(), [1.0, -2.0, 3.0, 4.0])
 
     def test_bom_y_viaje_redondo_exacto(self):
         tabla = pd.DataFrame({"fecha_operacion": ["2026-11-01"] * 3, "pml": [691.86, 1234.5, -0.01]})
-        contenido = x.a_csv(tabla, META)
+        contenido = x.a_csv(tabla)
         self.assertTrue(contenido.startswith(b"\xef\xbb\xbf"))
         self.assertNotIn(b"\r", contenido)
         leido = leer(contenido)
         self.assertEqual(leido.columns[0], "fecha_operacion")
         self.assertEqual(leido["pml"].tolist(), [691.86, 1234.5, -0.01])
 
-    def test_metadatos_y_procedencia(self):
-        leido = leer(x.a_csv(pd.DataFrame({"pml": [1.0]}), META))
-        self.assertEqual(list(leido.columns)[1:], list(META))
-        fila = leido.iloc[0]
-        self.assertEqual((fila["fuente"], fila["mercado"], fila["sistema"], fila["unidad"]),
-                         ("CENACE SW-PML", "MDA", "SIN", "MXN/MWh"))
-        self.assertEqual(fila["paquete_generado_utc"], "2026-11-13T05:00:04Z")
-        self.assertEqual((fila["consulta_desde"], fila["observado_hasta"]), ("2026-11-01", "2026-11-02"))
-        texto = x.a_csv(pd.DataFrame({"pml": [1.0]}), META).decode("utf-8-sig")
+    def test_sin_columnas_de_contexto_ni_datos_privados(self):
+        tabla = pd.DataFrame({"fecha_operacion": ["2026-11-01"], "nodo": ["06ESC-115"], "pml": [1.0]})
+        texto = x.a_csv(tabla).decode("utf-8-sig")
+        self.assertEqual(texto.splitlines()[0], "fecha_operacion,nodo,pml")
         for privado in ("/Users", "/home", "edarji@", "macmini"):
             self.assertNotIn(privado, texto)
 
     def test_sin_filas_no_genera_archivo(self):
         with self.assertRaises(x.SinDatosExportables):
-            x.a_csv(pd.DataFrame({"pml": []}), META)
+            x.a_csv(pd.DataFrame({"pml": []}))
 
     def test_nombre_de_archivo(self):
         self.assertEqual(x.nombre_archivo("historico", ["06ESC-115"], date(2026, 11, 1), date(2026, 11, 13), "diaria"),
@@ -142,12 +137,10 @@ class ContraLosCalculos(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         m = v.metadata()
-        cls.paquete = m
         cls.hd, cls.hh = date.fromisoformat(m["horario_desde"]), date.fromisoformat(m["horario_hasta"])
 
     def csv(self, tabla):
-        meta = x.metadatos("historico", "diaria", self.hd, self.hh, self.hd, self.hh, 100, self.paquete, "v")
-        return leer(x.a_csv(tabla, meta))
+        return leer(x.a_csv(tabla))
 
     def test_historico_coincide_con_la_serie(self):
         for res in ("horaria", "diaria", "mensual"):
