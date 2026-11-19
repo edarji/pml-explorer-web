@@ -21,7 +21,7 @@ from vista1 import (DATA_DIR, RESOLUCIONES, UMBRAL_DESCUADRE, DatosNoDisponibles
                     cobertura_horaria, estadisticas, huella_paquete,
                     inspeccionar_paquete, marcar_periodos, metadata, observado, serie)
 
-VERSION_APP = "v0.6.3 beta"  # versión de la aplicación; el esquema de datos y la fecha vienen del paquete
+VERSION_APP = "v0.6.4 beta"  # versión de la aplicación; el esquema de datos y la fecha vienen del paquete
 REPO = "https://github.com/edarji/pml-explorer-web/blob/main"
 COBERTURA_ESCASA = 80  # % de horas con dato bajo el cual se advierte explícitamente
 SITIO_MERCADOS = "https://edarji.net/mercados/"
@@ -105,6 +105,25 @@ ESTILOS = """<style>
 @media (max-width:640px){
 .st-key-ficha{border-left:none;padding-left:0;border-top:1px solid #2C2C2E;padding-top:.6rem}
 }
+/* v0.6.4 · Pulido UX. Segunda tarjeta (vista 2: curvas de cada nodo) con el mismo estilo. */
+.st-key-tarjeta_curvas{background:#111113;border:1px solid #2C2C2E;border-radius:.8rem;padding:1rem 1.1rem .6rem}
+/* Marca: logo y título en una fila también en móvil (antes el logo ocupaba su propia fila). */
+.st-key-marca{flex-wrap:nowrap}
+.st-key-marca h1{padding:.2rem 0 0}
+/* Foco visible con teclado en pestañas y pastillas. */
+.st-key-pestanas label:has(input:focus-visible){outline:2px solid #FFB000;outline-offset:-2px;border-radius:.3rem}
+.st-key-rangos button:focus-visible{outline:2px solid #FFB000;outline-offset:2px}
+.st-key-rangos button{min-height:2.25rem;min-width:3.2rem}
+@media (max-width:640px){
+/* Primera pantalla compacta: marca, pestañas y pastillas ocupan menos alto para llegar antes a la cifra y la gráfica. */
+.st-key-marca .logo-pml{width:52px}
+.st-key-marca h1{font-size:1.75rem}
+.block-container h3{font-size:1.2rem}
+.precio .valor{font-size:2.1rem}
+.precio .cambio{font-size:1rem}
+/* Pastillas cómodas al tacto: 44 px de alto (guía de Apple). */
+.st-key-rangos button{min-height:44px;min-width:56px}
+}
 </style>"""
 ASSETS = Path(__file__).resolve().parent / "assets"
 NARANJA = "#FFB000"  # v0.6.3: ámbar del logo sax (nombre conservado: es la serie principal en las tres vistas)
@@ -113,6 +132,7 @@ GRIS = "#8E8E93"
 FONDO = "#000000"  # contorno del punto resaltado, para que se separe de la línea
 EJE = "#3A3A3C"     # marcas del eje X
 REJILLA = "#1F1F22"  # rejilla horizontal, tenue sobre negro
+CERO = "#8E8E93"     # v0.6.4: línea de referencia en cero (spread, pérdidas y congestión)
 # Fechas de los ejes en español (Vega-Lite usa inglés por defecto: «Thu 29», «November»).
 LOCALE_ES = {"time": {
     "dateTime": "%A, %e de %B de %Y, %X", "date": "%d/%m/%Y", "time": "%H:%M:%S", "periods": ["AM", "PM"],
@@ -193,7 +213,7 @@ def campos_recuadro(df, resolucion, nodo):
     return df
 
 
-def grafica(df, y, titulo_y, resolucion, color=None, nodo=""):
+def grafica(df, y, titulo_y, resolucion, color=None, nodo="", cero=False):
     """Línea con puntos; los periodos parciales se marcan con ▼.
 
     v0.5.1: al pasar el mouse cerca de la línea se marca el punto más cercano y aparece un recuadro pequeño
@@ -213,7 +233,9 @@ def grafica(df, y, titulo_y, resolucion, color=None, nodo=""):
                 axis=alt.Axis(orient="right", domain=False, ticks=False, gridColor=REJILLA, tickCount=5)),
     )
     linea = base.mark_line(color=color or NARANJA, strokeWidth=1.8)
-    capas = [linea]
+    # v0.6.4 · `cero=True` (spread): línea de referencia en 0 para leer el signo de un vistazo.
+    capas = ([alt.Chart(df).mark_rule(color=CERO, strokeWidth=1, strokeDash=[4, 3]).encode(y=alt.datum(0))]
+             if cero else []) + [linea]
     # Con muchos periodos solo se dibujan los puntos parciales, para no saturar la gráfica.
     puntos = base if len(df) <= 400 else base.transform_filter("datum.parcial")
     if resolucion != "horaria":
@@ -410,7 +432,7 @@ def cabecera(valor_del_dia, dia, limites, texto, porcentaje=True):
     return valor
 
 
-def grafica_series(df, columnas, colores, resolucion, titulo_serie="Serie", nodo=None):
+def grafica_series(df, columnas, colores, resolucion, titulo_serie="Serie", nodo=None, cero=False):
     """Varias curvas con el mismo estilo que `grafica` (eje derecho, sin rejilla vertical, fechas en español).
 
     v0.5.1: el mismo recuadro pequeño al pasar el mouse (punto más cercano de cada curva).
@@ -429,12 +451,18 @@ def grafica_series(df, columnas, colores, resolucion, titulo_serie="Serie", nodo
                 axis=alt.Axis(orient="right", domain=False, ticks=False, gridColor=REJILLA, tickCount=5)),
         color=alt.Color("serie:N", title=None, sort=columnas, scale=alt.Scale(domain=columnas, range=colores),
                         legend=alt.Legend(orient="top-left", direction="horizontal")),
+        # v0.6.4 · No depender solo del color: la segunda curva va punteada (la leyenda muestra color y trazo).
+        strokeDash=alt.StrokeDash("serie:N", title=None, sort=columnas,
+                                  scale=alt.Scale(domain=columnas, range=[[1, 0], [6, 3], [2, 2]][:len(columnas)]),
+                                  legend=alt.Legend(orient="top-left", direction="horizontal")),
     )
     cerca = alt.selection_point(on="pointerover", nearest=True, fields=["periodo", "serie"], empty=False,
                                 clear="pointerout")
     puntos = (base.mark_point(size=70, filled=True, stroke=FONDO, strokeWidth=1.5)
               .encode(opacity=alt.condition(cerca, alt.value(1), alt.value(0)), tooltip=recuadro).add_params(cerca))
-    st.altair_chart(alt.layer(base.mark_line(strokeWidth=1.6), puntos).properties(background="transparent")
+    capas = ([alt.Chart(largo).mark_rule(color=CERO, strokeWidth=1, strokeDash=[4, 3]).encode(y=alt.datum(0))]
+             if cero else []) + [base.mark_line(strokeWidth=1.6), puntos]
+    st.altair_chart(alt.layer(*capas).properties(background="transparent")
                     .configure_view(stroke=None).configure(locale=LOCALE_ES), width="stretch")
 
 
@@ -696,6 +724,14 @@ def vista_2(limites, nodos, fechas_nodo, version, panel):
         x = consultar_resumen(nodo_a, nodo_b, dia, dia, str(DATA_DIR), version).iloc[0]
         return None if x["horas_coincidentes"] == 0 else x["promedio"]
     cabecera(spread_del_dia, hasta_obs, limites, "Spread A − B promedio", porcentaje=False)
+    # v0.6.4 · Quién es más caro, en palabras: solo lee el signo del spread promedio ya calculado.
+    if pd.notna(r["promedio"]) and r["promedio"] != 0:
+        caro, barato = (nodo_a, nodo_b) if r["promedio"] > 0 else (nodo_b, nodo_a)
+        st.markdown(f'<div class="linea-meta">En promedio del periodo, <b>{caro}</b> fue más caro que {barato} por '
+                    f'<b>{mxn(abs(r["promedio"]))} MXN/MWh</b>.</div>', unsafe_allow_html=True)
+    if UBICACION:
+        nombres = UBICACION["nombres"]
+        st.caption(f"A: {cat_nodos.etiqueta(nodo_a, nombres)} · B: {cat_nodos.etiqueta(nodo_b, nombres)}")
     st.markdown(f"Positivo: {nodo_a} más caro que {nodo_b} | **Cobertura común:** {r['cobertura_pct']}% ({comunes:,} de "
                 f"{del_rango:,} horas con dato en los dos nodos) | **Rango común con observaciones:** {desde_obs} a {hasta_obs}")
     if r["cobertura_pct"] < COBERTURA_ESCASA:
@@ -713,9 +749,7 @@ def vista_2(limites, nodos, fechas_nodo, version, panel):
         izq, der = st.columns([3.2, 1], gap="large")
         with izq:
             st.markdown("**Spread A − B (MXN/MWh)** · solo horas coincidentes")
-            grafica(d, "dif_promedio", "Spread A − B (MXN/MWh)", resolucion, nodo=f"{nodo_a} − {nodo_b}")
-            st.markdown("**PML de cada nodo (MXN/MWh)** · cada curva con todas sus horas con dato")
-            grafica_series(curvas, [nodo_a, nodo_b], [NARANJA, AZUL], resolucion, titulo_serie="Nodo")
+            grafica(d, "dif_promedio", "Spread A − B (MXN/MWh)", resolucion, nodo=f"{nodo_a} − {nodo_b}", cero=True)
         with der, st.container(key="ficha"):
             if pd.notna(r["minimo"]) and pd.notna(r["maximo"]):
                 st.markdown(barra_rango("Rango horario del spread", r["minimo"], r["maximo"], r["promedio"]),
@@ -728,6 +762,11 @@ def vista_2(limites, nodos, fechas_nodo, version, panel):
             st.metric("Horas con A más caro", "—" if pd.isna(r["pct_a_mas_caro"]) else f"{r['pct_a_mas_caro']}%")
             st.markdown(fila("Horas coincidentes", f"{comunes:,}") + fila("Cobertura común", f"{r['cobertura_pct']}%")
                         + fila("Días excluidos", f"{int(r['dias_no_comparables'] or 0):,}"), unsafe_allow_html=True)
+    # v0.6.4 · Las curvas de cada nodo pasan a una segunda tarjeta, debajo: en móvil ya no compiten con el spread
+    # por la primera pantalla y la ficha del spread queda justo después de su gráfica.
+    with st.container(key="tarjeta_curvas"):
+        st.markdown("**PML de cada nodo (MXN/MWh)** · A continua, B punteada · cada curva con todas sus horas con dato")
+        grafica_series(curvas, [nodo_a, nodo_b], [NARANJA, AZUL], resolucion, titulo_serie="Nodo")
     descarga_csv("comparacion", exportar.tabla_spread(d, nodo_a, nodo_b, resolucion), [nodo_a, nodo_b], inicio, fin,
                  resolucion)
     if not horario_completo:
@@ -809,7 +848,7 @@ def vista_3(limites, nodos, fechas_nodo, version, panel):
         izq, der = st.columns([3.2, 1], gap="large")
         with izq:
             st.markdown("**Componentes del PML (barras apiladas, MXN/MWh)** · los negativos quedan debajo del cero")
-            st.altair_chart(alt.Chart(largo).mark_bar().encode(
+            st.altair_chart((alt.Chart(largo).mark_bar().encode(
                 x=alt.X("periodo:T", title=None, axis=alt.Axis(grid=False, domain=False, tickColor=EJE)),
                 y=alt.Y("valor:Q", title=None, stack="zero",
                         axis=alt.Axis(orient="right", domain=False, ticks=False, gridColor=REJILLA, tickCount=5)),
@@ -818,21 +857,26 @@ def vista_3(limites, nodos, fechas_nodo, version, panel):
                                 legend=alt.Legend(orient="top-left", direction="horizontal")),
                 tooltip=[alt.Tooltip("etiqueta:N", title="Periodo"), alt.Tooltip("componente:N", title="Componente"),
                          alt.Tooltip("valor:Q", title="MXN/MWh", format=",.2f")])
+                + alt.Chart(largo).mark_rule(color=CERO, strokeWidth=1).encode(y=alt.datum(0)))
                 .properties(background="transparent").configure_view(stroke=None).configure(locale=LOCALE_ES),
                 width="stretch")
             st.markdown("**Pérdidas y congestión (MXN/MWh)** · la parte propia del nodo, a su escala")
             grafica_series(df.rename(columns={"perdidas": "Pérdidas", "congestion": "Congestión"}),
-                           ["Pérdidas", "Congestión"], colores[1:], resolucion, titulo_serie="Componente", nodo=nodo)
+                           ["Pérdidas", "Congestión"], colores[1:], resolucion, titulo_serie="Componente", nodo=nodo,
+                           cero=True)
         with der, st.container(key="ficha"):
             st.metric("PML promedio", mxn(r["pml"]))
             st.metric("Energía", mxn(r["energia"]))
             st.metric("Pérdidas", mxn(r["perdidas"]))
             st.metric("Congestión", mxn(r["congestion"]))
-            st.metric("Horas con congestión > 0", f"{int(r['horas_congestion_positiva']):,}")
-            st.metric("Horas con congestión < 0", f"{int(r['horas_congestion_negativa']):,}")
-            st.metric("Descuadre máximo", f"{r['descuadre_max']:,.4f}",
-                      help="Máximo de |PML − (energía + pérdidas + congestión)| en una hora. Viene del redondeo de CENACE.")
             st.markdown(fila("Cobertura", f"{r['cobertura_pct']}%"), unsafe_allow_html=True)
+            # v0.6.4 · Detalle técnico plegado: el resumen principal es PML + sus tres componentes. El aviso de
+            # descuadre sobre el umbral sigue arriba, fuera de este bloque.
+            with st.expander("Detalle técnico"):
+                st.metric("Horas con congestión > 0", f"{int(r['horas_congestion_positiva']):,}")
+                st.metric("Horas con congestión < 0", f"{int(r['horas_congestion_negativa']):,}")
+                st.metric("Descuadre máximo", f"{r['descuadre_max']:,.4f}",
+                          help="Máximo de |PML − (energía + pérdidas + congestión)| en una hora. Viene del redondeo de CENACE.")
     descarga_csv("componentes", exportar.tabla_componentes(df, nodo, resolucion), [nodo], inicio, fin, resolucion)
     st.caption(f"Promedios horarios simples sobre las mismas {con_dato:,} horas para el PML y cada componente."
                + ("" if r["horas_descuadre"] > 0 else f" Ninguna hora con descuadre mayor a {UMBRAL_DESCUADRE} MXN/MWh."))
@@ -852,12 +896,13 @@ st.set_page_config(page_title="PML Explorer", page_icon=str(ASSETS / "logo.svg")
 st.html(ESTILOS)
 # H01: regreso explícito al sitio editorial, fuera de cualquier panel para que se vea en las tres vistas.
 st.markdown(f"[← Mercados · edarji.net]({SITIO_MERCADOS})")
-col_logo, col_titulo = st.columns([1, 9], vertical_alignment="center")
-with col_logo:
+# v0.6.4: logo y título en un contenedor horizontal, para que en móvil queden en la misma fila.
+with st.container(key="marca", horizontal=True, vertical_alignment="center", gap="medium"):
     logo()
-with col_titulo:
-    st.title("PML Explorer")
-    st.caption("Precio Marginal Local · Mercado del Día en Adelanto · SIN (CENACE) · MXN/MWh")
+    with st.container():
+        st.title("PML Explorer")
+        st.caption("Precio Marginal Local · Mercado del Día en Adelanto · SIN (CENACE) · MXN/MWh · "
+                   "datos diarios publicados, no en tiempo real")
 
 if not (DATA_DIR / "metadata.json").is_file():
     st.info("Los derivados públicos de CENACE todavía no están disponibles en esta publicación.")
