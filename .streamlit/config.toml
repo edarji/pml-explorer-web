@@ -6,18 +6,19 @@ enableXsrfProtection = true
 [browser]
 gatherUsageStats = false
 
-# Tema visual claro tipo «ficha de mercado» (v0.5; fondo blanco desde v0.5.1), texto casi negro, línea naranja,
-# verde/rojo solo para cambios. Sustituye al tema oscuro tipo terminal (ámbar sobre negro).
+# v0.6.3 · Identidad «Dark Trading» (Bloomberg Black + Apple Bolsa): fondo negro, superficies grafito,
+# texto casi blanco, ámbar del logo sax como acento y serie principal, verde/rojo de Apple solo para cambios.
+# Sustituye al tema claro «ficha de mercado» (v0.5–v0.6.2). Solo presentación: ningún cálculo cambia.
 [theme]
-base = "light"
-backgroundColor = "#FFFFFF"  # v0.5.1: fondo blanco alrededor de la app (antes crema #FBF8F2)
-secondaryBackgroundColor = "#F3EEE5"
-textColor = "#1B1B1B"
-primaryColor = "#E8772E"
-borderColor = "#E4DDD0"
-linkColor = "#1B1B1B"
+base = "dark"
+backgroundColor = "#000000"
+secondaryBackgroundColor = "#1C1C1E"
+textColor = "#F2F2F7"
+primaryColor = "#FFB000"
+borderColor = "#2C2C2E"
+linkColor = "#FFB000"
 font = "sans-serif"
 baseRadius = "0.5rem"
-greenColor = "#2E7D32"
-redColor = "#C62828"
-chartCategoricalColors = ["#E8772E", "#2F6FB0", "#8E8E8E", "#2E7D32"]
+greenColor = "#30D158"
+redColor = "#FF453A"
+chartCategoricalColors = ["#FFB000", "#0A84FF", "#8E8E93", "#30D158"]
