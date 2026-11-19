@@ -4,7 +4,7 @@ Documento revisado: **2026-11-13**. Describe el comportamiento de la aplicación
 
 | Concepto | Valor vigente | Dónde se comprueba |
 | --- | --- | --- |
-| Versión de la aplicación | **v0.6.3 beta** (identidad visual Dark Trading): vista 1 (PML histórico), vista 2 (spread entre nodos) y vista 3 (componentes), con enlaces compartibles, selector por ubicación y descarga CSV | Pie de la aplicación («PML Explorer v0.6.3 beta · Datos: esquema v2 · …») |
+| Versión de la aplicación | **v0.6.4 beta** (identidad visual Dark Trading con pulido UX): vista 1 (PML histórico), vista 2 (spread entre nodos) y vista 3 (componentes), con enlaces compartibles, selector por ubicación y descarga CSV | Pie de la aplicación («PML Explorer v0.6.4 beta · Datos: esquema v2 · …») |
 | Esquema de datos | **v2** (v1 + componentes del PML), publicado por `pml-bot` desde el 2026-10-31 (commit `c62aa39`) | `version_esquema` en `data/metadata.json`; [contrato de datos](data-contract.md) |
 | Fecha del paquete | Cambia cada noche; no la fija este documento | «Actualización del paquete» en el pie de la aplicación (`generado_utc` convertido a Ciudad de México) |
 
