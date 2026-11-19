@@ -21,7 +21,7 @@ from vista1 import (DATA_DIR, RESOLUCIONES, UMBRAL_DESCUADRE, DatosNoDisponibles
                     cobertura_horaria, estadisticas, huella_paquete,
                     inspeccionar_paquete, marcar_periodos, metadata, observado, serie)
 
-VERSION_APP = "v0.6.4 beta"  # versión de la aplicación; el esquema de datos y la fecha vienen del paquete
+VERSION_APP = "v0.6.5 beta"  # versión de la aplicación; el esquema de datos y la fecha vienen del paquete
 REPO = "https://github.com/edarji/pml-explorer-web/blob/main"
 COBERTURA_ESCASA = 80  # % de horas con dato bajo el cual se advierte explícitamente
 SITIO_MERCADOS = "https://edarji.net/mercados/"
@@ -450,11 +450,11 @@ def grafica_series(df, columnas, colores, resolucion, titulo_serie="Serie", nodo
         y=alt.Y("valor:Q", title=None, scale=alt.Scale(zero=False),
                 axis=alt.Axis(orient="right", domain=False, ticks=False, gridColor=REJILLA, tickCount=5)),
         color=alt.Color("serie:N", title=None, sort=columnas, scale=alt.Scale(domain=columnas, range=colores),
-                        legend=alt.Legend(orient="top-left", direction="horizontal")),
+                        legend=alt.Legend(orient="top", direction="horizontal", title=None)),
         # v0.6.4 · No depender solo del color: la segunda curva va punteada (la leyenda muestra color y trazo).
         strokeDash=alt.StrokeDash("serie:N", title=None, sort=columnas,
                                   scale=alt.Scale(domain=columnas, range=[[1, 0], [6, 3], [2, 2]][:len(columnas)]),
-                                  legend=alt.Legend(orient="top-left", direction="horizontal")),
+                                  legend=alt.Legend(orient="top", direction="horizontal", title=None)),
     )
     cerca = alt.selection_point(on="pointerover", nearest=True, fields=["periodo", "serie"], empty=False,
                                 clear="pointerout")
@@ -854,7 +854,7 @@ def vista_3(limites, nodos, fechas_nodo, version, panel):
                         axis=alt.Axis(orient="right", domain=False, ticks=False, gridColor=REJILLA, tickCount=5)),
                 color=alt.Color("componente:N", title=None, sort=list(nombres.values()),
                                 scale=alt.Scale(domain=list(nombres.values()), range=colores),
-                                legend=alt.Legend(orient="top-left", direction="horizontal")),
+                                legend=alt.Legend(orient="top", direction="horizontal", title=None)),
                 tooltip=[alt.Tooltip("etiqueta:N", title="Periodo"), alt.Tooltip("componente:N", title="Componente"),
                          alt.Tooltip("valor:Q", title="MXN/MWh", format=",.2f")])
                 + alt.Chart(largo).mark_rule(color=CERO, strokeWidth=1).encode(y=alt.datum(0)))

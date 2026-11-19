@@ -132,7 +132,7 @@ SPREAD_DIARIO_ORIGINAL = """
 @unittest.skipUnless(HAY_DATOS, "Sin paquete público en data/")
 class ContraLosCalculos(unittest.TestCase):
     """Con el paquete real: el CSV trae exactamente los valores que la app calcula."""
-    A, B = "01AAN-85", "08BNV-115"  # 08BNV-115 tiene horas faltantes en la ventana horaria
+    A, B = "01AAN-85", "08BNV-115"
 
     @classmethod
     def setUpClass(cls):
@@ -148,9 +148,19 @@ class ContraLosCalculos(unittest.TestCase):
             leido = self.csv(x.tabla_historico(df, self.B, res))
             self.assertEqual(len(leido), len(df), res)
             self.assertEqual(leido["pml"].tolist(), df["pml_promedio"].tolist(), res)
-        # Horas sin dato: no hay fila inventada.
-        horaria = v.serie(self.B, self.hd, self.hh, "horaria")
-        self.assertLess(len(horaria), ((self.hh - self.hd).days + 1) * 24)
+        # Horas sin dato: no hay fila inventada. El nodo con faltantes se busca en el paquete actual: la ventana
+        # horaria se mueve cada noche y un nodo fijo (antes 08BNV-115) puede quedar completo (2026-11-19).
+        posibles = ((self.hh - self.hd).days + 1) * 24
+        incompleto = v._consulta("SELECT nodo FROM read_parquet(?) GROUP BY nodo HAVING COUNT(*) < ? "
+                                 "ORDER BY COUNT(*) DESC, nodo LIMIT 1",
+                                 [v._archivos("hourly", self.hd, self.hh), posibles])
+        if incompleto.empty:
+            self.skipTest("Ningún nodo tiene horas faltantes en la ventana horaria de este paquete")
+        nodo = incompleto["nodo"].iloc[0]
+        horaria = v.serie(nodo, self.hd, self.hh, "horaria")
+        self.assertLess(len(horaria), posibles)
+        csv = self.csv(x.tabla_historico(v.marcar_periodos(horaria, self.hd, self.hh, "horaria"), nodo, "horaria"))
+        self.assertEqual(len(csv), len(horaria))
 
     def test_spread_identico_al_de_antes(self):
         archivos_h = v._archivos("hourly", self.hd, self.hh)
