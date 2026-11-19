@@ -21,7 +21,7 @@ from vista1 import (DATA_DIR, RESOLUCIONES, UMBRAL_DESCUADRE, DatosNoDisponibles
                     cobertura_horaria, estadisticas, huella_paquete,
                     inspeccionar_paquete, marcar_periodos, metadata, observado, serie)
 
-VERSION_APP = "v0.6.2 beta"  # versión de la aplicación; el esquema de datos y la fecha vienen del paquete
+VERSION_APP = "v0.6.3 beta"  # versión de la aplicación; el esquema de datos y la fecha vienen del paquete
 REPO = "https://github.com/edarji/pml-explorer-web/blob/main"
 COBERTURA_ESCASA = 80  # % de horas con dato bajo el cual se advierte explícitamente
 SITIO_MERCADOS = "https://edarji.net/mercados/"
@@ -39,16 +39,21 @@ UBICACION = {}  # se llena al cargar el paquete: {"union": DataFrame, "nombres":
 # H03: los st.caption de Streamlit 1.66 usan opacidad 0.6 (≈3.70:1 sobre blanco). Con 0.8 el texto
 # queda en ≈6.67:1 sobre blanco y ≈6.19:1 sobre gris claro, por debajo del texto principal (12.53:1).
 ESTILOS = """<style>
+/* v0.6.3 · Dark Trading (Bloomberg Black + Apple Bolsa). Solo colores y tipografía; la estructura es la de v0.5–v0.6.2.
+   Paleta: negro #000, superficies #111113/#1C1C1E, bordes #2C2C2E, texto #F2F2F7, secundario #A1A1A6,
+   ámbar #FFB000 (logo sax), azul #0A84FF, verde #30D158 / rojo #FF453A solo para cambios. */
 [data-testid='stCaptionContainer']{opacity:0.8}
 .block-container{max-width:1240px}
-/* v0.5 · Pestañas: el radio de vistas se dibuja como barra de pestañas subrayada. */
-.st-key-pestanas div[role=radiogroup]{gap:0;border-bottom:1px solid #E4DDD0;flex-wrap:nowrap;overflow-x:auto}
+/* Cifras con ancho fijo por dígito, como en una pantalla de cotizaciones: las columnas no bailan. */
+.precio,.st-key-ficha,.fila,.rango,[data-testid=stMetricValue],[data-testid=stDataFrame]{font-variant-numeric:tabular-nums}
+/* v0.5 · Pestañas: el radio de vistas se dibuja como barra de pestañas subrayada (activa en ámbar). */
+.st-key-pestanas div[role=radiogroup]{gap:0;border-bottom:1px solid #2C2C2E;flex-wrap:nowrap;overflow-x:auto}
 .st-key-pestanas div[role=radiogroup] label{padding:.5rem 1.1rem .55rem;margin:0;border-bottom:3px solid transparent;
   white-space:nowrap}
 .st-key-pestanas div[role=radiogroup] label > div > div:first-child{display:none}
-.st-key-pestanas div[role=radiogroup] label p{font-size:1.02rem}
-.st-key-pestanas label[data-selected=true]{box-shadow:inset 0 -3px 0 #1B1B1B}
-.st-key-pestanas label[data-selected=true] p{font-weight:600}
+.st-key-pestanas div[role=radiogroup] label p{font-size:1.02rem;color:#A1A1A6}
+.st-key-pestanas label[data-selected=true]{box-shadow:inset 0 -3px 0 #FFB000}
+.st-key-pestanas label[data-selected=true] p{font-weight:600;color:#F2F2F7}
 /* v0.5.1 · Móvil: las tres pestañas no caben en una fila (≈526 px) y «Componentes» quedaba fuera de la
    pantalla. En pantallas angostas la barra pasa a dos filas en vez de desplazarse: todas siempre visibles. */
 @media (max-width:640px){
@@ -61,38 +66,53 @@ ESTILOS = """<style>
 .st-key-descarga{flex-direction:column;align-items:stretch}
 .st-key-descarga button{width:100%}
 }
-/* v0.5.1 · Recuadro al pasar el mouse: pequeño para no tapar la gráfica. */
-#vg-tooltip-element{font-size:11px;padding:4px 7px}
-#vg-tooltip-element td.key{padding-right:6px}
-/* Botones de rango: pastillas pequeñas; la activa en gris oscuro. */
-.st-key-rangos button{min-height:2rem;padding:.1rem .85rem;border:1px solid #D9D2C5;background:#FFFFFF}
-.st-key-rangos button p{font-size:.85rem}
-.st-key-rangos button[kind=primary]{background:#3A3A3A;border-color:#3A3A3A;color:#fff}
-/* Encabezado tipo ficha de mercado. */
+/* v0.5.1 · Recuadro al pasar el mouse: pequeño para no tapar la gráfica; v0.6.3 en grafito. */
+#vg-tooltip-element{font-size:11px;padding:4px 7px;background:#1C1C1E;color:#F2F2F7;border:1px solid #3A3A3C;
+  box-shadow:0 4px 14px rgba(0,0,0,.6)}
+#vg-tooltip-element td.key{padding-right:6px;color:#A1A1A6}
+/* Botones de rango: pastillas pequeñas (como 1D/1S/1M de Bolsa); la activa en ámbar. */
+.st-key-rangos button{min-height:2rem;padding:.1rem .85rem;border:1px solid #3A3A3C;background:#1C1C1E;
+  border-radius:999px;color:#F2F2F7}
+.st-key-rangos button p{font-size:.85rem;font-weight:600}
+.st-key-rangos button[kind=primary]{background:#FFB000;border-color:#FFB000;color:#000}
+/* Encabezado tipo cotización: cifra grande blanca y cambio en pastilla verde/roja (Apple Bolsa). */
 .precio{display:flex;flex-wrap:wrap;align-items:baseline;gap:.35rem .8rem;margin:-.4rem 0 .2rem}
-.precio .valor{font-size:2.6rem;font-weight:700;letter-spacing:-.02em;line-height:1.1}
-.precio .unidad{font-size:1rem;font-weight:600;color:#555}
-.precio .cambio{font-size:1.25rem;font-weight:600}
-.precio .fecha{font-size:.85rem;color:#6B6B6B}
-.sube{color:#2E7D32}.baja{color:#C62828}.igual{color:#6B6B6B}
-.linea-meta{font-size:.85rem;color:#4A4A4A;margin-bottom:.4rem}
-/* Tarjeta de gráfica + ficha de indicadores. */
-.st-key-tarjeta{background:#F5F1EA;border-radius:.8rem;padding:1rem 1.1rem .6rem}
+.precio .valor{font-size:2.6rem;font-weight:700;letter-spacing:-.02em;line-height:1.1;color:#FFFFFF}
+.precio .unidad{font-size:1rem;font-weight:600;color:#A1A1A6}
+.precio .cambio{font-size:1.15rem;font-weight:700;padding:.05rem .5rem;border-radius:.35rem}
+.precio .cambio.sube{background:#30D158;color:#000}.precio .cambio.baja{background:#FF453A;color:#000}
+.precio .cambio.igual{background:#3A3A3C;color:#F2F2F7}
+.precio .fecha{font-size:.85rem;color:#A1A1A6}
+.sube{color:#30D158}.baja{color:#FF453A}.igual{color:#A1A1A6}
+.linea-meta{font-size:.85rem;color:#A1A1A6;margin-bottom:.4rem}
+/* Tarjeta de gráfica + ficha de indicadores: superficie grafito con borde fino (terminal). */
+.st-key-tarjeta{background:#111113;border:1px solid #2C2C2E;border-radius:.8rem;padding:1rem 1.1rem .6rem}
+.st-key-ficha{border-left:1px solid #2C2C2E;padding-left:1rem}
 .st-key-ficha [data-testid=stMetric]{padding:0}
 .st-key-ficha [data-testid=stMetricLabel]{min-height:0;margin:0}
 .st-key-ficha [data-testid=stMetric] > div{display:flex;justify-content:space-between;align-items:baseline;gap:.5rem}
-.st-key-ficha [data-testid=stMetricLabel] p{font-size:.88rem}
-.st-key-ficha [data-testid=stMetricValue], .st-key-ficha [data-testid=stMetricValue] p{font-size:.92rem;font-weight:500;line-height:1.6;height:auto;min-height:0}
+.st-key-ficha [data-testid=stMetricLabel] p{font-size:.88rem;color:#A1A1A6}
+.st-key-ficha [data-testid=stMetricValue], .st-key-ficha [data-testid=stMetricValue] p{font-size:.92rem;font-weight:600;line-height:1.6;height:auto;min-height:0;color:#F2F2F7}
 .st-key-ficha [data-testid=stVerticalBlock]{gap:.1rem}
-.fila{display:flex;justify-content:space-between;font-size:.88rem;line-height:1.75}
-.rango{margin:.1rem 0 .7rem}.rango .et{font-size:.88rem}
-.rango .barra{position:relative;height:3px;background:#CFC8BB;margin:.55rem 0 .3rem;border-radius:2px}
-.rango .barra span{position:absolute;top:-4px;width:11px;height:11px;border-radius:50%;background:#555;
+.fila{display:flex;justify-content:space-between;font-size:.88rem;line-height:1.75;border-top:1px solid #1C1C1E}
+.fila span:first-child{color:#A1A1A6}
+.rango{margin:.1rem 0 .7rem}.rango .et{font-size:.88rem;color:#A1A1A6}
+.rango .barra{position:relative;height:3px;background:#3A3A3C;margin:.55rem 0 .3rem;border-radius:2px}
+.rango .barra span{position:absolute;top:-4px;width:11px;height:11px;border-radius:50%;background:#FFB000;
   transform:translateX(-50%)}
-.rango .ext{display:flex;justify-content:space-between;font-size:.75rem;color:#555}
+.rango .ext{display:flex;justify-content:space-between;font-size:.75rem;color:#A1A1A6}
+/* En una columna (móvil) la ficha va debajo de la gráfica: el separador pasa de vertical a horizontal. */
+@media (max-width:640px){
+.st-key-ficha{border-left:none;padding-left:0;border-top:1px solid #2C2C2E;padding-top:.6rem}
+}
 </style>"""
 ASSETS = Path(__file__).resolve().parent / "assets"
-NARANJA = "#E8772E"
+NARANJA = "#FFB000"  # v0.6.3: ámbar del logo sax (nombre conservado: es la serie principal en las tres vistas)
+AZUL = "#0A84FF"
+GRIS = "#8E8E93"
+FONDO = "#000000"  # contorno del punto resaltado, para que se separe de la línea
+EJE = "#3A3A3C"     # marcas del eje X
+REJILLA = "#1F1F22"  # rejilla horizontal, tenue sobre negro
 # Fechas de los ejes en español (Vega-Lite usa inglés por defecto: «Thu 29», «November»).
 LOCALE_ES = {"time": {
     "dateTime": "%A, %e de %B de %Y, %X", "date": "%d/%m/%Y", "time": "%H:%M:%S", "periods": ["AM", "PM"],
@@ -188,9 +208,9 @@ def grafica(df, y, titulo_y, resolucion, color=None, nodo=""):
     if resolucion != "horaria":
         recuadro.append(alt.Tooltip("horas:Q", title="Horas con dato", format=","))
     base = alt.Chart(df).encode(
-        x=alt.X("periodo:T", title=None, axis=alt.Axis(grid=False, domain=False, tickColor="#CFC8BB")),
+        x=alt.X("periodo:T", title=None, axis=alt.Axis(grid=False, domain=False, tickColor=EJE)),
         y=alt.Y(f"{y}:Q", title=None, scale=alt.Scale(zero=False),
-                axis=alt.Axis(orient="right", domain=False, ticks=False, gridColor="#E4DDD0", tickCount=5)),
+                axis=alt.Axis(orient="right", domain=False, ticks=False, gridColor=REJILLA, tickCount=5)),
     )
     linea = base.mark_line(color=color or NARANJA, strokeWidth=1.8)
     capas = [linea]
@@ -205,7 +225,7 @@ def grafica(df, y, titulo_y, resolucion, color=None, nodo=""):
     # Punto más cercano al mouse: invisible hasta que se acerca el cursor, y lleva el recuadro.
     cerca = alt.selection_point(on="pointerover", nearest=True, fields=["periodo"], empty=False,
                                 clear="pointerout")
-    capas.append(base.mark_point(size=70, filled=True, color=color or NARANJA, stroke="white", strokeWidth=1.5)
+    capas.append(base.mark_point(size=70, filled=True, color=color or NARANJA, stroke=FONDO, strokeWidth=1.5)
                  .encode(opacity=alt.condition(cerca, alt.value(1), alt.value(0)), tooltip=recuadro)
                  .add_params(cerca))
     st.altair_chart(alt.layer(*capas).properties(background="transparent")
@@ -404,15 +424,15 @@ def grafica_series(df, columnas, colores, resolucion, titulo_serie="Serie", nodo
         recuadro.append(alt.Tooltip("hora_txt:N", title="Hora"))
     recuadro.append(alt.Tooltip("valor:Q", title="MXN/MWh", format=",.2f"))
     base = alt.Chart(largo).encode(
-        x=alt.X("periodo:T", title=None, axis=alt.Axis(grid=False, domain=False, tickColor="#CFC8BB")),
+        x=alt.X("periodo:T", title=None, axis=alt.Axis(grid=False, domain=False, tickColor=EJE)),
         y=alt.Y("valor:Q", title=None, scale=alt.Scale(zero=False),
-                axis=alt.Axis(orient="right", domain=False, ticks=False, gridColor="#E4DDD0", tickCount=5)),
+                axis=alt.Axis(orient="right", domain=False, ticks=False, gridColor=REJILLA, tickCount=5)),
         color=alt.Color("serie:N", title=None, sort=columnas, scale=alt.Scale(domain=columnas, range=colores),
                         legend=alt.Legend(orient="top-left", direction="horizontal")),
     )
     cerca = alt.selection_point(on="pointerover", nearest=True, fields=["periodo", "serie"], empty=False,
                                 clear="pointerout")
-    puntos = (base.mark_point(size=70, filled=True, stroke="white", strokeWidth=1.5)
+    puntos = (base.mark_point(size=70, filled=True, stroke=FONDO, strokeWidth=1.5)
               .encode(opacity=alt.condition(cerca, alt.value(1), alt.value(0)), tooltip=recuadro).add_params(cerca))
     st.altair_chart(alt.layer(base.mark_line(strokeWidth=1.6), puntos).properties(background="transparent")
                     .configure_view(stroke=None).configure(locale=LOCALE_ES), width="stretch")
@@ -695,7 +715,7 @@ def vista_2(limites, nodos, fechas_nodo, version, panel):
             st.markdown("**Spread A − B (MXN/MWh)** · solo horas coincidentes")
             grafica(d, "dif_promedio", "Spread A − B (MXN/MWh)", resolucion, nodo=f"{nodo_a} − {nodo_b}")
             st.markdown("**PML de cada nodo (MXN/MWh)** · cada curva con todas sus horas con dato")
-            grafica_series(curvas, [nodo_a, nodo_b], [NARANJA, "#2F6FB0"], resolucion, titulo_serie="Nodo")
+            grafica_series(curvas, [nodo_a, nodo_b], [NARANJA, AZUL], resolucion, titulo_serie="Nodo")
         with der, st.container(key="ficha"):
             if pd.notna(r["minimo"]) and pd.notna(r["maximo"]):
                 st.markdown(barra_rango("Rango horario del spread", r["minimo"], r["maximo"], r["promedio"]),
@@ -782,7 +802,7 @@ def vista_3(limites, nodos, fechas_nodo, version, panel):
 
     df = marcar_periodos(df, inicio, fin, resolucion)
     nombres = {"energia": "Energía", "perdidas": "Pérdidas", "congestion": "Congestión"}
-    colores = [NARANJA, "#2F6FB0", "#8E8E8E"]
+    colores = [NARANJA, AZUL, GRIS]
     largo = df.melt(id_vars=["periodo", "etiqueta"], value_vars=list(nombres), var_name="componente", value_name="valor")
     largo["componente"] = largo["componente"].map(nombres)
     with st.container(key="tarjeta"):
@@ -790,9 +810,9 @@ def vista_3(limites, nodos, fechas_nodo, version, panel):
         with izq:
             st.markdown("**Componentes del PML (barras apiladas, MXN/MWh)** · los negativos quedan debajo del cero")
             st.altair_chart(alt.Chart(largo).mark_bar().encode(
-                x=alt.X("periodo:T", title=None, axis=alt.Axis(grid=False, domain=False, tickColor="#CFC8BB")),
+                x=alt.X("periodo:T", title=None, axis=alt.Axis(grid=False, domain=False, tickColor=EJE)),
                 y=alt.Y("valor:Q", title=None, stack="zero",
-                        axis=alt.Axis(orient="right", domain=False, ticks=False, gridColor="#E4DDD0", tickCount=5)),
+                        axis=alt.Axis(orient="right", domain=False, ticks=False, gridColor=REJILLA, tickCount=5)),
                 color=alt.Color("componente:N", title=None, sort=list(nombres.values()),
                                 scale=alt.Scale(domain=list(nombres.values()), range=colores),
                                 legend=alt.Legend(orient="top-left", direction="horizontal")),
