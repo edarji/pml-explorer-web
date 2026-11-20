@@ -1,5 +1,29 @@
 # Validaciones y aceptación pendiente
 
+## 2026-11-20 · PND v0.7.0: AC-13 local (rendimiento con el paquete real)
+
+Medición **local** con el paquete PND real de esta rama (`pnd/`, 2023-01-01 a 2026-11-19, 1418 archivos horarios, 101 zonas, `dias_sin_dato` = 2026-05-08) y el paquete PML del repo. Equipo: MacBook Pro Apple M5 Pro, 24 GB, macOS 27.2.1; Python 3.14.8, Streamlit 1.66.1, DuckDB 1.5.6, pyarrow 24.0.0, pandas 3.0.6. Zona: MONTERREY. Cada escenario corre en su propio proceso (`scripts/medir_ac13_pnd.py`); RSS = `ru_maxrss` del proceso. Mediana de 3 corridas.
+
+| Escenario | Primera corrida | Con caché | RSS máximo |
+| --- | ---: | ---: | ---: |
+| App, inicio PML (referencia, sin modalidad PND en la URL) | 0.99 s | 0.08 s | 229 MiB |
+| App, PND mensual, rango completo | 1.61 s | 0.09 s | 275 MiB |
+| App, PND diaria, rango completo | 1.54 s | 0.09 s | 276 MiB |
+| App, PND horaria, 366 días (2025-11-19 a 2026-11-19) | 1.21 s | 0.13 s | 281 MiB |
+| App, PND solo 2026-05-08 (día sin dato: «Sin datos», 0 métricas) | 0.94 s | 0.06 s | 225 MiB |
+
+| Función de `pnd.py` (sin Streamlit) | Resultado | Tiempo | RSS máximo |
+| --- | --- | ---: | ---: |
+| `inspeccionar_pnd()` (manifiesto, SHA-256 de 1419 archivos, esquema, zstd) | 2023-01-01 a 2026-11-19, 101 zonas | 0.24 s | 75 MiB |
+| `serie_pnd` mensual, rango completo | 47 filas | 0.54 s | 180 MiB |
+| `serie_pnd` diaria, rango completo | 1418 filas | 0.55 s | 181 MiB |
+| `serie_pnd` horaria, 366 días | 8760 filas (365 días × 24; 2026-05-08 sin dato) | 0.33 s | 163 MiB |
+| `estadisticas_pnd`, rango completo | 34,032 horas con dato | 0.50 s | 174 MiB |
+
+Lectura: con el paquete real, PND agrega unos 0.2–0.6 s a la primera corrida de AppTest y unos 50 MiB de RSS sobre el inicio PML. Las corridas con caché quedan por debajo de 0.15 s. En las cinco corridas de la app no hubo ninguna excepción.
+
+Son mediciones locales de procesos concretos (AppTest y funciones), **no de Community Cloud**: la memoria, el arranque en frío y el tiempo de consulta en la nube siguen pendientes hasta desplegar, lo que requiere aprobación específica.
+
 ## 2026-10-30 · Entrega 3: componentes (vista 3) y contrato v2
 
 `vista3.py` reutiliza la consulta validada de `power-market-lab/scripts/vista3.py` en la ventana horaria (umbral de descuadre 0.02 MXN/MWh; el conteo compara el descuadre redondeado a 6 decimales para no contar ruido de coma flotante). Fuera de la ventana usa los acumuladores v2 sobre las mismas `horas_validas` del PML.
