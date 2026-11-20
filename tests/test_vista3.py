@@ -31,7 +31,9 @@ class Contrato(unittest.TestCase):
         if es_v2() or not (v.DATA_DIR / "metadata.json").is_file():
             self.skipTest("El paquete ya es v2 o no existe")
         from streamlit.testing.v1 import AppTest
-        app = AppTest.from_file(APP, default_timeout=120).run()
+        app = AppTest.from_file(APP, default_timeout=120)
+        app.session_state["escena"] = "solo"  # v0.8.0: sin enlace la app abre ENSEMBLE; estas pruebas son de la vista SOLO
+        app.run()
         app.radio(key="vista").set_value("3. Componentes del PML").run()
         self.assertFalse(app.exception)
         self.assertEqual(len(app.metric), 0)
