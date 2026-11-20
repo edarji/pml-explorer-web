@@ -1,5 +1,26 @@
 # Validaciones y aceptación pendiente
 
+## 2026-11-20 · v0.8.0 Graphite Trading | Ensemble & Solo: regresión, pruebas y rendimiento (local)
+
+Rama `graphite-ensemble-solo`, PR en borrador. Plan y criterios AC-G01 a AC-G14 en la Issue #19. Entorno: contenedor Linux, Python 3.13, Streamlit 1.66.1, DuckDB 1.5.6, pyarrow 24.0.0, pandas 3.0.6, con los paquetes `data/` y `pnd/` de `main` (`7bf7621`).
+
+- **Pruebas:** 191 passed, 4 skipped (`main`: 166 passed, 4 skipped). Nuevas: `tests/test_escena.py` (8) y `tests/test_ensemble.py` (17). Las pruebas de vistas que abrían la app sin enlace ahora fijan la escena SOLO antes de correr (sin enlace, la app abre ENSEMBLE); sus aserciones no cambiaron, salvo la versión del pie (v0.8.0 beta).
+- **Mismo cálculo que SOLO (AC-G06):** para el día de referencia, el promedio, horas, mínimo, máximo y horas negativas del ranking coinciden exactamente con `estadisticas()` (dentro y fuera de la ventana horaria) y `estadisticas_pnd()` en una muestra de 19 nodos por día y 19 zonas.
+- **Regresión de enlaces (AC-G02, AC-G03):** 14 enlaces (4 de la vista 1, 3 de la vista 2, 2 de la vista 3, 3 de PND, uno con nodo inexistente y uno incompleto) dan en `main` y en esta rama las mismas métricas, subtítulos, textos, avisos, tablas y URL (AppTest). Solo se excluyen lo que esta versión agrega a propósito: el encabezado del solista y el pie con la versión.
+- **CSV (AC-G09):** 12 descargas reales (Chromium) de las 4 vistas: nombre de archivo y SHA-256 idénticos a `main`.
+- **Archivos sin cambios (AC-G10):** `git diff main` vacío en `data/`, `pnd/`, `scripts/`, `exportar.py`, `vista1.py`, `vista2.py`, `vista3.py`, `pnd.py`, `enlaces.py`.
+- **Responsive (AC-G11):** sin desplazamiento horizontal en 320, 390, 768, 1024 y 1440 px para ENSEMBLE, SOLO vistas 1–3 y SOLO PND (25 capturas en `docs/capturas/v0.8.0-graphite/`).
+- **Rendimiento (AC-G12), navegador real, 5 sesiones nuevas tras reiniciar el servidor:**
+
+| Medición | Corrida 1 (servidor en frío) | Corridas 2–5 (mediana) |
+| --- | ---: | ---: |
+| Carga de ENSEMBLE hasta terminar de dibujar | 3.59 s | 1.45 s |
+| ENSEMBLE → SOLO (tocar un ranking) | 0.98 s | 0.68 s |
+| SOLO → ENSEMBLE («Volver al mercado») | 0.54 s | 0.46 s |
+| Referencia `main` v0.7.0, carga inicial (mismo método) | 4.36 s | 1.79 s |
+
+La meta de 3 s en frío no se cumple por 0.6 s; ese tiempo es sobre todo la carga del paquete que `main` también hace (4.36 s con el mismo método). Las transiciones no tienen animaciones: son un solo rerun con consultas en caché. Son tiempos **locales**, no de Community Cloud.
+
 ## 2026-11-20 · PND v0.7.0: AC-03 contra reportes oficiales de CENACE
 
 Verificación independiente de Eduardo, 2026-11-20 (comparación verificada a las 12:27:24Z), sobre el paquete de `9cbd5b3`. Los Parquet son los mismos en el paquete actual: después solo cambió `metadata.json`, en `a2d279b`. La evidencia completa está en el [comentario del PR #23](https://github.com/edarji/pml-explorer-web/pull/23#issuecomment-7039719618).

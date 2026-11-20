@@ -95,7 +95,7 @@ ESTILOS = """<style>
 .sube{color:#30D158}.baja{color:#FF453A}.igual{color:#A1A1A6}
 .linea-meta{font-size:.85rem;color:#A1A1A6;margin-bottom:.4rem}
 /* Tarjeta de gráfica + ficha de indicadores: superficie grafito con borde fino (terminal). */
-.st-key-tarjeta{background:#111113;border:1px solid #2C2C2E;border-radius:.8rem;padding:1rem 1.1rem .6rem}
+.st-key-tarjeta{background:#111113;border:1px solid #2C2C2E;border-radius:.8rem;padding:1rem 1.1rem .9rem}
 .st-key-ficha{border-left:1px solid #2C2C2E;padding-left:1rem}
 .st-key-ficha [data-testid=stMetric]{padding:0}
 .st-key-ficha [data-testid=stMetricLabel]{min-height:0;margin:0}
@@ -145,10 +145,12 @@ ESTILOS = """<style>
 .kpi .et{font-size:.78rem;color:#A1A1A6}
 .kpi .v{font-size:1.35rem;font-weight:700;color:#F2F2F7;font-variant-numeric:tabular-nums;line-height:1.3}
 .kpi .nota{font-size:.75rem;color:#A1A1A6;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.mini-et,.lista-et{font-size:.8rem;color:#A1A1A6;margin:.35rem 0 -.2rem}
-[class*=st-key-rk_] [data-testid=stVerticalBlock]{gap:.3rem}
+.mini-et{font-size:.8rem;color:#A1A1A6;margin:.35rem 0 -.2rem}
+.lista-et{font-size:.8rem;color:#A1A1A6;margin:.3rem 0 0}
+[class*=st-key-rk_][data-testid=stVerticalBlock]{gap:.35rem}
 [class*=st-key-rk_] button{justify-content:flex-start;min-height:2.25rem;padding:.2rem .7rem;background:#1C1C1E;
   border:1px solid #2C2C2E;font-variant-numeric:tabular-nums;text-align:left}
+[class*=st-key-rk_] button > div{justify-content:flex-start;width:100%}
 [class*=st-key-rk_] button p{font-size:.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 [class*=st-key-rk_] button:hover{border-color:#FFB000}
 .st-key-rk_pnd_caras button:hover,.st-key-rk_pnd_baratas button:hover{border-color:#0A84FF}
@@ -160,10 +162,11 @@ ESTILOS = """<style>
 .solista .nombre{font-size:1.7rem;font-weight:700;color:#FFFFFF;letter-spacing:-.01em}
 .solista .nombre .vs{font-size:1rem;color:#A1A1A6;font-weight:600}
 .solista .detalle{font-size:.86rem;color:#A1A1A6}
-/* Tableta (641–1024 px): el panel derecho pasa arriba a todo el ancho; los indicadores, 2 × 2. */
+/* Tableta y móvil (≤ 1024 px): el tablero va primero y el panel del solista debajo, ambos a todo el ancho (a 768 px
+   una columna derecha quedaría en ≈190 px); los indicadores pasan a 2 × 2. Los rankings ya abren SOLO con un toque. */
 @media (max-width:1024px){
 .st-key-ensemble > div > [data-testid=stHorizontalBlock],
-.st-key-ensemble > [data-testid=stHorizontalBlock]{flex-direction:column-reverse}
+.st-key-ensemble > [data-testid=stHorizontalBlock]{flex-direction:column}
 .st-key-ensemble > div > [data-testid=stHorizontalBlock] > [data-testid=stColumn],
 .st-key-ensemble > [data-testid=stHorizontalBlock] > [data-testid=stColumn]{width:100% !important;flex:1 1 100% !important}
 .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -1283,10 +1286,10 @@ def seccion_pml(dia, total, version):
             st.warning(f"Ningún nodo tiene PML el {dia}. No se muestra ninguna cifra: sin dato no es precio cero.")
             return
         r = ens.resumen(ranking, total)
-        kpis([("Nodos con dato", f"{r['con_dato']:,}", f"de {total:,} en el paquete · {r['sin_dato']:,} sin dato"),
+        kpis([("Nodos con dato", f"{r['con_dato']:,}", f"de {total:,} · {r['sin_dato']:,} sin dato"),
               ("Más caro", mxn(r["caro"]["promedio"]), r["caro"]["elemento"]),
               ("Más barato", mxn(r["barato"]["promedio"]), r["barato"]["elemento"]),
-              ("Nodos con alguna hora < 0", f"{r['con_negativos']:,}", "PML horario negativo ese día")])
+              ("Con alguna hora < 0", f"{r['con_negativos']:,}", "PML horario negativo ese día")])
         st.markdown('<div class="mini-et">Distribución del PML promedio del día entre nodos (MXN/MWh)</div>',
                     unsafe_allow_html=True)
         distribucion(ranking, NARANJA, "Nodos")
@@ -1321,10 +1324,10 @@ def seccion_pnd(hasta):
             return
         total = len(PND["zonas"])
         r = ens.resumen(ranking, total)
-        kpis([("Zonas con dato", f"{r['con_dato']:,}", f"de {total:,} zonas de carga · {r['sin_dato']:,} sin dato"),
+        kpis([("Zonas con dato", f"{r['con_dato']:,}", f"de {total:,} · {r['sin_dato']:,} sin dato"),
               ("Más cara", mxn(r["caro"]["promedio"]), r["caro"]["elemento"].title()),
               ("Más barata", mxn(r["barato"]["promedio"]), r["barato"]["elemento"].title()),
-              ("Zonas con alguna hora < 0", f"{r['con_negativos']:,}", "PND horario negativo ese día")])
+              ("Con alguna hora < 0", f"{r['con_negativos']:,}", "PND horario negativo ese día")])
         st.markdown('<div class="mini-et">Distribución del PND promedio del día entre zonas de carga (MXN/MWh)</div>',
                     unsafe_allow_html=True)
         distribucion(ranking, AZUL, "Zonas")

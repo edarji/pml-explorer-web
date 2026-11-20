@@ -1,6 +1,6 @@
 # Metodología — PML Explorer
 
-Documento revisado: **2026-11-13**. Describe el comportamiento de la aplicación pública vigente. La fecha de este documento no es un corte de precios.
+Documento revisado: **2026-11-20** (v0.8.0 · Ensemble & Solo). Describe el comportamiento de la aplicación pública vigente. La fecha de este documento no es un corte de precios.
 
 | Concepto | Valor vigente | Dónde se comprueba |
 | --- | --- | --- |
@@ -66,6 +66,12 @@ PML = energía + pérdidas + congestión, con los signos publicados por CENACE (
 
 ## Uso de la interfaz
 
+- **Ensemble y Solo (v0.8.0):** la aplicación abre en **ENSEMBLE**, un tablero compacto del día de referencia («Hasta», acotado a cada paquete) con dos secciones separadas: **PML · NodoP** (todos los nodos) y **PND · Zona de carga** (todas las zonas). Cada sección muestra cuántos elementos tienen dato, el más caro y el más barato, cuántos tuvieron alguna hora negativa, una gráfica compacta de distribución y los 5 más caros y 5 más baratos. Elegir un nodo o una zona en el panel derecho (o tocar una fila de los rankings) abre **SOLO**: las vistas de siempre con ese elemento como protagonista. «Volver al mercado» regresa a ENSEMBLE con las mismas fechas, resolución, modalidad y selección. Desde SOLO PML, «Comparar nodos» usa al protagonista como nodo A.
+  - **Sin cálculo nuevo:** el promedio del día de cada elemento es el mismo valor que su vista SOLO para ese día (promedio simple de sus horas con dato; fuera de la ventana horaria PML, suma ÷ horas válidas del diario). El tablero solo **ordena** esos valores y **cuenta** elementos: no hay promedios entre nodos, índices ni ponderaciones. La distribución agrupa esos mismos promedios por intervalo de precio para dibujarlos.
+  - **PML y PND no se mezclan:** cada sección usa su paquete y su propio día de referencia (si el día PND no tiene dato, se usa el último anterior con dato y se dice). Ninguna gráfica, tabla o indicador combina PML con PND.
+  - **Faltantes:** un nodo o una zona sin horas con dato ese día no entra al ranking ni se trata como cero; se cuenta como «sin dato». Un elemento con menos de 24 horas lo indica en su fila.
+  - **Enlaces:** un enlace con `vista`, `nodo`, `nodo_a`, `nodo_b`, `modalidad` o `zona` abre SOLO con exactamente el mismo análisis que en v0.7.0 (incluidos sus avisos). Sin esos parámetros abre ENSEMBLE; su URL guarda solo `desde`, `hasta` y `resolucion`.
+  - En pantallas de 1024 px o menos, el tablero va primero y el panel del solista debajo, ambos a todo el ancho.
 - **Vista y filtros:** vista, nodo(s), fechas y resolución están en el panel «Vista y filtros», cerrado al abrir la aplicación. Cerrarlo no cambia la selección.
 - **Fechas por defecto:** «Desde» y «Hasta» inician en el día de la consulta (fecha de Ciudad de México), en resolución horaria. Si el paquete todavía no incluye ese día, se usa el último día disponible. Los límites seleccionables siguen saliendo de `metadata.json`.
 - **Nodos (v0.6.0):** se buscan por clave NodoP o por nombre oficial (por ejemplo `06ESC` o «Escobedo» encuentran `06ESC-115 · Escobedo`). Cada opción se muestra como «Clave · Nombre», pero el valor elegido, la URL y los cálculos usan solo la clave: un nombre puede repetirse en varias claves. Antes del nodo, «Región de Control», «Estado» y «Zona de carga» (opcionales, «Todas» por defecto) acotan la lista; el estado es la entidad federativa (clave INEGI) donde CENACE ubica cada nodo y se aplica nodo por nodo, porque una zona de carga puede abarcar varios estados; no cambian el nodo elegido: si queda fuera del filtro se conserva con un aviso, y «Limpiar ubicación» vuelve a «Todas». En la vista 2, Nodo A y Nodo B tienen filtros independientes. La clasificación es la de la versión del catálogo indicada al pie y no se aplica hacia atrás; los 7 nodos de interconexión internacional aparecen como «sin clasificación verificada». Si el catálogo falta o no pasa su validación, la aplicación funciona solo con claves, como en v0.5.1. Región, estado y zona no se guardan en los enlaces.
