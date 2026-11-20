@@ -13,7 +13,7 @@ Contrato PND v1 (pnd/):
 
 Un día sin dato no es precio cero: no tiene archivo, se lista en `dias_sin_dato` y no se rellena.
 `dias_sin_dato` (decisión de producto 2026-11-20) es una lista de objetos con la evidencia de la consulta real
-al servicio: {"fecha", "consultado_utc", "status" y/o "http", "resumen", "url"}. No es una ausencia permanente:
+al servicio: {"fecha", "estado", "consultas": [{"consultado_utc", "url", "http", "status", "respuesta", ...}]}. No es una ausencia permanente:
 es «sin dato disponible en la consulta verificada» y el pipeline lo reintenta. Un hueco sin esa evidencia, o un
 día declarado que sí tiene archivo, invalida el paquete.
 Los promedios son simples sobre las horas con dato, igual que en el PML.
@@ -90,6 +90,21 @@ def _revisar_parquet(ruta, nombre, info, esquema):
             raise PndNoDisponible(f"Compresión distinta de zstd en {nombre}.")
 
 
+def ultima_consulta(entrada):
+    """Consulta más reciente que respalda un día sin dato, o None si no hay evidencia aceptable.
+
+    Forma de power-market-lab (config/pnd_dias_sin_dato.json): {"fecha", "estado", "consultas": [{consultado_utc,
+    url, http, status, respuesta, sha256_respuesta}]}; también se acepta la consulta en el primer nivel.
+    Solo cuenta un «sin resultados» del servicio (status ZERO_RESULTS o HTTP 204/404), nunca un error o un timeout.
+    """
+    if not isinstance(entrada, dict) or "fecha" not in entrada:
+        return None
+    consultas = entrada.get("consultas") or [entrada]
+    validas = [c for c in consultas if isinstance(c, dict) and c.get("consultado_utc")
+               and (c.get("status") == "ZERO_RESULTS" or c.get("http") in (204, 404))]
+    return max(validas, key=lambda c: c["consultado_utc"]) if validas else None
+
+
 def inspeccionar_pnd(carpeta=PND_DIR):
     """Verifica manifiesto, archivos esperados, SHA-256, filas, esquema y zstd. Devuelve los límites del paquete.
 
@@ -101,9 +116,10 @@ def inspeccionar_pnd(carpeta=PND_DIR):
         desde, hasta = _fecha(m["desde"]), _fecha(m["hasta"])
         evidencia = {}
         for e in m.get("dias_sin_dato", []):
-            if not (isinstance(e, dict) and e.get("consultado_utc") and (e.get("status") or e.get("http"))):
+            consulta = ultima_consulta(e)
+            if consulta is None:
                 raise PndNoDisponible("Un día sin dato no trae la evidencia de su consulta.")
-            evidencia[_fecha(e["fecha"])] = e
+            evidencia[_fecha(e["fecha"])] = consulta
         sin_dato = sorted(evidencia)
         if len(sin_dato) != len(m.get("dias_sin_dato", [])):
             raise PndNoDisponible("Días sin dato repetidos en metadata.")

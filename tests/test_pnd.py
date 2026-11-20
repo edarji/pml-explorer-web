@@ -62,8 +62,12 @@ def armar_paquete(carpeta, desde=DESDE, hasta=HASTA, sin_dato=SIN_DATO, zonas=ZO
 
 def evidencia(dia):
     """Forma de una entrada de dias_sin_dato: el día y el resultado de la consulta real al servicio."""
-    return {"fecha": str(dia), "consultado_utc": "2026-11-20T12:30:00Z", "http": 200, "status": "ZERO_RESULTS",
-            "resumen": '{"status":"ZERO_RESULTS"}', "url": f"https://ws01.cenace.gob.mx:8082/SWPEND/SIM/SIN/MDA/{dia:%Y/%m/%d}/{dia:%Y/%m/%d}/JSON"}
+    url = f"https://ws01.cenace.gob.mx:8082/SWPEND/SIM/SIN/MDA/{dia:%Y/%m/%d}/{dia:%Y/%m/%d}/JSON"
+    return {"fecha": str(dia), "estado": "sin dato disponible en la consulta verificada; se reintenta",
+            "consultas": [{"consultado_utc": "2026-11-19T23:00:00Z", "url": url, "http": 200, "status": "ZERO_RESULTS",
+                           "respuesta": "status ZERO_RESULTS, Resultados vacío"},
+                          {"consultado_utc": "2026-11-20T12:30:00Z", "url": url, "http": 200, "status": "ZERO_RESULTS",
+                           "respuesta": "status ZERO_RESULTS, Resultados vacío"}]}
 
 
 def escribir_metadata(carpeta, desde, hasta, sin_dato, n_zonas, **extra):
@@ -113,7 +117,10 @@ class Contrato(unittest.TestCase):
             pnd.inspeccionar_pnd(self.dir)
 
     def test_dia_sin_dato_sin_evidencia_se_rechaza(self):
-        for entrada in (str(SIN_DATO[0]), {"fecha": str(SIN_DATO[0])}, {"fecha": str(SIN_DATO[0]), "status": "ZERO_RESULTS"}):
+        dia = str(SIN_DATO[0])
+        error = {"consultado_utc": "2026-11-20T12:30:00Z", "http": 500, "status": "ERROR"}
+        for entrada in (dia, {"fecha": dia}, {"fecha": dia, "status": "ZERO_RESULTS"}, {"fecha": dia, "consultas": [error]},
+                        {"fecha": dia, "consultas": []}):
             with self.subTest(entrada=entrada):
                 escribir_metadata(self.dir, DESDE, HASTA, [], 3, dias_sin_dato=[entrada])
                 with self.assertRaises(pnd.PndNoDisponible):
