@@ -62,7 +62,7 @@ def armar_paquete(carpeta, desde=DESDE, hasta=HASTA, sin_dato=SIN_DATO, zonas=ZO
 
 
 FIXTURE_SIN_DATO = Path(__file__).with_name("fixtures") / "pnd_dias_sin_dato.json"
-# Copia exacta de power-market-lab config/pnd_dias_sin_dato.json (rama pnd-descarga, 2d0e93d): el mismo esquema que
+# Copia exacta de power-market-lab config/pnd_dias_sin_dato.json (rama pnd-descarga, 6e0af8d): el mismo esquema que
 # exportar_pnd.py escribe en metadata.dias_sin_dato. Las pruebas no usan otro esquema de fixture.
 ENTRADA_REAL = json.loads(FIXTURE_SIN_DATO.read_text(encoding="utf-8"))[0]
 
@@ -129,7 +129,7 @@ class Contrato(unittest.TestCase):
         escribir_metadata(real, date(2026, 5, 6), date(2026, 5, 10), [], 3, dias_sin_dato=[ENTRADA_REAL])
         limites = pnd.inspeccionar_pnd(real)
         self.assertEqual(limites["dias_sin_dato"], [date(2026, 5, 8)])
-        self.assertEqual(limites["evidencia_sin_dato"][date(2026, 5, 8)]["consultado_utc"], "2026-11-20T12:20:23Z")
+        self.assertEqual(limites["evidencia_sin_dato"][date(2026, 5, 8)]["consultado_utc"], "2026-11-20T12:18:26Z")
 
     def test_evidencia_invalida_se_rechaza(self):
         def con(**cambio):
@@ -400,7 +400,7 @@ class Interfaz(unittest.TestCase):
         app = self.abrir(modalidad="pnd", zona="MONTERREY", desde="2026-11-01", hasta="2026-11-05", resolucion="mensual")
         self.assertIn("80.0% (96 de 120 horas con dato)", " ".join(m.value for m in app.markdown))
         aviso = " ".join(w.value for w in app.warning)
-        self.assertIn("2026-11-03 (consulta verificada 2026-11-20T12:20:23Z)", aviso)
+        self.assertIn("2026-11-03 (consulta verificada 2026-11-20T12:18:26Z)", aviso)
         self.assertNotIn("permanente", aviso)
         self.assertEqual({m.label: m.value for m in app.metric}["Mínimo horario"], "-50.00")
 

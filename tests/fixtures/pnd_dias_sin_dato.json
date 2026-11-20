@@ -11,15 +11,15 @@
         "status": "ZERO_RESULTS",
         "respuesta": "status ZERO_RESULTS, Resultados vacío (0 zonas); 139 bytes",
         "sha256_respuesta": "626acf4fbd82b94dfc03f7f22a5b13e3d7da50b2b805ff0d764c08af32a5c671"
-      },
+      }
+    ],
+    "confirmaciones": [
       {
-        "consultado_utc": "2026-11-20T12:20:23Z",
-        "url": "https://ws01.cenace.gob.mx:8082/SWPEND/SIM/SIN/MDA/2026/05/08/2026/05/08/JSON",
+        "descripcion": "Verificación independiente del propietario desde otro equipo, mismo URL del día; sin hora de consulta capturada (no se registra timestamp para no inventarlo). El archivo local de la respuesta terminó de escribirse a las 2026-11-20T12:19:51Z según su mtime.",
         "http": 200,
         "status": "ZERO_RESULTS",
         "respuesta": "status ZERO_RESULTS, nombre PEND, proceso MDA, sistema SIN, area PÚBLICA, Resultados vacío; 139 bytes, 0.36 s",
-        "sha256_respuesta": "626acf4fbd82b94dfc03f7f22a5b13e3d7da50b2b805ff0d764c08af32a5c671",
-        "origen": "verificación independiente del propietario desde otro equipo; la hora es la de su reporte (consulta inmediatamente anterior)"
+        "sha256_respuesta": "626acf4fbd82b94dfc03f7f22a5b13e3d7da50b2b805ff0d764c08af32a5c671"
       }
     ],
     "notas": "El backfill de 2026-11-19 (bloque 2026-05-03 a 2026-05-09) devolvió los otros 6 días sin este. El 2026-11-20 ~12:08Z la consulta con lista de 10 zonas también dio ZERO_RESULTS con Valores vacíos. En la misma fecha el PML MDA SIN sí existe. Crudo de la consulta en data/pnd/raw/ del Mac mini."
