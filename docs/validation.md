@@ -1,5 +1,28 @@
 # Validaciones y aceptación pendiente
 
+## 2026-11-20 · PND v0.7.0: AC-03 contra reportes oficiales de CENACE
+
+Verificación independiente de Eduardo, 2026-11-20 (comparación verificada a las 12:27:24Z), sobre el paquete de `9cbd5b3`. Los Parquet son los mismos en el paquete actual: después solo cambió `metadata.json`, en `a2d279b`. La evidencia completa está en el [comentario del PR #23](https://github.com/edarji/pml-explorer-web/pull/23#issuecomment-7039719618).
+
+- **Reporte oficial:** ZIP descargado de [PreEnerServConMDA](https://www.cenace.gob.mx/Paginas/SIM/Reportes/PreEnerServConMDA.aspx) con *Precios en Nodos Distribuidos MDA, Diaria, SIN, 17/11/2026–19/11/2026*. Trae 3 CSV de 2424 filas cada uno (101 zonas × 24 h). SHA-256:
+  - 17 nov: `f3d61c376c6dd9cc3b1c55158aab2b52651884672942be90fb697ec7fda78127`
+  - 18 nov: `ca581a15bd02e52d23cdcceaa737424234a9c350e74f321f7e75bb3354afd8f7`
+  - 19 nov: `f90c6fd4cfac847f29e5c5c8fa15396b5214400c88b0b435b9d3e8e51791daba`
+- **Servicio:** `SWPEND/SIM/SIN/MDA/2026/11/17/2026/11/19/JSON` respondió HTTP 200, 1,455,466 bytes, SHA-256 `bbb683956164a65775589a30b06db4e9de5201d30e16ce8cb4eb11111889ce92`.
+- **Comparación exacta (Decimal)** por fecha, zona y hora de `pz`, `pz_ene`, `pz_per` y `pz_cng` contra los Parquet del paquete: 7272 filas y 29,088 valores, **0 diferencias**.
+- **App:** las estadísticas y el CSV de MONTERREY, VDM CENTRO y CENTRO ORIENTE del 17 al 19 de noviembre (216 h) coinciden con el reporte. Promedios horarios (17/18/19):
+  - MONTERREY 603.3220833 / 591.5229167 / 584.05875
+  - VDM CENTRO 1019.26875 / 769.09 / 1008.165
+  - CENTRO ORIENTE 766.2854167 / 682.8266667 / 796.87
+- **Día sin dato:** en MONTERREY, mayo de 2026 da 479.91 con 720 de 744 h (96.8 %). El 2026-05-08 no tiene filas.
+- **Medición local de Eduardo** (macOS, Python 3.14.8, DuckDB 1.5.6; no es Community Cloud ni caché del sistema vacía):
+  - inspección 0.1392 s;
+  - diaria, mensual y estadísticas de 3 zonas para 2023–2025: 0.1816–0.2188 s por operación;
+  - histórico completo: 0.2426–0.2828 s;
+  - RSS máximo acumulado del proceso: 250,413,056 bytes (~239 MiB).
+
+Alcance: AC-03 queda registrado para el 17–19 nov de 2026 con esta evidencia. Los demás días los respalda el contrato (descuadre ≤ 0.02, 24 h, zonas = referencia), no una comparación uno a uno.
+
 ## 2026-11-20 · PND v0.7.0: AC-13 local (rendimiento con el paquete real)
 
 Medición **local** con el paquete PND real de esta rama (`pnd/`, 2023-01-01 a 2026-11-19, 1418 archivos horarios, 101 zonas, `dias_sin_dato` = 2026-05-08) y el paquete PML del repo. Equipo: MacBook Pro Apple M5 Pro, 24 GB, macOS 27.2.1; Python 3.14.8, Streamlit 1.66.1, DuckDB 1.5.6, pyarrow 24.0.0, pandas 3.0.6. Zona: MONTERREY. Cada escenario corre en su propio proceso (`scripts/medir_ac13_pnd.py`); RSS = `ru_maxrss` del proceso. Mediana de 3 corridas.

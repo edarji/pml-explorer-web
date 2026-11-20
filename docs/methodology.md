@@ -101,5 +101,5 @@ La aplicación está publicada en Streamlit Community Cloud (https://pml-explore
   - Si el rango elegido solo contiene días sin dato, la app responde «sin datos».
 - **Resolución horaria.** Se permite hasta 366 días por rango. No hay ventana horaria: el paquete PND es horario desde 2023.
 - **Pendiente (no forma parte de esta entrega).**
-  - AC-03: contrastar contra los reportes oficiales de CENACE.
+  - AC-03: registrado el 2026-11-20 contra los reportes oficiales de CENACE del 17 al 19 de noviembre de 2026: 29,088 valores, 0 diferencias ([validación](validation.md)).
   - AC-13: la medición local con el paquete real ya está hecha ([validación](validation.md), 2026-11-20). Falta medir en Community Cloud, después de un despliegue aprobado.
