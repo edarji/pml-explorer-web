@@ -12,6 +12,7 @@ import streamlit as st
 
 import catalogo as cat_nodos
 import exportar
+import pnd as pnd_zonas
 
 from enlaces import PARAMETROS, VISTAS_URL, construir_enlace, leer_enlace
 from rangos import RANGOS_RAPIDOS, rango_rapido
@@ -21,7 +22,7 @@ from vista1 import (DATA_DIR, RESOLUCIONES, UMBRAL_DESCUADRE, DatosNoDisponibles
                     cobertura_horaria, estadisticas, huella_paquete,
                     inspeccionar_paquete, marcar_periodos, metadata, observado, serie)
 
-VERSION_APP = "v0.6.5 beta"  # versión de la aplicación; el esquema de datos y la fecha vienen del paquete
+VERSION_APP = "v0.7.0 beta"  # versión de la aplicación; el esquema de datos y la fecha vienen del paquete
 REPO = "https://github.com/edarji/pml-explorer-web/blob/main"
 COBERTURA_ESCASA = 80  # % de horas con dato bajo el cual se advierte explícitamente
 SITIO_MERCADOS = "https://edarji.net/mercados/"
@@ -36,6 +37,12 @@ AYUDA_SOLO_CLAVE = ("Escribe la clave NodoP o parte de ella, por ejemplo 06ESC. 
                     "ubicaciones no está disponible en esta publicación.")
 TODAS = "Todas"
 UBICACION = {}  # se llena al cargar el paquete: {"union": DataFrame, "nombres": dict, "manifiesto": dict}
+# v0.7.0 · Precio de zona de carga. Se llena solo si la carpeta pública pnd/ pasa su contrato; si no, la app es
+# exactamente la de PML (sin selector de modalidad). {"limites", "zonas", "regiones", "version"}
+PND = {}
+MODALIDADES = {"pml": "PML · NodoP", "pnd": "PND · Zona de carga"}
+ZONA_DEFECTO = "MONTERREY"
+PND_HORARIA_MAX_DIAS = 366  # la gráfica horaria de más de un año no se lee y pesa en el navegador
 # H03: los st.caption de Streamlit 1.66 usan opacidad 0.6 (≈3.70:1 sobre blanco). Con 0.8 el texto
 # queda en ≈6.67:1 sobre blanco y ≈6.19:1 sobre gris claro, por debajo del texto principal (12.53:1).
 ESTILOS = """<style>
@@ -192,6 +199,22 @@ def consultar_componentes(nodo, inicio, fin, resolucion, data_dir, version):
     return componentes(nodo, inicio, fin, resolucion, data_dir)
 
 
+@st.cache_data(max_entries=2, show_spinner=False)
+def cargar_pnd(pnd_dir, version):
+    """v0.7.0 · Límites y zonas del paquete PND. Lanza PndNoDisponible si no cumple el contrato."""
+    return pnd_zonas.inspeccionar_pnd(pnd_dir), pnd_zonas.zonas(pnd_dir)
+
+
+@st.cache_data(max_entries=64, show_spinner=False)
+def consultar_estadisticas_pnd(zona, inicio, fin, pnd_dir, version):
+    return pnd_zonas.estadisticas_pnd(zona, inicio, fin, pnd_dir)
+
+
+@st.cache_data(max_entries=32, show_spinner=False)
+def consultar_serie_pnd(zona, inicio, fin, resolucion, pnd_dir, version):
+    return pnd_zonas.serie_pnd(zona, inicio, fin, resolucion, pnd_dir)
+
+
 def mxn(valor):
     """Precio con la misma precisión en indicadores y tablas: dos decimales."""
     return "—" if pd.isna(valor) else f"{valor:,.2f}"
@@ -213,14 +236,14 @@ def campos_recuadro(df, resolucion, nodo):
     return df
 
 
-def grafica(df, y, titulo_y, resolucion, color=None, nodo="", cero=False):
+def grafica(df, y, titulo_y, resolucion, color=None, nodo="", cero=False, titulo_serie=None):
     """Línea con puntos; los periodos parciales se marcan con ▼.
 
     v0.5.1: al pasar el mouse cerca de la línea se marca el punto más cercano y aparece un recuadro pequeño
     con nodo, valor, fecha y hora (horaria) u horas con dato (diaria y mensual).
     """
     df = campos_recuadro(df, resolucion, nodo)
-    recuadro = [alt.Tooltip("nodo_txt:N", title="Nodos" if " − " in nodo else "Nodo"),
+    recuadro = [alt.Tooltip("nodo_txt:N", title=titulo_serie or ("Nodos" if " − " in nodo else "Nodo")),
                 alt.Tooltip("fecha_txt:N", title="Fecha")]
     if resolucion == "horaria":
         recuadro.append(alt.Tooltip("hora_txt:N", title="Hora"))
@@ -286,6 +309,35 @@ Documento completo: [metodología]({REPO}/docs/methodology.md) · [contrato de d
 """)
 
 
+def metodologia_pnd():
+    """v0.7.0 · Metodología de la modalidad PND (decisión D: PEND/pz solo aquí y en los metadatos)."""
+    with st.expander("Metodología y definiciones · PND"):
+        st.markdown(f"""
+- **Qué es:** el **precio de zona de carga (PND)** que publica CENACE para cada zona de carga del SIN en el Mercado del Día en Adelanto (MDA). Es el precio con que se liquida la demanda de la zona, no el de un nodo. Unidades: MXN/MWh.
+- **Fuente:** CENACE, servicio SW-PEND (Precios de Energía en Nodos Distribuidos), campo `pz` (y `pz_ene`, `pz_per`, `pz_cng` para energía, pérdidas y congestión). Según el manual técnico de SW-PEND, es el promedio de los PML de los nodos de la zona **ponderado** por su factor de distribución de carga: no es un promedio simple de nodos, por eso la app lo toma tal cual lo publica CENACE y no lo recalcula.
+- **Componentes:** PND = energía + pérdidas + congestión, con sus signos. Se revisa que |PND − suma| no supere 0.02 MXN/MWh antes de publicar.
+- **Promedio:** promedio **simple** de las horas con dato, igual que en el PML. Diario y mensual se calculan sobre las horas, nunca promediando promedios.
+- **Convención horaria:** hora 1–24 de CENACE, hora final (la hora 1 es 00:00–01:00 del día de operación). Sin conversión a UTC.
+- **Faltantes:** una hora o un día sin dato **no es un precio cero**; no se imputa ni se arrastra. Si el servicio de CENACE no devolvió un día en una consulta verificada, el paquete lo declara «sin dato disponible» con la fecha y el resultado de esa consulta, y se vuelve a pedir en cada actualización. La cobertura es horas con dato ÷ (24 × días del rango), incluidos esos días.
+- **Correcciones:** si CENACE corrige un día ya publicado, el paquete toma la versión nueva y el día queda listado como corregido; el original se conserva en el respaldo del laboratorio.
+- **Zonas y regiones:** la lista de zonas viene del paquete; la Región de Control para filtrar viene del [Catálogo de NodosP de CENACE](https://www.cenace.gob.mx/Paginas/SIM/NodosP.aspx) (una zona puede estar en dos regiones). Solo ayuda a encontrar la zona; no interviene en ningún cálculo.
+- **PML y PND no se mezclan:** cada modalidad tiene su propio paquete, sus fechas y su CSV.
+
+Documento completo: [metodología]({REPO}/docs/methodology.md) · [contrato de datos]({REPO}/docs/data-contract.md).
+""")
+
+
+def ajustar_fechas_modalidad():
+    """Callback del selector de modalidad: acota «Desde» y «Hasta» a las fechas del paquete elegido.
+
+    PML y PND tienen paquetes distintos; un date_input con un valor fuera de sus límites fallaría.
+    """
+    limites = PND["limites"] if st.session_state.get("modalidad") == "pnd" else PND["limites_pml"]
+    for clave in ("desde", "hasta"):
+        if clave in st.session_state:
+            st.session_state[clave] = min(max(st.session_state[clave], limites["desde"]), limites["hasta"])
+
+
 def dia_de_consulta(limites):
     """Fecha de operación por defecto: hoy en Ciudad de México, acotada al rango del paquete.
 
@@ -337,7 +389,7 @@ def leer_url(nodos, limites):
         return
     st.session_state["enlace_leido"] = True
     parametros = {clave: st.query_params.get_all(clave) for clave in st.query_params}
-    estado, problemas, faltantes = leer_enlace(parametros, nodos, limites)
+    estado, problemas, faltantes = leer_enlace(parametros, nodos, limites, PND.get("zonas"), PND.get("limites"))
     st.session_state.update(estado)
     st.session_state["enlace_avisos"] = (problemas, faltantes)
     st.session_state["panel_abierto"] = bool(problemas)  # fijo en la sesión: el panel no se cierra solo
@@ -376,7 +428,7 @@ def actualizar_url(vista):
         st.query_params.from_dict(nuevo)
 
 
-def descarga_csv(vista_url, tabla, nodos_csv, inicio, fin, resolucion):
+def descarga_csv(vista_url, tabla, nodos_csv, inicio, fin, resolucion, ayuda=None):
     """v0.6.2 · «Descargar CSV» y el enlace de la consulta, debajo de la tarjeta de cada vista.
 
     `tabla` sale de los DataFrames que la vista ya dibujó (exportar.tabla_*), así que el archivo trae los
@@ -388,11 +440,11 @@ def descarga_csv(vista_url, tabla, nodos_csv, inicio, fin, resolucion):
     """
     nombre = exportar.nombre_archivo(vista_url, nodos_csv, inicio, fin, resolucion)
     enlace = construir_enlace({clave: st.session_state.get(clave) for clave in PARAMETROS}
-                              | {"vista": st.session_state["vista"]})
+                              | {"vista": st.session_state.get("vista", VISTAS_URL["historico"])})
     with st.container(key="descarga", horizontal=True, vertical_alignment="center", gap="small"):
         st.download_button("Descargar CSV", data=exportar.a_csv(tabla), file_name=nombre,
                            mime="text/csv", on_click="ignore", icon=":material/download:", key=f"csv_{vista_url}",
-                           help="Los datos de esta gráfica: fecha, hora (si es horaria), nodo y precios en MXN/MWh.")
+                           help=ayuda or "Los datos de esta gráfica: fecha, hora (si es horaria), nodo y precios en MXN/MWh.")
         with st.popover("Enlace de esta consulta"):
             st.code(URL_APP + "?" + urlencode(enlace), language=None, wrap_lines=True)
             st.caption("Copia el enlace con el botón de la esquina. Abre esta misma vista con estos filtros.")
@@ -891,6 +943,138 @@ def vista_3(limites, nodos, fechas_nodo, version, panel):
         st.dataframe(tabla, hide_index=True, width="stretch", column_config=formato)
 
 
+def selector_zona(zonas):
+    """v0.7.0 · Zona de carga con filtro opcional de Región de Control (decisión E: sin filtro de estado).
+
+    Igual que con los nodos, el filtro solo acota la lista; nunca cambia la zona elegida.
+    """
+    st.session_state.setdefault("zona", ZONA_DEFECTO if ZONA_DEFECTO in zonas else zonas[0])
+    opciones = zonas
+    if PND["regiones"]:
+        c1, c2 = st.columns([1, 2])
+        with c1:
+            region = _elegir("Región de Control", sorted(PND["regiones"]), "zona_region")
+        if region is not None:
+            opciones = [z for z in PND["regiones"][region] if z in zonas]
+            if st.session_state["zona"] not in opciones:
+                st.caption(f"{st.session_state['zona']} está fuera de esta región; se conserva hasta que elijas otra zona.")
+                opciones = [st.session_state["zona"]] + opciones
+        destino = c2
+    else:
+        destino = st.container()
+    with destino:
+        zona = st.selectbox("Zona de carga", opciones, key="zona", format_func=str.title,
+                            help="Zona de carga del SIN según CENACE. El PND es el precio de la zona, no de un nodo.")
+    regiones = [r for r, zs in PND["regiones"].items() if zona in zs]
+    if regiones:
+        st.caption(f"Región de Control: {', '.join(r.title() for r in sorted(regiones))}")
+    return zona
+
+
+def vista_pnd(panel):
+    """v0.7.0 · Precio de zona de carga (PND) histórico de una zona. Carril separado: no usa ningún dato PML."""
+    limites, fechas_zona, version = PND["limites"], PND["zonas"], PND["version"]
+    zonas = list(fechas_zona)
+    with panel:
+        zona = selector_zona(zonas)
+        inicio, fin, resolucion = controles_rango(limites)
+        primera, ultima = fechas_zona.get(zona, (None, None))
+        if primera:
+            st.caption(f"{zona.title()} tiene datos del {primera} al {ultima}.")
+    actualizar_url(st.session_state.get("vista", VISTAS_URL["historico"]))
+
+    if inicio > fin:
+        st.error("La fecha 'Desde' debe ser anterior a 'Hasta'.")
+        st.stop()
+    if resolucion == "horaria" and (fin - inicio).days + 1 > PND_HORARIA_MAX_DIAS:
+        st.warning(f"La resolución horaria admite hasta {PND_HORARIA_MAX_DIAS} días. "
+                   "Acorta el rango o elige diaria o mensual.")
+        st.stop()
+
+    try:
+        e = consultar_estadisticas_pnd(zona, inicio, fin, str(pnd_zonas.PND_DIR), version).iloc[0]
+        df = consultar_serie_pnd(zona, inicio, fin, resolucion, str(pnd_zonas.PND_DIR), version)
+    except (duckdb.Error, OSError):
+        st.error("No se puede consultar el rango con el paquete público de PND. Es necesario revisar sus archivos.")
+        st.stop()
+
+    sin_dato = [d for d in limites["dias_sin_dato"] if inicio <= d <= fin]
+    if e["horas_con_dato"] == 0:
+        st.warning(f"Sin datos de PND para {zona.title()} entre {inicio} y {fin}. No se muestra ninguna "
+                   "cifra: la ausencia de datos no equivale a precio cero."
+                   + (" Ese periodo no tiene dato disponible en la consulta verificada al servicio de CENACE; "
+                      "se reintenta en cada actualización." if sin_dato else ""))
+        st.stop()
+
+    st.subheader(f"{zona.title()}: precio de zona de carga (PND), {inicio} a {fin}")
+    con_dato, del_rango = int(e["horas_con_dato"]), int(e["horas_del_rango"])
+    desde_obs, hasta_obs = e["primera_fecha"].date(), e["ultima_fecha"].date()
+
+    def pnd_del_dia(d):
+        x = consultar_estadisticas_pnd(zona, d, d, str(pnd_zonas.PND_DIR), version).iloc[0]
+        return None if x["horas_con_dato"] == 0 else x["promedio"]
+    cabecera(pnd_del_dia, hasta_obs, limites, "PND promedio")
+    st.markdown(f"Zona de carga · MDA · SIN · CENACE | **Cobertura:** {e['cobertura_pct']}% ({con_dato:,} de "
+                f"{del_rango:,} horas con dato) | **Rango con observaciones:** {desde_obs} a {hasta_obs}")
+    if sin_dato:
+        evidencia = limites["evidencia_sin_dato"]
+        detalle = "; ".join(f"{d} (consulta verificada {evidencia[d]['consultado_utc']})" for d in sin_dato)
+        st.warning(f"Sin dato disponible en la consulta verificada al servicio de CENACE: {detalle}. Ese día no "
+                   "tiene precio en el paquete (no es cero ni se rellena) y la cobertura lo cuenta como faltante; "
+                   "se vuelve a consultar en cada actualización.")
+    if e["cobertura_pct"] < COBERTURA_ESCASA:
+        st.warning(f"Cobertura escasa: los indicadores describen solo {con_dato:,} horas, entre {desde_obs} y "
+                   f"{hasta_obs}. Las horas sin dato no se tratan como cero.")
+    corregidos = [d for d in limites["dias_corregidos"] if inicio <= d <= fin]
+    if corregidos:
+        st.caption(f"Días corregidos por CENACE después de su primera publicación: {', '.join(map(str, corregidos))}.")
+
+    df = marcar_periodos(df, inicio, fin, resolucion)
+    titulo = {"horaria": "PND horario", "diaria": "PND promedio diario", "mensual": "PND promedio mensual"}[resolucion]
+    with st.container(key="tarjeta"):
+        izq, der = st.columns([3.2, 1], gap="large")
+        with izq:
+            st.markdown(f"**{titulo} (MXN/MWh)**")
+            grafica(df, "pnd_promedio", "PND (MXN/MWh)", resolucion, nodo=zona.title(), titulo_serie="Zona")
+        with der, st.container(key="ficha"):
+            st.markdown(barra_rango("Rango horario del periodo", e["minimo"], e["maximo"], e["promedio"]),
+                        unsafe_allow_html=True)
+            st.metric("Promedio horario", mxn(e["promedio"]), help="Promedio simple de las horas con dato.")
+            st.metric("Mediana horaria", mxn(e["mediana"]))
+            st.metric("Mínimo horario", mxn(e["minimo"]), help="Menor PND de una hora en el rango.")
+            st.metric("Máximo horario", mxn(e["maximo"]), help="Mayor PND de una hora en el rango.")
+            st.metric("Horas con PND < 0", f"{int(e['horas_negativas']):,}")
+            st.markdown(fila("Energía", mxn(e["energia"])) + fila("Pérdidas", mxn(e["perdidas"]))
+                        + fila("Congestión", mxn(e["congestion"])) + fila("Desv. estándar", mxn(e["desv_std"]))
+                        + fila("Percentil 10", mxn(e["p10"])) + fila("Percentil 90", mxn(e["p90"]))
+                        + fila("Cobertura", f"{e['cobertura_pct']}%"), unsafe_allow_html=True)
+    descarga_csv("pnd", exportar.tabla_pnd(df, zona, resolucion), [zona], inicio, fin, resolucion,
+                 ayuda="Los datos de esta gráfica: fecha, hora (si es horaria), zona de carga, PND y sus componentes "
+                       "en MXN/MWh.")
+    st.caption(f"Indicadores calculados sobre las {con_dato:,} horas con dato, en MXN/MWh"
+               + ("." if resolucion == "horaria" else f", aunque la gráfica sea {resolucion}.")
+               + " Energía, pérdidas y congestión: promedios sobre las mismas horas.")
+    avisos_parciales(df, resolucion)
+
+    with st.expander("Tabla del PND y sus componentes"):
+        tabla = df[["etiqueta", "pnd_promedio", "energia", "perdidas", "congestion", "horas", "horas_posibles"]].rename(
+            columns={"etiqueta": "Periodo", "pnd_promedio": "PND", "energia": "Energía", "perdidas": "Pérdidas",
+                     "congestion": "Congestión", "horas": "Horas con dato", "horas_posibles": "Horas posibles en el rango"})
+        st.dataframe(tabla, hide_index=True, width="stretch",
+                     column_config={c: st.column_config.NumberColumn(format="%.2f")
+                                    for c in ("PND", "Energía", "Pérdidas", "Congestión")})
+
+
+def conservar_widgets():
+    """v0.7.0 · Streamlit borra el estado de un widget que no se dibuja en una corrida. Al pasar a PND (o volver a
+    PML) se ocultan pestañas y selectores de la otra modalidad; reescribir su valor lo conserva para el regreso."""
+    claves = ["vista", "zona", "zona_region"] + [f"{n}{s}" for n in ("nodo", "nodo_a", "nodo_b")
+                                                for s in ("", "_region", "_estado", "_zona")]
+    for clave in claves:
+        if clave in st.session_state:
+            st.session_state[clave] = st.session_state[clave]
+
+
 st.set_page_config(page_title="PML Explorer", page_icon=str(ASSETS / "logo.svg"), layout="wide",
                    initial_sidebar_state="collapsed")
 st.html(ESTILOS)
@@ -921,6 +1105,16 @@ if not nodos:
     st.warning("El paquete público no contiene nodos con datos.")
     st.stop()
 UBICACION.update(cargar_ubicacion(tuple(nodos), firma_catalogo()))
+# v0.7.0 · PND: solo si la carpeta pública pnd/ existe y cumple su contrato. Si falla, PML sigue igual.
+if (pnd_zonas.PND_DIR / "metadata.json").is_file():
+    try:
+        version_pnd = pnd_zonas.huella_pnd() + VERSION_APP
+        limites_pnd, fechas_zona = cargar_pnd(str(pnd_zonas.PND_DIR), version_pnd)
+        regiones_pnd = pnd_zonas.regiones_de_zonas(UBICACION["union"]) if UBICACION else {}
+        PND.update(limites=limites_pnd, zonas=fechas_zona, version=version_pnd, limites_pml=limites,
+                   regiones={r: [z for z in zs if z in fechas_zona] for r, zs in regiones_pnd.items()})
+    except (pnd_zonas.PndNoDisponible, duckdb.Error, OSError):
+        PND.clear()
 
 
 VISTAS = {VISTAS_URL["historico"]: vista_1, VISTAS_URL["comparacion"]: vista_2, VISTAS_URL["componentes"]: vista_3}
@@ -929,23 +1123,44 @@ leer_url(nodos, limites)
 # H07: vista y filtros en un panel con texto visible dentro del contenido, cerrado al iniciar, en vez de la
 # barra lateral (en móvil quedaba sobre los resultados o como un icono sin texto). Cerrarlo no borra la selección.
 # v0.5: las vistas son una barra de pestañas visible arriba; nodo, fechas y resolución siguen en el panel.
+conservar_widgets()
+if PND:
+    # v0.7.0 · Modalidad: PML por nodo (como siempre) o PND por zona de carga. Sin PND publicado no se dibuja.
+    st.radio("Precio", list(MODALIDADES), key="modalidad", horizontal=True, format_func=MODALIDADES.get,
+             on_change=ajustar_fechas_modalidad,
+             help="PML: precio de un nodo (NodoP). PND: precio de una zona de carga, con el que se liquida la demanda.")
+modo_pnd = bool(PND) and st.session_state.get("modalidad") == "pnd"
+limites_activos = PND["limites"] if modo_pnd else limites
 col_pestanas, col_rangos = st.columns([3, 1], vertical_alignment="bottom")
 with col_pestanas, st.container(key="pestanas"):
-    vista = st.radio("Vista", list(VISTAS), key="vista", horizontal=True, label_visibility="collapsed",
-                     format_func=lambda v: v.split(". ", 1)[1])
+    if modo_pnd:
+        st.markdown("**Precio de zona de carga (PND)** · histórico por zona")
+    else:
+        vista = st.radio("Vista", list(VISTAS), key="vista", horizontal=True, label_visibility="collapsed",
+                         format_func=lambda v: v.split(". ", 1)[1])
 with col_rangos:
-    botones_rango(limites)
+    botones_rango(limites_activos)
 # Si el enlace trae problemas, el panel abre solo para corregirlos.
 panel = st.expander("Vista y filtros", expanded=st.session_state["panel_abierto"])
 # El contenido va en un contenedor creado antes que el pie: si una vista se detiene con st.stop()
 # (sin datos, fechas invertidas), metodología y fechas disponibles siguen visibles debajo.
 contenido = st.container()
-metodologia()
-st.caption(f"PML Explorer {VERSION_APP} · Datos: esquema v{metadata()['version_esquema']} · "
-           f"Fechas de operación disponibles: {limites['desde']} a {limites['hasta']} (diario); "
-           f"{limites['horario_desde']} a {limites['horario_hasta']} (horario). "
-           f"Actualización del paquete: {actualizado_cdmx(limites['generado_utc'])}, Ciudad de México."
-           + (f" · Nombres y ubicación: Catálogo de NodosP de CENACE, versión "
-              f"{UBICACION['manifiesto']['version_catalogo']}." if UBICACION else ""))
+if modo_pnd:
+    metodologia_pnd()
+    lp = PND["limites"]
+    st.caption(f"PML Explorer {VERSION_APP} · PND: contrato v1 · Fechas de operación disponibles: {lp['desde']} a "
+               f"{lp['hasta']} ({lp['zonas']} zonas de carga) · Actualización del paquete PND: "
+               f"{actualizado_cdmx(lp['generado_utc'])}, Ciudad de México · Fuente: CENACE SW-PEND, MDA, SIN.")
+else:
+    metodologia()
+    st.caption(f"PML Explorer {VERSION_APP} · Datos: esquema v{metadata()['version_esquema']} · "
+               f"Fechas de operación disponibles: {limites['desde']} a {limites['hasta']} (diario); "
+               f"{limites['horario_desde']} a {limites['horario_hasta']} (horario). "
+               f"Actualización del paquete: {actualizado_cdmx(limites['generado_utc'])}, Ciudad de México."
+               + (f" · Nombres y ubicación: Catálogo de NodosP de CENACE, versión "
+                  f"{UBICACION['manifiesto']['version_catalogo']}." if UBICACION else ""))
 with contenido:
-    VISTAS[vista](limites, nodos, fechas_nodo, version, panel)
+    if modo_pnd:
+        vista_pnd(panel)
+    else:
+        VISTAS[vista](limites, nodos, fechas_nodo, version, panel)

@@ -91,3 +91,15 @@ Cada vista tiene «Descargar CSV» debajo de la gráfica. El archivo contiene **
 La pantalla obtiene los límites diarios y horarios de `metadata.json`. Muestra `generado_utc`, instante de generación del paquete, convertido a `America/Mexico_City`; no lo infiere del reloj del servidor ni de Git, ni lo confunde con la extracción original de CENACE. El [contrato de datos](data-contract.md) fija el esquema, las unidades, la convención horaria y el manifiesto con conteos y SHA-256. El lector comprueba ese manifiesto antes de mostrar cifras.
 
 La aplicación está publicada en Streamlit Community Cloud (https://pml-explorer.streamlit.app/) y `pml-bot` actualiza el paquete cada noche. **No hay mediciones verificadas** de memoria, tiempo de arranque en frío ni tiempo de consulta en Community Cloud; tampoco de la duración de la publicación nocturna con el esquema v2. Los cambios de cálculo se aprueban y validan primero en `power-market-lab`.
+
+## Precio de zona de carga · PND (v0.7.0, en revisión)
+
+- **Qué es.** Es el precio de zona de carga que CENACE publica en SW-PEND (campo `pz`) para el MDA del SIN. Según el manual técnico de SW-PEND, es el PML de los nodos de la zona **ponderado** por su factor de distribución de carga, así que la app lo toma tal cual y no lo recalcula.
+- **Promedios.** Igual que en PML: un promedio simple de las horas con dato. El diario y el mensual se calculan sobre las horas (quedan ponderados por las horas válidas), nunca promediando promedios. Energía, pérdidas y congestión se promedian sobre las mismas horas.
+- **Cobertura.** Se calcula como horas con dato ÷ (24 × días del rango elegido), incluidos los días declarados sin dato.
+  - Un día sin dato no tiene fila ni cifra y no cuenta como cero.
+  - Si el rango elegido solo contiene días sin dato, la app responde «sin datos».
+- **Resolución horaria.** Se permite hasta 366 días por rango. No hay ventana horaria: el paquete PND es horario desde 2023.
+- **Pendiente (no forma parte de esta entrega).**
+  - AC-03: contrastar contra los reportes oficiales de CENACE.
+  - AC-13: medir el rendimiento con el paquete real.

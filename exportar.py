@@ -15,7 +15,8 @@ import re
 import pandas as pd
 
 # Prefijo del archivo según la vista (nombre de la vista en la URL -> prefijo).
-PREFIJOS = {"historico": "pml_historico", "comparacion": "pml_spread", "componentes": "pml_componentes"}
+PREFIJOS = {"historico": "pml_historico", "comparacion": "pml_spread", "componentes": "pml_componentes",
+            "pnd": "pnd_historico"}  # v0.7.0: precio de zona de carga
 # Un texto que empieza así puede ejecutarse como fórmula al abrir el CSV en Excel u hojas de cálculo.
 INICIO_FORMULA = ("=", "+", "-", "@", "\t", "\r")
 
@@ -79,6 +80,13 @@ def tabla_componentes(df, nodo, resolucion):
         (columna, df[origen].to_numpy()) for columna, origen in (
             ("pml", "pml"), ("energia", "energia"), ("perdidas", "perdidas"),
             ("congestion", "congestion"), ("descuadre_promedio", "descuadre"))])
+
+
+def tabla_pnd(df, zona, resolucion):
+    """v0.7.0 · PND de una zona de carga y sus componentes (promedio simple de las horas con dato del periodo)."""
+    return _insertar(columnas_tiempo(df, resolucion), resolucion, [("zona_carga", zona)] + [
+        (columna, df[origen].to_numpy()) for columna, origen in (
+            ("pnd", "pnd_promedio"), ("energia", "energia"), ("perdidas", "perdidas"), ("congestion", "congestion"))])
 
 
 def nombre_archivo(vista, nodos, desde, hasta, resolucion):

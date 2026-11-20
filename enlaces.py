@@ -6,6 +6,9 @@ del análisis (vista, nodos, fechas absolutas y resolución), nunca una copia de
 
 Ejemplo:
     ?vista=comparacion&nodo_a=01AAN-85&nodo_b=01AGU-230&desde=2026-10-01&hasta=2026-11-04&resolucion=diaria
+
+v0.7.0 · Precio de zona de carga (decisión F, 2026-11-13): ?modalidad=pnd&zona=MONTERREY&desde=...&hasta=...
+&resolucion=... Un enlace sin `modalidad` es PML, exactamente como antes; los enlaces PML no cambian.
 """
 from datetime import date
 
@@ -16,10 +19,11 @@ VISTAS_URL = {"historico": "1. PML histórico",
               "componentes": "3. Componentes del PML"}
 NODOS_DE_VISTA = {"historico": ("nodo",), "comparacion": ("nodo_a", "nodo_b"), "componentes": ("nodo",)}
 RESOLUCIONES_URL = ("horaria", "diaria", "mensual")
-PARAMETROS = ("vista", "nodo", "nodo_a", "nodo_b", "desde", "hasta", "resolucion")
+PARAMETROS = ("vista", "nodo", "nodo_a", "nodo_b", "desde", "hasta", "resolucion", "modalidad", "zona")
+MODALIDADES_URL = ("pnd",)  # sin el parámetro: PML
 
 
-def leer_enlace(parametros, nodos, limites):
+def leer_enlace(parametros, nodos, limites, zonas=None, limites_pnd=None):
     """Valida los parámetros de un enlace y devuelve (estado, problemas, faltantes).
 
     - `parametros`: {nombre: [valores]} tal como llegan en la URL (una lista por si vienen repetidos).
@@ -28,6 +32,8 @@ def leer_enlace(parametros, nodos, limites):
     - `problemas`: frases para el usuario; un valor inválido nunca se sustituye por otro en silencio.
     - `faltantes`: parámetros que el enlace no trae; la app usa sus valores predeterminados y lo dice.
     Sin ningún parámetro conocido no hay enlace que leer: devuelve todo vacío.
+    v0.7.0: con `modalidad=pnd` se validan `zona` contra `zonas` y las fechas contra `limites_pnd`; si la
+    publicación no trae PND (`zonas` None) el enlace se avisa como problema, nunca se abre como PML.
     """
     if not any(p in parametros for p in PARAMETROS):
         return {}, [], []
@@ -44,22 +50,39 @@ def leer_enlace(parametros, nodos, limites):
             return None
         return valores[0]
 
-    vista = valor("vista")
-    if vista is not None:
-        if vista in VISTAS_URL:
-            estado["vista"] = VISTAS_URL[vista]
-        else:
-            problemas.append(f"La vista «{vista}» no existe. Opciones: {', '.join(VISTAS_URL)}.")
-    # Si la vista falta o es inválida, se revisan los nodos de la vista que mostrará la app (la primera).
-    for clave in NODOS_DE_VISTA.get(vista, NODOS_DE_VISTA["historico"]):
-        nodo = valor(clave)
-        if nodo is None:
-            continue
-        if nodo in nodos:
-            estado[clave] = nodo
-        else:
-            problemas.append(f"El nodo «{nodo}» ({clave}) no está en el paquete público. "
-                             "Búscalo por su clave NodoP en «Vista y filtros».")
+    if "modalidad" in parametros:
+        modalidad = valor("modalidad")
+        if modalidad not in MODALIDADES_URL:
+            problemas.append(f"La modalidad «{modalidad}» no existe. Opción: pnd (sin el parámetro, PML).")
+            return estado, problemas, faltantes
+        if zonas is None or limites_pnd is None:
+            problemas.append("Este enlace es de precios de zona de carga (PND), que no están en esta publicación.")
+            return estado, problemas, faltantes
+        estado["modalidad"] = modalidad
+        zona = valor("zona")
+        if zona is not None:
+            if zona in zonas:
+                estado["zona"] = zona
+            else:
+                problemas.append(f"La zona de carga «{zona}» no está en el paquete público de PND.")
+        limites = limites_pnd
+    else:
+        vista = valor("vista")
+        if vista is not None:
+            if vista in VISTAS_URL:
+                estado["vista"] = VISTAS_URL[vista]
+            else:
+                problemas.append(f"La vista «{vista}» no existe. Opciones: {', '.join(VISTAS_URL)}.")
+        # Si la vista falta o es inválida, se revisan los nodos de la vista que mostrará la app (la primera).
+        for clave in NODOS_DE_VISTA.get(vista, NODOS_DE_VISTA["historico"]):
+            nodo = valor(clave)
+            if nodo is None:
+                continue
+            if nodo in nodos:
+                estado[clave] = nodo
+            else:
+                problemas.append(f"El nodo «{nodo}» ({clave}) no está en el paquete público. "
+                                 "Búscalo por su clave NodoP en «Vista y filtros».")
 
     fechas = {}
     for clave in ("desde", "hasta"):
@@ -92,10 +115,13 @@ def construir_enlace(estado):
 
     `estado` usa las claves de los widgets; `vista` es la etiqueta de la pestaña. Devuelve {nombre: texto}.
     """
-    vista = next(nombre for nombre, etiqueta in VISTAS_URL.items() if etiqueta == estado["vista"])
-    enlace = {"vista": vista}
-    for clave in NODOS_DE_VISTA[vista]:
-        enlace[clave] = estado[clave]
+    if estado.get("modalidad") == "pnd":  # v0.7.0: zona de carga; la vista PML no va en el enlace
+        enlace = {"modalidad": "pnd", "zona": estado["zona"]}
+    else:
+        vista = next(nombre for nombre, etiqueta in VISTAS_URL.items() if etiqueta == estado["vista"])
+        enlace = {"vista": vista}
+        for clave in NODOS_DE_VISTA[vista]:
+            enlace[clave] = estado[clave]
     enlace["desde"] = estado["desde"].isoformat()
     enlace["hasta"] = estado["hasta"].isoformat()
     enlace["resolucion"] = estado["resolucion"]
