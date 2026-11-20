@@ -9,11 +9,12 @@ Contrato PND v1 (pnd/):
                                 pnd, energia, perdidas, congestion (DOUBLE, MXN/MWh), zstd
     zonas.parquet               zona_carga, primera_fecha, ultima_fecha
     metadata.json               version_esquema "1", generado_utc, desde, hasta, zonas, archivos{filas, sha256},
-                                dias_corregidos (opcional), dias_sin_dato (opcional, ver abajo)
+                                dias_corregidos, dias_sin_dato (obligatorio, ver abajo)
 
 Un día sin dato no es precio cero: no tiene archivo, se lista en `dias_sin_dato` y no se rellena.
-`dias_sin_dato` (decisión de producto 2026-11-20) es una lista de objetos con la evidencia de la consulta real
-al servicio: {"fecha", "estado", "consultas": [{"consultado_utc", "url", "http", "status", "respuesta", ...}]}. No es una ausencia permanente:
+`dias_sin_dato` (obligatorio; decisión de producto 2026-11-20) es la copia exacta de las entradas de
+power-market-lab config/pnd_dias_sin_dato.json: {"fecha", "estado", "decision", "consultas": [{"consultado_utc",
+"url", "http", "status", "respuesta", "sha256_respuesta"}], "notas"}. Cada consulta debe ser HTTP 200 + ZERO_RESULTS. No es una ausencia permanente:
 es «sin dato disponible en la consulta verificada» y el pipeline lo reintenta. Un hueco sin esa evidencia, o un
 día declarado que sí tiene archivo, invalida el paquete.
 Los promedios son simples sobre las horas con dato, igual que en el PML.
@@ -21,7 +22,7 @@ Los promedios son simples sobre las horas con dato, igual que en el PML.
 import hashlib
 import json
 import os
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 import duckdb
@@ -29,6 +30,7 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 
 PND_DIR = Path(os.environ.get("PML_PND_DIR") or Path(__file__).resolve().parent / "pnd")
+URL_SERVICIO = "https://ws01.cenace.gob.mx:8082/SWPEND/SIM/SIN/MDA/"
 UNIDADES = {"horaria": "hour", "diaria": "day", "mensual": "month"}
 ESQUEMA_HORARIO = {"sistema": pa.string(), "mercado": pa.string(), "zona_carga": pa.string(),
                    "fecha": pa.date32(), "hora": pa.int32(), "pnd": pa.float64(), "energia": pa.float64(),
@@ -90,56 +92,106 @@ def _revisar_parquet(ruta, nombre, info, esquema):
             raise PndNoDisponible(f"Compresión distinta de zstd en {nombre}.")
 
 
-def ultima_consulta(entrada):
-    """Consulta más reciente que respalda un día sin dato, o None si no hay evidencia aceptable.
+def es_utc(texto):
+    """True si es fecha y hora ISO en UTC terminada en Z, p. ej. 2026-11-20T12:18:26Z (igual que validar_pnd.py)."""
+    try:
+        return isinstance(texto, str) and texto.endswith("Z") and bool(datetime.fromisoformat(texto[:-1] + "+00:00"))
+    except ValueError:
+        return False
 
-    Forma de power-market-lab (config/pnd_dias_sin_dato.json): {"fecha", "estado", "consultas": [{consultado_utc,
-    url, http, status, respuesta, sha256_respuesta}]}; también se acepta la consulta en el primer nivel.
-    Solo cuenta un «sin resultados» del servicio (status ZERO_RESULTS o HTTP 204/404), nunca un error o un timeout.
+
+def evidencia_valida(consulta, dia):
+    """Una consulta real al servicio que respondió «sin resultados» para ese día: HTTP 200 + ZERO_RESULTS, hora UTC,
+    URL de SW-PEND con la fecha del día y respuesta resumida. Un 500, un ERROR o un timeout no son un faltante válido."""
+    return (isinstance(consulta, dict) and consulta.get("http") == 200 and consulta.get("status") == "ZERO_RESULTS"
+            and es_utc(consulta.get("consultado_utc")) and isinstance(consulta.get("url"), str)
+            and consulta["url"].startswith(URL_SERVICIO) and f"/{dia:%Y/%m/%d}/" in consulta["url"]
+            and isinstance(consulta.get("respuesta"), str) and consulta["respuesta"].strip() != "")
+
+
+def ultima_consulta(entrada):
+    """Consulta más reciente que respalda un día sin dato, o None si la entrada no tiene evidencia aceptable.
+
+    Forma única (power-market-lab config/pnd_dias_sin_dato.json, copiada tal cual a metadata.dias_sin_dato):
+    {"fecha", "estado", "decision", "consultas": [{consultado_utc, url, http, status, respuesta, sha256_respuesta}],
+    "notas"}. Todas las consultas listadas deben ser evidencia válida (mismo criterio que validar_pnd.py).
     """
-    if not isinstance(entrada, dict) or "fecha" not in entrada:
+    if not isinstance(entrada, dict) or not isinstance(entrada.get("fecha"), str):
         return None
-    consultas = entrada.get("consultas") or [entrada]
-    validas = [c for c in consultas if isinstance(c, dict) and c.get("consultado_utc")
-               and (c.get("status") == "ZERO_RESULTS" or c.get("http") in (204, 404))]
-    return max(validas, key=lambda c: c["consultado_utc"]) if validas else None
+    try:
+        dia = _fecha_iso(entrada["fecha"])
+    except ValueError:
+        return None
+    consultas = entrada.get("consultas")
+    if not isinstance(consultas, list) or not consultas or not all(evidencia_valida(c, dia) for c in consultas):
+        return None
+    return max(consultas, key=lambda c: c["consultado_utc"])
+
+
+def _fecha_iso(texto):
+    """Fecha AAAA-MM-DD exacta (sin aceptar 20261105 ni otros formatos que fromisoformat admite)."""
+    if not (isinstance(texto, str) and len(texto) == 10 and texto[4] == texto[7] == "-"):
+        raise ValueError(f"fecha inválida: {texto!r}")
+    return date.fromisoformat(texto)
+
+
+def _es_hash(texto):
+    return isinstance(texto, str) and len(texto) == 64 and all(c in "0123456789abcdefABCDEF" for c in texto)
 
 
 def inspeccionar_pnd(carpeta=PND_DIR):
     """Verifica manifiesto, archivos esperados, SHA-256, filas, esquema y zstd. Devuelve los límites del paquete.
 
-    Las reglas de filas (24 horas, zonas exactas, finitos, descuadre) las revisa validar_pnd.py antes de publicar.
+    Cualquier metadata malformada (tipos, campos faltantes, evidencia) termina en PndNoDisponible: así solo se
+    deshabilita la modalidad PND y PML sigue igual. Las reglas de filas (24 horas, zonas exactas, finitos,
+    descuadre) las revisa validar_pnd.py antes de publicar.
     """
-    raiz = Path(carpeta)
-    m = metadata_pnd(raiz)
     try:
-        desde, hasta = _fecha(m["desde"]), _fecha(m["hasta"])
-        evidencia = {}
-        for e in m.get("dias_sin_dato", []):
-            consulta = ultima_consulta(e)
-            if consulta is None:
-                raise PndNoDisponible("Un día sin dato no trae la evidencia de su consulta.")
-            evidencia[_fecha(e["fecha"])] = consulta
-        sin_dato = sorted(evidencia)
-        if len(sin_dato) != len(m.get("dias_sin_dato", [])):
-            raise PndNoDisponible("Días sin dato repetidos en metadata.")
-        corregidos = sorted({_fecha(d) for d in m.get("dias_corregidos", [])})
-    except (TypeError, ValueError) as exc:
-        raise PndNoDisponible("Fechas inválidas en metadata.json de PND.") from exc
-    if desde > hasta or any(not desde < d < hasta for d in sin_dato):
-        raise PndNoDisponible("Rango de PND inválido o días sin dato fuera del rango.")
+        return _inspeccionar(Path(carpeta))
+    except PndNoDisponible:
+        raise
+    except (KeyError, TypeError, ValueError, AttributeError, OSError, pa.ArrowException, duckdb.Error) as exc:
+        raise PndNoDisponible(f"Paquete PND ilegible o malformado ({type(exc).__name__}).") from exc
+
+
+def _inspeccionar(raiz):
+    m = metadata_pnd(raiz)
+    desde, hasta = _fecha_iso(m["desde"]), _fecha_iso(m["hasta"])
+    if desde > hasta or not es_utc(m["generado_utc"]):
+        raise PndNoDisponible("Rango o fecha de generación inválidos en metadata.json de PND.")
+    if not isinstance(m["zonas"], int) or isinstance(m["zonas"], bool) or m["zonas"] < 1:
+        raise PndNoDisponible("metadata.zonas inválido.")
+    lista = m.get("dias_sin_dato")
+    if not isinstance(lista, list):
+        raise PndNoDisponible("metadata.dias_sin_dato falta o no es una lista.")
+    evidencia = {}
+    for e in lista:
+        consulta = ultima_consulta(e)
+        if consulta is None:
+            raise PndNoDisponible("Un día sin dato no trae evidencia válida de su consulta.")
+        dia = _fecha_iso(e["fecha"])
+        if dia in evidencia or not desde < dia < hasta:
+            raise PndNoDisponible("Día sin dato repetido o fuera del rango del paquete.")
+        evidencia[dia] = consulta
+    sin_dato = sorted(evidencia)
+    corregidos = m.get("dias_corregidos", [])
+    if not isinstance(corregidos, list) or not all(isinstance(d, str) for d in corregidos):
+        raise PndNoDisponible("metadata.dias_corregidos no es una lista de fechas.")
+    corregidos = sorted({_fecha_iso(d) for d in corregidos})
+    archivos = m["archivos"]
+    if not isinstance(archivos, dict) or not all(
+            isinstance(info, dict) and isinstance(info.get("filas"), int) and not isinstance(info["filas"], bool)
+            and info["filas"] >= 0 and _es_hash(info.get("sha256")) for info in archivos.values()):
+        raise PndNoDisponible("metadata.archivos no tiene filas enteras y sha256 por archivo.")
     esperados = {f"hourly/{d}.parquet" for d in _dias(desde, hasta) if d not in sin_dato} | {"zonas.parquet"}
     presentes = {p.relative_to(raiz).as_posix() for p in raiz.rglob("*.parquet")}
-    if set(m["archivos"]) != esperados or presentes != esperados:
+    if set(archivos) != esperados or presentes != esperados:
         raise PndNoDisponible("Los archivos de PND no coinciden con el manifiesto y su rango.")
-    try:
-        for nombre in sorted(esperados):
-            _revisar_parquet(raiz / nombre, nombre, m["archivos"][nombre],
-                             ESQUEMA_ZONAS if nombre == "zonas.parquet" else ESQUEMA_HORARIO)
-        if pq.ParquetFile(raiz / "zonas.parquet").metadata.num_rows != m["zonas"]:
-            raise PndNoDisponible("Conteo de zonas incompatible con metadata.")
-    except (OSError, KeyError, pa.ArrowException) as exc:
-        raise PndNoDisponible("No se pueden leer los archivos de PND.") from exc
+    for nombre in sorted(esperados):
+        _revisar_parquet(raiz / nombre, nombre, archivos[nombre],
+                         ESQUEMA_ZONAS if nombre == "zonas.parquet" else ESQUEMA_HORARIO)
+    if pq.ParquetFile(raiz / "zonas.parquet").metadata.num_rows != m["zonas"]:
+        raise PndNoDisponible("Conteo de zonas incompatible con metadata.")
     return {"desde": desde, "hasta": hasta, "generado_utc": m["generado_utc"], "zonas": m["zonas"],
             "dias_sin_dato": sin_dato, "evidencia_sin_dato": evidencia, "dias_corregidos": corregidos}
 

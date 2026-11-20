@@ -139,7 +139,19 @@ Carril separado del PML (decisiones A–H, 2026-11-13). Vive en la carpeta públ
 
 Reglas:
 - **Filas.** Cada día con archivo trae exactamente las zonas de la referencia (`config/zonas_pnd_sin.txt`, Catálogo de NodosP v2026-10-23, 101 zonas) y 24 horas por zona. Los cuatro precios son finitos y |pnd − (energía + pérdidas + congestión)| ≤ 0.02.
-- **Días sin dato** (decisión de producto, 2026-11-20). Un día del rango sin archivo solo se acepta si `dias_sin_dato` lo declara con la evidencia de la consulta real al servicio: `fecha`, `consultado_utc`, `http`/`status` (por ejemplo `ZERO_RESULTS`), `resumen` y `url`. No es una ausencia permanente: significa «sin dato disponible en la consulta verificada», y el pipeline lo reintenta. Un hueco no declarado, una declaración sin evidencia, un día declarado que sí tiene archivo o uno en un extremo del rango invalidan el paquete.
+- **Días sin dato** (decisión de producto, 2026-11-20). Contrato único con power-market-lab (`docs/pnd-contrato.md`, 4442f62).
+  - `metadata.dias_sin_dato` es obligatorio. Cada entrada es la copia exacta de `config/pnd_dias_sin_dato.json`: `{fecha, estado, decision, consultas: [{consultado_utc, url, http, status, respuesta, sha256_respuesta}], notas}`.
+  - Cada consulta debe cumplir todo esto:
+    - `http` 200 y `status` `ZERO_RESULTS`. Un 500, un ERROR, un timeout o un 204/404 no cuentan.
+    - `consultado_utc` en ISO, terminado en Z.
+    - URL de SW-PEND con `/AAAA/MM/DD/` del mismo día.
+    - `respuesta` no vacía.
+  - No es una ausencia permanente: significa «sin dato disponible en la consulta verificada», y el pipeline lo reintenta.
+  - Invalidan el paquete:
+    - un hueco no declarado;
+    - una declaración sin esa evidencia;
+    - un día declarado que sí tiene archivo, uno repetido o uno en un extremo del rango.
+  - Si cualquier dato de metadata viene malformado (tipos o campos), la app deshabilita solo PND; PML sigue igual.
 - **Días corregidos.** Son los días que CENACE cambió después de la primera descarga. El paquete trae la versión nueva y el laboratorio conserva el crudo anterior.
 - **URL.** `?modalidad=pnd&zona=<ZONA>&desde=&hasta=&resolucion=`. Un enlace sin `modalidad` es PML, como siempre.
 - **CSV.** El archivo es `pnd_historico_<zona>_<desde>[_<hasta>]_<resolución>.csv` con las columnas de tiempo, `zona_carga`, `pnd`, `energia`, `perdidas` y `congestion`. Un periodo sin dato no tiene fila.

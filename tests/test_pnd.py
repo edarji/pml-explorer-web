@@ -7,6 +7,7 @@ from datetime import date, timedelta
 import hashlib
 import io
 import json
+import os
 from pathlib import Path
 import shutil
 import sys
@@ -60,14 +61,19 @@ def armar_paquete(carpeta, desde=DESDE, hasta=HASTA, sin_dato=SIN_DATO, zonas=ZO
     return carpeta
 
 
+FIXTURE_SIN_DATO = Path(__file__).with_name("fixtures") / "pnd_dias_sin_dato.json"
+# Copia exacta de power-market-lab config/pnd_dias_sin_dato.json (rama pnd-descarga, 2d0e93d): el mismo esquema que
+# exportar_pnd.py escribe en metadata.dias_sin_dato. Las pruebas no usan otro esquema de fixture.
+ENTRADA_REAL = json.loads(FIXTURE_SIN_DATO.read_text(encoding="utf-8"))[0]
+
+
 def evidencia(dia):
-    """Forma de una entrada de dias_sin_dato: el día y el resultado de la consulta real al servicio."""
-    url = f"https://ws01.cenace.gob.mx:8082/SWPEND/SIM/SIN/MDA/{dia:%Y/%m/%d}/{dia:%Y/%m/%d}/JSON"
-    return {"fecha": str(dia), "estado": "sin dato disponible en la consulta verificada; se reintenta",
-            "consultas": [{"consultado_utc": "2026-11-19T23:00:00Z", "url": url, "http": 200, "status": "ZERO_RESULTS",
-                           "respuesta": "status ZERO_RESULTS, Resultados vacío"},
-                          {"consultado_utc": "2026-11-20T12:30:00Z", "url": url, "http": 200, "status": "ZERO_RESULTS",
-                           "respuesta": "status ZERO_RESULTS, Resultados vacío"}]}
+    """Entrada con el esquema real, trasladada a otro día (solo cambian la fecha y la ruta de la URL)."""
+    entrada = json.loads(json.dumps(ENTRADA_REAL))
+    entrada["fecha"] = str(dia)
+    for c in entrada["consultas"]:
+        c["url"] = c["url"].replace("/2026/05/08/2026/05/08/", f"/{dia:%Y/%m/%d}/{dia:%Y/%m/%d}/")
+    return entrada
 
 
 def escribir_metadata(carpeta, desde, hasta, sin_dato, n_zonas, **extra):
@@ -116,9 +122,75 @@ class Contrato(unittest.TestCase):
         with self.assertRaises(pnd.PndNoDisponible):
             pnd.inspeccionar_pnd(self.dir)
 
+    def test_entrada_real_de_config_se_acepta(self):
+        """Integración: paquete alrededor del 2026-05-08 con la entrada idéntica a config/pnd_dias_sin_dato.json."""
+        real = armar_paquete(self.tmp / "real", desde=date(2026, 5, 6), hasta=date(2026, 5, 10),
+                             sin_dato=[date(2026, 5, 8)])
+        escribir_metadata(real, date(2026, 5, 6), date(2026, 5, 10), [], 3, dias_sin_dato=[ENTRADA_REAL])
+        limites = pnd.inspeccionar_pnd(real)
+        self.assertEqual(limites["dias_sin_dato"], [date(2026, 5, 8)])
+        self.assertEqual(limites["evidencia_sin_dato"][date(2026, 5, 8)]["consultado_utc"], "2026-11-20T12:20:23Z")
+
+    def test_evidencia_invalida_se_rechaza(self):
+        def con(**cambio):
+            e = evidencia(SIN_DATO[0])
+            e["consultas"][0].update(cambio)
+            return e
+        casos = {"http 500": con(http=500), "status ERROR": con(status="ERROR"), "http 204": con(http=204),
+                 "hora sin Z": con(consultado_utc="2026-11-20 12:18:26"), "hora inválida": con(consultado_utc="ayer"),
+                 "url de otro día": con(url="https://ws01.cenace.gob.mx:8082/SWPEND/SIM/SIN/MDA/2026/11/04/2026/11/04/JSON"),
+                 "url de otro servicio": con(url="https://example.com/2026/11/03/JSON"),
+                 "sin respuesta": con(respuesta=""), "http texto": con(http="200")}
+        for caso, entrada in casos.items():
+            with self.subTest(caso=caso):
+                escribir_metadata(self.dir, DESDE, HASTA, [], 3, dias_sin_dato=[entrada])
+                with self.assertRaises(pnd.PndNoDisponible):
+                    pnd.inspeccionar_pnd(self.dir)
+
+    def test_metadata_malformada_es_pnd_no_disponible(self):
+        dia = str(SIN_DATO[0])
+        sin_fecha = evidencia(SIN_DATO[0])
+        del sin_fecha["fecha"]
+        archivos = json.loads((self.dir / "metadata.json").read_text())["archivos"]
+        primero = next(iter(archivos))
+        casos = {
+            "entrada con consulta sin fecha": {"dias_sin_dato": [sin_fecha]},
+            "fecha no texto": {"dias_sin_dato": [evidencia(SIN_DATO[0]) | {"fecha": 20261103}]},
+            "consultas no lista": {"dias_sin_dato": [evidencia(SIN_DATO[0]) | {"consultas": {"x": 1}}]},
+            "dias_sin_dato ausente": {"dias_sin_dato": None},
+            "dias_sin_dato no lista": {"dias_sin_dato": dia},
+            "archivos no dict": {"archivos": list(archivos)},
+            "info no dict": {"archivos": archivos | {primero: "x"}},
+            "filas texto": {"archivos": archivos | {primero: archivos[primero] | {"filas": "72"}}},
+            "filas bool": {"archivos": archivos | {primero: archivos[primero] | {"filas": True}}},
+            "sha256 corto": {"archivos": archivos | {primero: archivos[primero] | {"sha256": "abc"}}},
+            "zonas texto": {"zonas": "3"},
+            "generado sin Z": {"generado_utc": "2026-11-20"},
+            "corregidos con números": {"dias_corregidos": [1]},
+        }
+        for caso, cambio in casos.items():
+            with self.subTest(caso=caso):
+                escribir_metadata(self.dir, DESDE, HASTA, SIN_DATO, 3, **cambio)
+                if cambio.get("dias_sin_dato", 0) is None:
+                    meta = json.loads((self.dir / "metadata.json").read_text())
+                    del meta["dias_sin_dato"]
+                    (self.dir / "metadata.json").write_text(json.dumps(meta))
+                with self.assertRaises(pnd.PndNoDisponible):
+                    pnd.inspeccionar_pnd(self.dir)
+        escribir_metadata(self.dir, DESDE, HASTA, SIN_DATO, 3)
+        meta = json.loads((self.dir / "metadata.json").read_text())
+        for campo, valor in (("desde", "2026-13-01"), ("hasta", 20261105), ("desde", None)):
+            with self.subTest(campo=campo, valor=valor):
+                (self.dir / "metadata.json").write_text(json.dumps(meta | {campo: valor}))
+                with self.assertRaises(pnd.PndNoDisponible):
+                    pnd.inspeccionar_pnd(self.dir)
+        (self.dir / "metadata.json").write_text("[1, 2]")
+        with self.assertRaises(pnd.PndNoDisponible):
+            pnd.inspeccionar_pnd(self.dir)
+
     def test_dia_sin_dato_sin_evidencia_se_rechaza(self):
         dia = str(SIN_DATO[0])
-        error = {"consultado_utc": "2026-11-20T12:30:00Z", "http": 500, "status": "ERROR"}
+        error = evidencia(SIN_DATO[0])["consultas"][0] | {"http": 500, "status": "ERROR"}
         for entrada in (dia, {"fecha": dia}, {"fecha": dia, "status": "ZERO_RESULTS"}, {"fecha": dia, "consultas": [error]},
                         {"fecha": dia, "consultas": []}):
             with self.subTest(entrada=entrada):
@@ -328,14 +400,63 @@ class Interfaz(unittest.TestCase):
         app = self.abrir(modalidad="pnd", zona="MONTERREY", desde="2026-11-01", hasta="2026-11-05", resolucion="mensual")
         self.assertIn("80.0% (96 de 120 horas con dato)", " ".join(m.value for m in app.markdown))
         aviso = " ".join(w.value for w in app.warning)
-        self.assertIn("2026-11-03 (consulta verificada 2026-11-20T12:30:00Z)", aviso)
+        self.assertIn("2026-11-03 (consulta verificada 2026-11-20T12:20:23Z)", aviso)
         self.assertNotIn("permanente", aviso)
         self.assertEqual({m.label: m.value for m in app.metric}["Mínimo horario"], "-50.00")
+
+    def test_metadata_pnd_malformada_no_tumba_pml(self):
+        roto = armar_paquete(self.tmp / "roto")
+        escribir_metadata(roto, DESDE, HASTA, SIN_DATO, 3, archivos={"zonas.parquet": {"filas": "x"}},
+                          dias_sin_dato=[{"consultas": [{"http": 200}]}])
+        app = self.abrir(roto)
+        self.assertNotIn("modalidad", [r.key for r in app.radio])
+        self.assertEqual(app.radio(key="vista").value, "1. PML histórico")
+        self.assertGreater(len(app.metric), 0)
 
     def test_enlace_pnd_sin_paquete_avisa_y_no_muestra_cifras(self):
         app = self.abrir(self.tmp / "no-existe", modalidad="pnd", zona="MONTERREY")
         self.assertEqual(len(app.metric), 0)
         self.assertIn("PND", app.error[0].value)
+
+
+@unittest.skipUnless(os.environ.get("PND_LABORATORIO"), "Define PND_LABORATORIO con un clon de power-market-lab")
+class ExportadorReal(unittest.TestCase):
+    """Integración con el exportador y el validador reales de power-market-lab, con su config/pnd_dias_sin_dato.json.
+
+    PND_LABORATORIO=<clon en la rama pnd-descarga> python -m pytest tests/test_pnd.py -k ExportadorReal
+    """
+
+    def test_paquete_del_exportador_real_lo_acepta_la_app(self):
+        lab = Path(os.environ["PND_LABORATORIO"])
+        sys.path.insert(0, str(lab / "scripts"))
+        import descargar_pnd as dl
+        import exportar_pnd as ex
+        import validar_pnd as va
+        tmp = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, tmp)
+        origen = tmp / "parquet"
+        origen.mkdir()
+        inicio, fin, hueco = date(2026, 5, 6), date(2026, 5, 10), date(2026, 5, 8)
+        fuente = armar_paquete(tmp / "fuente", desde=inicio, hasta=fin, sin_dato=[hueco])
+        for archivo in (fuente / "hourly").glob("*.parquet"):
+            shutil.copy(archivo, origen / f"pnd_mda_sin_{archivo.stem}.parquet")
+        config = lab / "config" / "pnd_dias_sin_dato.json"
+        self.assertEqual(json.loads(config.read_text(encoding="utf-8"))[0], ENTRADA_REAL)  # fixture = config real
+        parches = [mock.patch.object(ex, "CARPETA_PARQUET", origen),
+                   mock.patch.object(ex, "CARPETA_PUBLICA", tmp / "publico"),
+                   mock.patch.object(ex, "ARCHIVO_CORREGIDOS", tmp / "corregidos.json"),
+                   mock.patch.object(ex, "ARCHIVO_SIN_DATO", config), mock.patch.object(dl, "ARCHIVO_SIN_DATO", config),
+                   mock.patch.object(ex, "INICIO", inicio), mock.patch.object(va, "INICIO", inicio)]
+        for p in parches:
+            p.start()
+            self.addCleanup(p.stop)
+        ex.main()
+        errores, _ = va.validar(tmp / "publico", referencia=set(ZONAS))
+        self.assertEqual(errores, [])
+        limites = pnd.inspeccionar_pnd(tmp / "publico")
+        self.assertEqual((limites["desde"], limites["hasta"], limites["dias_sin_dato"]), (inicio, fin, [hueco]))
+        e = pnd.estadisticas_pnd("MONTERREY", hueco, hueco, tmp / "publico").iloc[0]
+        self.assertEqual(e["horas_con_dato"], 0)
 
 
 if __name__ == "__main__":

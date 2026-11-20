@@ -1113,7 +1113,7 @@ if (pnd_zonas.PND_DIR / "metadata.json").is_file():
         regiones_pnd = pnd_zonas.regiones_de_zonas(UBICACION["union"]) if UBICACION else {}
         PND.update(limites=limites_pnd, zonas=fechas_zona, version=version_pnd, limites_pml=limites,
                    regiones={r: [z for z in zs if z in fechas_zona] for r, zs in regiones_pnd.items()})
-    except (pnd_zonas.PndNoDisponible, duckdb.Error, OSError):
+    except Exception:  # noqa: BLE001 — cualquier falla del paquete PND solo deshabilita PND; PML sigue igual
         PND.clear()
 
 
