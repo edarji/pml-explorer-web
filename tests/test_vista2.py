@@ -85,7 +85,9 @@ class Spread(unittest.TestCase):
 
     def test_interfaz(self):
         from streamlit.testing.v1 import AppTest
-        app = AppTest.from_file(APP, default_timeout=120).run()
+        app = AppTest.from_file(APP, default_timeout=120)
+        app.session_state["escena"] = "solo"  # v0.8.0: sin enlace la app abre ENSEMBLE; estas pruebas son de la vista SOLO
+        app.run()
         app.radio(key="vista").set_value("2. Comparar nodos (spread)").run()
         app.selectbox(key="nodo_a").set_value(A)
         app.selectbox(key="nodo_b").set_value(B)

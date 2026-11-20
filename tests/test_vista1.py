@@ -177,7 +177,9 @@ class ReferenciaReal(unittest.TestCase):
              patch.object(v, 'cobertura_horaria', return_value=False), \
              patch.object(v, 'estadisticas', return_value=estadistica), \
              patch.object(v, 'serie', return_value=serie):
-            app = AppTest.from_file(str(Path(v.__file__).with_name('app.py'))).run()
+            app = AppTest.from_file(str(Path(v.__file__).with_name('app.py')))
+            app.session_state["escena"] = "solo"  # v0.8.0: sin enlace la app abre ENSEMBLE; estas pruebas son de la vista SOLO
+            app.run()
             self.assertFalse(app.exception)
             self.assertEqual(app.date_input[0].value, self.desde)
             self.assertEqual(app.date_input[1].value, self.hasta)

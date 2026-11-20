@@ -22,7 +22,9 @@ HAY_DATOS = (v.DATA_DIR / "metadata.json").is_file() and (cat.REFERENCIA_DIR / c
 class Ubicacion(unittest.TestCase):
     def abrir(self, vista=None):
         from streamlit.testing.v1 import AppTest
-        app = AppTest.from_file(APP, default_timeout=120).run()
+        app = AppTest.from_file(APP, default_timeout=120)
+        app.session_state["escena"] = "solo"  # v0.8.0: sin enlace la app abre ENSEMBLE; estas pruebas son de la vista SOLO
+        app.run()
         if vista:
             app.radio(key="vista").set_value(vista).run()
         self.assertFalse(app.exception)
