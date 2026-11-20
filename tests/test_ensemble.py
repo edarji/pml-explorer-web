@@ -183,9 +183,36 @@ class EscenasApp(unittest.TestCase):
 
     def test_panel_derecho_abre_solo(self):  # AC-G04
         app = self.abrir()
+        app.segmented_control(key="nodo_tension").set_value("230 kV").run()
         app.selectbox(key="nodo").set_value("01AGU-230").run()
         self.assertEqual(app.session_state["escena"], "solo")
         self.assertEqual(app.query_params["nodo"], "01AGU-230")
+
+    def test_tension_inicial_400_con_catalogo_oficial(self):  # 2.ª iteración: filtro de tensión
+        import catalogo as cat
+        df, _ = cat.cargar()
+        kv = dict(zip(df["nodo"], df["tension_kv"]))
+        app = self.abrir()
+        self.assertEqual(app.segmented_control(key="nodo_tension").value, "400 kV")
+        opciones = app.selectbox(key="nodo").options
+        actual = app.selectbox(key="nodo").value
+        # El nodo elegido (01AAN-85, 85 kV) se conserva al inicio con aviso; el resto son 400 kV según el catálogo.
+        self.assertEqual(opciones[0].split(" · ")[0], actual)
+        self.assertIn(f"{actual} está fuera de este filtro", " ".join(c.value for c in app.caption))
+        self.assertTrue(all(kv[o.split(" · ")[0]] == 400.0 for o in opciones[1:]))
+        self.assertEqual(len(opciones) - 1, sum(1 for v in kv.values() if v == 400.0))
+        filas = [b for b in app.button if b.key.startswith("wl_pml_")]
+        self.assertTrue(0 < len(filas) <= 6)  # lista corta: no se dibujan miles de botones
+        app.segmented_control(key="nodo_tension").set_value("Todas").run()
+        self.assertEqual(app.selectbox(key="nodo").value, actual)  # cambiar el filtro no pierde el nodo
+
+    def test_watchlist_abre_solo_con_el_mismo_precio(self):
+        app = self.abrir()
+        fila = next(b for b in app.button if b.key == "wl_pml_0")
+        nodo, valor = fila.label.split(" · ")[:2]
+        fila.click().run()
+        self.assertEqual(app.query_params["nodo"], nodo)
+        self.assertEqual({m.label: m.value for m in app.metric}["Promedio horario"], valor)
 
     def test_fechas_invertidas_en_enlace_del_tablero(self):  # AC-G03: mismo aviso que en SOLO
         app = self.abrir(desde="2020-01-01", hasta="2020-01-02")

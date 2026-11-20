@@ -6,19 +6,19 @@ enableXsrfProtection = true
 [browser]
 gatherUsageStats = false
 
-# v0.6.3 · Identidad «Dark Trading» (Bloomberg Black + Apple Bolsa): fondo negro, superficies grafito,
-# texto casi blanco, ámbar del logo sax como acento y serie principal, verde/rojo de Apple solo para cambios.
-# Sustituye al tema claro «ficha de mercado» (v0.5–v0.6.2). Solo presentación: ningún cálculo cambia.
+# v0.8.0 · «Graphite híbrido» (dirección de producto, Issue #19 / PR #24, 2026-11-20): fondo gris tipo Apple Bolsa,
+# tarjetas claras, panel de análisis grafito y serie ámbar. Sustituye al fondo negro de Dark Trading (v0.6.3–v0.7.0).
+# Solo presentación: ningún cálculo cambia. Los colores del panel grafito se fijan en ESTILOS (app.py).
 [theme]
-base = "dark"
-backgroundColor = "#000000"
-secondaryBackgroundColor = "#1C1C1E"
-textColor = "#F2F2F7"
+base = "light"
+backgroundColor = "#E8E9EC"
+secondaryBackgroundColor = "#F7F7F8"
+textColor = "#1C1C1E"
 primaryColor = "#FFB000"
-borderColor = "#2C2C2E"
-linkColor = "#FFB000"
+borderColor = "#D5D7DB"
+linkColor = "#8A5300"
 font = "sans-serif"
 baseRadius = "0.5rem"
-greenColor = "#30D158"
-redColor = "#FF453A"
+greenColor = "#1E8E3E"
+redColor = "#D70015"
 chartCategoricalColors = ["#FFB000", "#0A84FF", "#8E8E93", "#30D158"]

@@ -1,5 +1,17 @@
 # Validaciones y aceptación pendiente
 
+## 2026-11-20 · v0.8.0, segunda iteración visual (Graphite híbrido, watchlist con tensión, congestión en SOLO)
+
+Atiende la dirección de producto de los comentarios en #19 y #24. Mismo entorno y método que la entrada siguiente.
+
+- **Pruebas:** 193 passed, 4 skipped. Nuevas: tensión inicial 400 kV contra la columna oficial `tension_kv` del catálogo (las 53 opciones son de 400 kV, el nodo elegido se conserva con aviso y no se pierde al cambiar el filtro) y una fila de la watchlist que abre SOLO con el mismo precio.
+- **Regresión:** los 14 enlaces dan en `main` y en esta rama las mismas métricas, textos, avisos, tablas y URL. Las 12 descargas CSV tienen el mismo nombre y SHA-256. `data/`, `pnd/`, `scripts/` y los módulos de cálculo no cambian. `.streamlit/config.toml` sí cambia, solo en la paleta del tema.
+- **Responsive:** sin desplazamiento horizontal en 320, 390, 768, 1024 y 1440 px. Hay 25 capturas en `docs/capturas/v0.8.0-graphite-2/`; las de la iteración anterior quedan en `docs/capturas/v0.8.0-graphite/` como «antes».
+- **Rendimiento local:** se midieron 5 sesiones nuevas tras reiniciar el servidor; las corridas 2–5 se resumen con su mediana.
+  - Carga de ENSEMBLE: 3.81 s en frío y 1.44 s con caché.
+  - ENSEMBLE → SOLO: 0.73 s.
+  - SOLO → ENSEMBLE: 0.51 s.
+
 ## 2026-11-20 · v0.8.0 Graphite Trading | Ensemble & Solo: regresión, pruebas y rendimiento (local)
 
 Rama `graphite-ensemble-solo`, PR en borrador. Plan y criterios AC-G01 a AC-G14 en la Issue #19. Entorno: contenedor Linux, Python 3.13, Streamlit 1.66.1, DuckDB 1.5.6, pyarrow 24.0.0, pandas 3.0.6, con los paquetes `data/` y `pnd/` de `main` (`7bf7621`).
