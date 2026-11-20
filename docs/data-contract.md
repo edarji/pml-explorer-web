@@ -126,3 +126,32 @@ Se automatiza la **detección y la validación**, no la aprobación.
 ## Exportación CSV (v0.6.2)
 
 El CSV que descarga la aplicación es un derivado de este contrato, no forma parte del paquete `data/`: se arma en el navegador del usuario a partir de los resultados ya calculados (`exportar.py`) y nunca se escribe en el repositorio. Columnas y reglas: [metodología](methodology.md#exportación-csv-v062).
+
+## Precio de zona de carga · contrato PND v1 (v0.7.0, en revisión)
+
+Carril separado del PML (decisiones A–H, 2026-11-13). Vive en la carpeta pública `pnd/` en la raíz del repo, **nunca en `data/`**: `inspeccionar_paquete` rechaza cualquier Parquet de `data/` que no esté en el manifiesto PML. Lo genera `power-market-lab/scripts/exportar_pnd.py`, y `validar_pnd.py` lo revisa antes de publicarlo. Si `pnd/` falta o no cumple este contrato, la app no ofrece la modalidad PND y PML queda exactamente igual.
+
+| Archivo | Contenido |
+|---|---|
+| `pnd/hourly/AAAA-MM-DD.parquet` | `sistema`, `mercado`, `zona_carga` (VARCHAR), `fecha` (DATE), `hora` (INTEGER 1–24, hora final), `pnd`, `energia`, `perdidas`, `congestion` (DOUBLE, MXN/MWh). Un archivo por día con todas las zonas y comprimido con zstd. |
+| `pnd/zonas.parquet` | `zona_carga`, `primera_fecha`, `ultima_fecha` (observadas en el paquete). |
+| `pnd/metadata.json` | `version_esquema` "1", `generado_utc`, `fuente`, `desde`, `hasta`, `zonas`, `dias_corregidos`, `dias_sin_dato`, `archivos` {ruta: {filas, sha256}}. |
+
+Reglas:
+- **Filas.** Cada día con archivo trae exactamente las zonas de la referencia (`config/zonas_pnd_sin.txt`, Catálogo de NodosP v2026-10-23, 101 zonas) y 24 horas por zona. Los cuatro precios son finitos y |pnd − (energía + pérdidas + congestión)| ≤ 0.02.
+- **Días sin dato** (decisión de producto, 2026-11-20). Contrato único con power-market-lab (`docs/pnd-contrato.md`, 4442f62).
+  - `metadata.dias_sin_dato` es obligatorio. Cada entrada es la copia exacta de `config/pnd_dias_sin_dato.json`: `{fecha, estado, decision, consultas: [{consultado_utc, url, http, status, respuesta, sha256_respuesta}], notas}`.
+  - Cada consulta debe cumplir todo esto:
+    - `http` 200 y `status` `ZERO_RESULTS`. Un 500, un ERROR, un timeout o un 204/404 no cuentan.
+    - `consultado_utc` en ISO, terminado en Z.
+    - URL de SW-PEND con `/AAAA/MM/DD/` del mismo día.
+    - `respuesta` no vacía.
+  - No es una ausencia permanente: significa «sin dato disponible en la consulta verificada», y el pipeline lo reintenta.
+  - Invalidan el paquete:
+    - un hueco no declarado;
+    - una declaración sin esa evidencia;
+    - un día declarado que sí tiene archivo, uno repetido o uno en un extremo del rango.
+  - Si cualquier dato de metadata viene malformado (tipos o campos), la app deshabilita solo PND; PML sigue igual.
+- **Días corregidos.** Son los días que CENACE cambió después de la primera descarga. El paquete trae la versión nueva y el laboratorio conserva el crudo anterior.
+- **URL.** `?modalidad=pnd&zona=<ZONA>&desde=&hasta=&resolucion=`. Un enlace sin `modalidad` es PML, como siempre.
+- **CSV.** El archivo es `pnd_historico_<zona>_<desde>[_<hasta>]_<resolución>.csv` con las columnas de tiempo, `zona_carga`, `pnd`, `energia`, `perdidas` y `congestion`. Un periodo sin dato no tiene fila.
