@@ -1085,8 +1085,10 @@ with st.container(key="marca", horizontal=True, vertical_alignment="center", gap
     logo()
     with st.container():
         st.title("PML Explorer")
-        st.caption("Precio Marginal Local · Mercado del Día en Adelanto · SIN (CENACE) · MXN/MWh · "
-                   "datos diarios publicados, no en tiempo real")
+        # v0.7.0 · El subtítulo depende de la modalidad (se conoce más abajo, tras leer el enlace): hueco reservado.
+        subtitulo = st.empty()
+        subtitulo.caption("Precio Marginal Local · Mercado del Día en Adelanto · SIN (CENACE) · MXN/MWh · "
+                          "datos diarios publicados, no en tiempo real")
 
 if not (DATA_DIR / "metadata.json").is_file():
     st.info("Los derivados públicos de CENACE todavía no están disponibles en esta publicación.")
@@ -1130,6 +1132,8 @@ if PND:
              on_change=ajustar_fechas_modalidad,
              help="PML: precio de un nodo (NodoP). PND: precio de una zona de carga, con el que se liquida la demanda.")
 modo_pnd = bool(PND) and st.session_state.get("modalidad") == "pnd"
+subtitulo.caption(("Precio de zona de carga (PND) · " if modo_pnd else "Precio Marginal Local · ")
+                  + "Mercado del Día en Adelanto · SIN (CENACE) · MXN/MWh · datos diarios publicados, no en tiempo real")
 limites_activos = PND["limites"] if modo_pnd else limites
 col_pestanas, col_rangos = st.columns([3, 1], vertical_alignment="bottom")
 with col_pestanas, st.container(key="pestanas"):

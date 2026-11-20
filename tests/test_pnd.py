@@ -364,6 +364,7 @@ class Interfaz(unittest.TestCase):
         app = self.abrir(modalidad="pnd", zona="VDM CENTRO", desde="2026-11-01", hasta="2026-11-05", resolucion="diaria")
         self.assertEqual(app.radio(key="modalidad").value, "pnd")
         self.assertNotIn("vista", [r.key for r in app.radio])  # sin pestañas PML
+        self.assertTrue(app.caption[0].value.startswith("Precio de zona de carga (PND) · Mercado del Día en Adelanto"))
         self.assertIn("Vdm Centro: precio de zona de carga (PND), 2026-11-01 a 2026-11-05", app.subheader[0].value)
         metricas = {m.label: m.value for m in app.metric}
         self.assertEqual(metricas["Promedio horario"], "312.50")
@@ -387,6 +388,7 @@ class Interfaz(unittest.TestCase):
         self.assertEqual(app.selectbox(key="nodo").value, nodo)
         self.assertNotIn("modalidad", app.query_params)
         self.assertEqual(app.query_params["vista"], "componentes")
+        self.assertTrue(app.caption[0].value.startswith("Precio Marginal Local · "))
 
     def test_dia_sin_dato_no_muestra_cifras(self):
         app = self.abrir(modalidad="pnd", zona="MONTERREY", desde="2026-11-03", hasta="2026-11-03", resolucion="diaria")
