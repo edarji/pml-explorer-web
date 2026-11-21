@@ -342,6 +342,8 @@ class Interfaz(unittest.TestCase):
     def abrir(self, carpeta=None, **parametros):
         from streamlit.testing.v1 import AppTest
         app = AppTest.from_file(APP, default_timeout=120)
+        if not parametros:  # v0.8.0: sin enlace la app abre ENSEMBLE; estas pruebas son de la vista SOLO
+            app.session_state["escena"] = "solo"
         for clave, valor in parametros.items():
             app.query_params[clave] = valor
         with mock.patch.object(pnd, "PND_DIR", carpeta or self.dir):

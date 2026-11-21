@@ -2,13 +2,15 @@
 
 Módulo de **Electricity Markets Monitor** para consultar el Precio Marginal Local (PML) por nodo: histórico, spread entre nodos y componentes, Mercado del Día en Adelanto (MDA), Sistema Interconectado Nacional (SIN) de México. Fuente: CENACE. Unidades: MXN/MWh.
 
-**Estado al 19 de noviembre de 2026:** aplicación pública **v0.6.3 beta** con identidad visual Dark Trading (en preparación v0.6.4: pulido UX, sin cambios de cálculo) en https://pml-explorer.streamlit.app/ con las tres vistas (PML histórico, spread entre nodos y componentes), enlaces compartibles, descarga CSV de cada vista y búsqueda de nodos por Región de Control, Estado, Zona de carga, clave o nombre oficial (Catálogo de NodosP de CENACE), enlazada desde [edarji.net/mercados](https://edarji.net/mercados/). Datos con **esquema v2**, actualizados cada noche por `pml-bot` (23:00, Ciudad de México); la fecha de cada paquete aparece en la aplicación. Ver [metodología](docs/methodology.md) y [validación](docs/validation.md).
+**Estado al 20 de noviembre de 2026:** en `main`, aplicación pública **v0.7.0 beta** (Dark Trading + precio de zona de carga PND) en https://pml-explorer.streamlit.app/. En preparación, en PR borrador: **v0.8.0 beta · Graphite Trading | Ensemble & Solo**, que abre en un tablero del mercado (PML por nodo y PND por zona, por separado) y pasa a la vista de un nodo o zona al elegirlo, sin cambios de cálculo, datos ni CSV. Tres vistas PML (histórico, spread entre nodos y componentes), histórico PND por zona, enlaces compartibles, descarga CSV y búsqueda de nodos por Región de Control, Estado, Zona de carga, clave o nombre oficial (Catálogo de NodosP de CENACE), enlazada desde [edarji.net/mercados](https://edarji.net/mercados/). Datos PML con **esquema v2**, actualizados cada noche por `pml-bot` (23:00, Ciudad de México); la fecha de cada paquete aparece en la aplicación. Ver [metodología](docs/methodology.md) y [validación](docs/validation.md).
 
 ## Estructura aprobada
 
 ```text
 app.py                     # explorer.py adaptado, misma vista 1
 enlaces.py                 # enlaces compartibles: lee y escribe vista y filtros en la URL
+escena.py                  # v0.8.0: escena inicial ENSEMBLE/SOLO y URL del tablero
+ensemble.py                # v0.8.0: ranking del día por nodo (PML) y por zona (PND), misma fórmula que SOLO
 vista1.py                  # consultas validadas + lectura del resumen diario
 requirements.txt
 .streamlit/config.toml

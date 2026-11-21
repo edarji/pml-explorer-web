@@ -18,7 +18,9 @@ APP = str(Path(v.__file__).with_name("app.py"))
 class InterfazPublica(unittest.TestCase):
     def correr(self, nodo, desde, hasta, resolucion):
         from streamlit.testing.v1 import AppTest
-        app = AppTest.from_file(APP, default_timeout=120).run()
+        app = AppTest.from_file(APP, default_timeout=120)
+        app.session_state["escena"] = "solo"  # v0.8.0: sin enlace la app abre ENSEMBLE; estas pruebas son de la vista SOLO
+        app.run()
         app.selectbox(key="nodo").set_value(nodo)
         app.date_input(key="desde").set_value(desde)
         app.date_input(key="hasta").set_value(hasta)
@@ -71,7 +73,9 @@ class AuditoriaUxV03(unittest.TestCase):
 
     def abrir(self, vista=None):
         from streamlit.testing.v1 import AppTest
-        app = AppTest.from_file(APP, default_timeout=120).run()
+        app = AppTest.from_file(APP, default_timeout=120)
+        app.session_state["escena"] = "solo"  # v0.8.0: sin enlace la app abre ENSEMBLE; estas pruebas son de la vista SOLO
+        app.run()
         if vista:
             app.radio(key="vista").set_value(vista).run()
         self.assertFalse(app.exception)
@@ -136,7 +140,9 @@ class RangosRapidosApp(unittest.TestCase):
 
     def pulsar(self, vista, clave_nodo, opcion, resolucion):
         from streamlit.testing.v1 import AppTest
-        app = AppTest.from_file(APP, default_timeout=120).run()
+        app = AppTest.from_file(APP, default_timeout=120)
+        app.session_state["escena"] = "solo"  # v0.8.0: sin enlace la app abre ENSEMBLE; estas pruebas son de la vista SOLO
+        app.run()
         app.radio(key="vista").set_value(vista).run()
         app.selectbox(key=clave_nodo).set_value("01AGU-230" if clave_nodo == "nodo" else "01AAN-85")
         app.radio(key="resolucion").set_value(resolucion).run()
@@ -178,7 +184,9 @@ class RangosRapidosApp(unittest.TestCase):
         inicio, fin = self.esperado["Últimos 7 días"]
         rapido = self.pulsar("1. PML histórico", "nodo", "Últimos 7 días", "diaria")
         from streamlit.testing.v1 import AppTest
-        manual = AppTest.from_file(APP, default_timeout=120).run()
+        manual = AppTest.from_file(APP, default_timeout=120)
+        manual.session_state["escena"] = "solo"  # v0.8.0: sin enlace la app abre ENSEMBLE; estas pruebas son de la vista SOLO
+        manual.run()
         manual.selectbox(key="nodo").set_value("01AGU-230")
         manual.date_input(key="desde").set_value(inicio)
         manual.date_input(key="hasta").set_value(fin)
@@ -200,6 +208,8 @@ class EnlacesCompartibles(unittest.TestCase):
         """Cada AppTest es una sesión nueva, sin session_state previo (AC-08)."""
         from streamlit.testing.v1 import AppTest
         app = AppTest.from_file(APP, default_timeout=120)
+        if not parametros:  # v0.8.0: sin enlace la app abre ENSEMBLE; estas pruebas son de la vista SOLO
+            app.session_state["escena"] = "solo"
         for clave, valor in parametros.items():
             app.query_params[clave] = valor
         app.run()
@@ -282,7 +292,7 @@ class EnlacesCompartibles(unittest.TestCase):
     def test_version_esquema_y_fecha_separados(self):  # AC-12
         app = self.abrir()
         pie = " ".join(c.value for c in app.caption)
-        self.assertIn(f"PML Explorer v0.7.0 beta · Datos: esquema v{self.esquema}", pie)
+        self.assertIn(f"PML Explorer v0.8.0 beta · Datos: esquema v{self.esquema}", pie)
         self.assertIn("Actualización del paquete:", pie)
 
 
@@ -294,6 +304,8 @@ class RecuadroGrafica(unittest.TestCase):
         import json
         from streamlit.testing.v1 import AppTest
         app = AppTest.from_file(APP, default_timeout=120)
+        if not parametros:  # v0.8.0: sin enlace la app abre ENSEMBLE; estas pruebas son de la vista SOLO
+            app.session_state["escena"] = "solo"
         for clave, valor in parametros.items():
             app.query_params[clave] = valor
         app.run()

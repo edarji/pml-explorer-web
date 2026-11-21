@@ -204,7 +204,9 @@ class BotonEnLaInterfaz(unittest.TestCase):
 
     def abrir(self, vista, nodo=None, desde=None, hasta=None, resolucion=None):
         from streamlit.testing.v1 import AppTest
-        app = AppTest.from_file(self.APP, default_timeout=120).run()
+        app = AppTest.from_file(self.APP, default_timeout=120)
+        app.session_state["escena"] = "solo"  # v0.8.0: sin enlace la app abre ENSEMBLE; estas pruebas son de la vista SOLO
+        app.run()
         app.radio(key="vista").set_value(vista).run()
         if nodo:
             app.selectbox(key="nodo").set_value(nodo)
