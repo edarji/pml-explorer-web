@@ -24,7 +24,7 @@ from vista1 import (DATA_DIR, RESOLUCIONES, UMBRAL_DESCUADRE, DatosNoDisponibles
                     cobertura_horaria, estadisticas, huella_paquete,
                     inspeccionar_paquete, marcar_periodos, metadata, observado, serie)
 
-VERSION_APP = "v0.8.0 beta"  # versión de la aplicación; el esquema de datos y la fecha vienen del paquete
+VERSION_APP = "v0.8.1 beta"  # versión de la aplicación; el esquema de datos y la fecha vienen del paquete
 REPO = "https://github.com/edarji/pml-explorer-web/blob/main"
 COBERTURA_ESCASA = 80  # % de horas con dato bajo el cual se advierte explícitamente
 SITIO_MERCADOS = "https://edarji.net/mercados/"
@@ -154,7 +154,7 @@ ESTILOS = """<style>
 [class*=st-key-rk_] button p,[class*=st-key-wl_] button p{font-size:.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 [class*=st-key-rk_] button:hover,[class*=st-key-wl_pml] button:hover{border-color:#E09A00;background:#FFF8E6}
 [class*=st-key-rk_pnd] button:hover,[class*=st-key-wl_pnd] button:hover{border-color:#0A84FF;background:#EEF5FF}
-.st-key-volver button{min-height:2.25rem;padding:.1rem .8rem;border:1px solid #C9CBD0;background:#F7F7F8;border-radius:999px}
+.st-key-volver button{min-height:2.25rem;padding:.1rem .8rem;border:1px solid #C9CBD0;background:#FFFFFF;border-radius:999px}
 .solista{display:flex;flex-wrap:wrap;align-items:baseline;gap:.1rem .7rem;margin:.1rem 0 .3rem;padding-left:.7rem;
   border-left:3px solid #FFB000}
 .solista.pnd{border-left-color:#0A84FF}
@@ -185,20 +185,37 @@ button[kind=primary],button[kind=primary] p{color:#000}
 .precio .unidad,.precio .fecha,.linea-meta{color:#5A5D63}
 .precio .cambio.sube{background:#1E8E3E;color:#FFF}.precio .cambio.baja{background:#D70015;color:#FFF}
 .precio .cambio.igual{background:#D5D7DB;color:#1C1C1E}
-/* Panel de análisis grafito: gráfica + ficha. El texto interior se fija claro porque el tema es claro. */
-.st-key-tarjeta,.st-key-tarjeta_curvas{background:#111720;border-color:#232A35;color:#F2F2F7;
-  box-shadow:0 1px 2px rgba(17,23,32,.18)}
-.st-key-tarjeta [data-testid=stMarkdownContainer],.st-key-tarjeta [data-testid=stMarkdownContainer] *,
-.st-key-tarjeta_curvas [data-testid=stMarkdownContainer],.st-key-tarjeta_curvas [data-testid=stMarkdownContainer] *{color:#F2F2F7}
-.st-key-ficha{border-left-color:#232A35}
-.st-key-ficha [data-testid=stMetricLabel] p,.fila span:first-child,.rango .et,.rango .ext span{color:#A7AEB8 !important}
-.st-key-ficha [data-testid=stMetricValue],.st-key-ficha [data-testid=stMetricValue] p,.fila span:last-child{color:#F2F2F7 !important}
-.fila{border-top-color:#232A35}
-.rango .barra{background:#3A4250}
-.st-key-tarjeta [data-testid=stTooltipIcon] svg{color:#A7AEB8}
-.st-key-tarjeta [data-testid=stExpander] details{border-color:#232A35;background:#161D27}
-.st-key-tarjeta [data-testid=stExpander] summary,.st-key-tarjeta [data-testid=stExpander] summary *{color:#F2F2F7}
-@media (max-width:640px){.st-key-ficha{border-top-color:#232A35}}
+/* v0.8.1 · Un solo sistema claro: la gráfica y la ficha del solista van en tarjeta clara (ya no en grafito #111720).
+   El solista es protagonista por escala, espacio y jerarquía, no por color de fondo. */
+.st-key-tarjeta,.st-key-tarjeta_curvas{background:#FFFFFF;border-color:#D5D7DB;color:#1C1C1E;
+  box-shadow:0 1px 2px rgba(17,23,32,.06)}
+.st-key-ficha{border-left-color:#E3E5E9}
+.st-key-ficha [data-testid=stMetricLabel] p,.fila span:first-child,.rango .et,.rango .ext span{color:#5A5D63 !important}
+.st-key-ficha [data-testid=stMetricValue],.st-key-ficha [data-testid=stMetricValue] p,.fila span:last-child{color:#1C1C1E !important}
+.fila{border-top-color:#EEF0F2}
+.rango .barra{background:#D5D7DB}
+.rango .barra span{background:#E09A00}
+@media (max-width:640px){.st-key-ficha{border-top-color:#E3E5E9}}
+#vg-tooltip-element{background:#FFFFFF;color:#1C1C1E;border-color:#D5D7DB;box-shadow:0 4px 14px rgba(17,23,32,.16)}
+#vg-tooltip-element td.key{color:#5A5D63}
+/* v0.8.1 · Solista al frente: el detalle aparece arriba, en una superficie clara con filo de color (ámbar PML, azul PND),
+   y el ENSEMBLE sigue debajo en la misma página. */
+.st-key-detalle_pml,.st-key-detalle_pnd{background:#F7F7F8;border:1px solid #D5D7DB;border-top:4px solid #FFB000;
+  border-radius:.9rem;padding:.9rem 1.2rem 1rem;box-shadow:0 2px 12px rgba(17,23,32,.08);scroll-margin-top:4rem}
+.st-key-detalle_pnd{border-top-color:#0A84FF}
+.st-key-detalle_pnd .solista{border-left-color:#0A84FF}
+.solista .nombre{font-size:2rem}
+.banda-et{display:flex;flex-wrap:wrap;align-items:baseline;gap:.2rem .6rem;margin:1.4rem 0 .2rem;font-size:1.05rem}
+.banda-et span{font-size:.82rem;color:#5A5D63}
+[class*=st-key-rk_] button[kind=primary],[class*=st-key-wl_pml] button[kind=primary]{background:#FFF3D6;border-color:#E09A00}
+[class*=st-key-rk_pnd] button[kind=primary],[class*=st-key-wl_pnd] button[kind=primary]{background:#E6F0FF;border-color:#0A84FF}
+[class*=st-key-rk_] button[kind=primary] p,[class*=st-key-wl_] button[kind=primary] p{font-weight:600}
+@media (max-width:640px){
+.st-key-detalle_pml,.st-key-detalle_pnd{padding:.7rem .75rem .8rem;border-radius:.7rem}
+}
+@media (max-width:1024px){
+.st-key-ensemble > div > [data-testid=stHorizontalBlock],.st-key-ensemble > [data-testid=stHorizontalBlock]{gap:1rem}
+}
 .st-key-nodo_tension button[aria-checked=true]{background:#FFB000;border-color:#FFB000;color:#000}
 .st-key-nodo_tension button[aria-checked=true] p{color:#000;font-weight:600}
 @media (max-width:640px){
@@ -212,9 +229,9 @@ ASSETS = Path(__file__).resolve().parent / "assets"
 NARANJA = "#FFB000"  # v0.6.3: ámbar del logo sax (nombre conservado: es la serie principal en las tres vistas)
 AZUL = "#0A84FF"
 GRIS = "#8E8E93"
-FONDO = "#111720"  # contorno del punto resaltado, para que se separe de la línea (v0.8.0: fondo del panel grafito)
-EJE = "#3A4250"     # marcas del eje X
-REJILLA = "#222A36"  # rejilla horizontal, tenue sobre el panel grafito
+FONDO = "#FFFFFF"  # contorno del punto resaltado, para que se separe de la línea (v0.8.1: fondo de la tarjeta clara)
+EJE = "#C9CBD0"     # marcas del eje X
+REJILLA = "#E3E5E9"  # rejilla horizontal, tenue sobre la tarjeta clara (v0.8.1: ya no hay panel grafito)
 CERO = "#8E8E93"     # v0.6.4: línea de referencia en cero (spread, pérdidas y congestión)
 # Fechas de los ejes en español (Vega-Lite usa inglés por defecto: «Thu 29», «November»).
 LOCALE_ES = {"time": {
@@ -235,8 +252,11 @@ MEDIO_PERIODO = {"horaria": pd.Timedelta(minutes=30), "diaria": pd.Timedelta(hou
 EJE_Y_ANCHO = 52       # px fijos del eje Y derecho: la línea y las barras comparten el mismo ancho de trazo
 TEXTO_GRAFITO, TEXTO_GRAFITO_2 = "#F2F2F7", "#A7AEB8"  # texto de las gráficas sobre el panel grafito
 TEXTO_CLARO, TEXTO_CLARO_2 = "#1C1C1E", "#5A5D63"      # texto de las gráficas sobre tarjetas claras
-DEGRADADO = alt.Gradient(gradient="linear", x1=1, x2=1, y1=0, y2=1, stops=[
-    alt.GradientStop(color="rgba(255,176,0,0.38)", offset=0), alt.GradientStop(color="rgba(255,176,0,0)", offset=1)])
+# v0.8.1 · Degradado bajo la línea del solista: ámbar para PML, azul para PND. Sobre claro, más tenue que en grafito.
+DEGRADADOS = {c: alt.Gradient(gradient="linear", x1=1, x2=1, y1=0, y2=1, stops=[
+    alt.GradientStop(color=f"rgba({rgb},0.26)", offset=0), alt.GradientStop(color=f"rgba({rgb},0)", offset=1)])
+    for c, rgb in (("#FFB000", "255,176,0"), ("#0A84FF", "10,132,255"))}
+GRAFITO = "#3A4250"    # v0.8.1 · congestión positiva en PND: la línea ya es azul y las barras no deben confundirse
 RANKING_N = 5          # filas de «Más caros» y «Más baratos»
 
 
@@ -336,8 +356,8 @@ def campos_recuadro(df, resolucion, nodo):
     return df
 
 
-def configurar(grafica_, oscuro=True):
-    """v0.8.0 · Estilo común de las gráficas: fechas en español y texto legible sobre el grafito o sobre claro."""
+def configurar(grafica_, oscuro=False):
+    """Estilo común de las gráficas: fechas en español y texto legible. v0.8.1: todas van sobre tarjetas claras."""
     texto, secundario = (TEXTO_GRAFITO, TEXTO_GRAFITO_2) if oscuro else (TEXTO_CLARO, TEXTO_CLARO_2)
     return (grafica_.configure_view(stroke=None).configure(locale=LOCALE_ES)
             .configure_axis(labelColor=secundario, titleColor=secundario)
@@ -345,7 +365,7 @@ def configurar(grafica_, oscuro=True):
             .configure_title(color=secundario, fontSize=12, fontWeight="normal", anchor="start"))
 
 
-def barras_congestion(df, resolucion, etiqueta, dominio):
+def barras_congestion(df, resolucion, etiqueta, dominio, positivo=AZUL):
     """v0.8.0 · Barras de congestión del mismo periodo bajo la gráfica principal de SOLO.
 
     `df` trae `periodo` y `congestion` ya calculados por la consulta de componentes de la vista (el mismo promedio
@@ -366,12 +386,13 @@ def barras_congestion(df, resolucion, etiqueta, dominio):
         y=alt.Y("congestion:Q", title=None,
                 axis=alt.Axis(orient="right", domain=False, ticks=False, gridColor=REJILLA, tickCount=3,
                               minExtent=EJE_Y_ANCHO, maxExtent=EJE_Y_ANCHO)),
-        color=alt.condition("datum.congestion >= 0", alt.value(AZUL), alt.value(GRIS)),
+        color=alt.condition("datum.congestion >= 0", alt.value(positivo), alt.value(GRIS)),
         tooltip=recuadro)
     cero = alt.Chart(df).mark_rule(color=CERO, strokeWidth=1).encode(y=alt.datum(0))
     st.altair_chart(configurar((barras + cero).properties(
         background="transparent", height=ALTO_CONGESTION,
-        title="Congestión del mismo periodo (MXN/MWh) · azul > 0, gris < 0")), width="stretch")
+        title="Congestión del mismo periodo (MXN/MWh) · "
+              + ("azul" if positivo == AZUL else "grafito") + " > 0, gris < 0")), width="stretch")
 
 
 def grafica(df, y, titulo_y, resolucion, color=None, nodo="", cero=False, titulo_serie=None, congestion=None):
@@ -403,8 +424,9 @@ def grafica(df, y, titulo_y, resolucion, color=None, nodo="", cero=False, titulo
     )
     # v0.8.0 · Línea ámbar marcada con un degradado debajo (solo presentación; los valores son los mismos).
     # El área baja hasta el borde inferior del trazo (y2 en píxeles): no obliga a la escala a incluir el cero.
-    area = base.mark_area(clip=True, line=False, color=DEGRADADO if (color or NARANJA) == NARANJA else color,
-                          opacity=1 if (color or NARANJA) == NARANJA else .12).encode(
+    serie = color or NARANJA
+    area = base.mark_area(clip=True, line=False, color=DEGRADADOS.get(serie, serie),
+                          opacity=1 if serie in DEGRADADOS else .12).encode(
         y=alt.Y(f"{y}:Q", title=None, stack=None, scale=alt.Scale(zero=False), axis=eje_y), y2=alt.value(ALTO_SOLO))
     linea = base.mark_line(color=color or NARANJA, strokeWidth=2.4)
     # v0.6.4 · `cero=True` (spread): línea de referencia en 0 para leer el signo de un vistazo.
@@ -429,7 +451,7 @@ def grafica(df, y, titulo_y, resolucion, color=None, nodo="", cero=False, titulo
     st.altair_chart(configurar(alt.layer(*capas).properties(background="transparent", height=ALTO_SOLO)),
                     width="stretch")
     if congestion is not None and len(congestion):
-        barras_congestion(congestion, resolucion, nodo, dominio)
+        barras_congestion(congestion, resolucion, nodo, dominio, positivo=GRAFITO if serie == AZUL else AZUL)
 
 
 def avisos_parciales(df, resolucion):
@@ -1214,7 +1236,8 @@ def vista_pnd(panel):
         with izq:
             st.markdown(f"**{titulo} (MXN/MWh)**")
             # v0.8.0 · La congestión del PND es la del propio paquete PND (pz_cng), ya en esta serie: no se toma del PML.
-            grafica(df, "pnd_promedio", "PND (MXN/MWh)", resolucion, nodo=zona.title(), titulo_serie="Zona",
+            # v0.8.1 · PND en azul (PML en ámbar), igual que en el tablero ENSEMBLE.
+            grafica(df, "pnd_promedio", "PND (MXN/MWh)", resolucion, color=AZUL, nodo=zona.title(), titulo_serie="Zona",
                     congestion=df[["periodo", "etiqueta", "congestion"]])
         with der, st.container(key="ficha"):
             st.markdown(barra_rango("Rango horario del periodo", e["minimo"], e["maximo"], e["promedio"]),
@@ -1265,7 +1288,51 @@ def entrar_solo(modalidad, elemento):
         estado["nodo"] = estado["nodo_a"] = elemento
         estado["vista"] = VISTAS_URL["historico"]
     estado["escena"] = SOLO
+    # v0.8.1 · El detalle aparece arriba: tras elegir desde el tablero (que puede estar más abajo), la página
+    # lleva la vista al detalle una sola vez. `enfoque` cambia en cada elección para que el aviso se repita.
+    estado["enfocar"] = True
+    estado["enfoque"] = estado.get("enfoque", 0) + 1
     descartar_avisos()
+
+
+def solista_actual():
+    """v0.8.1 · (modalidad, elemento) del detalle abierto, o None si solo se ve el mercado."""
+    estado = st.session_state
+    if estado.get("escena") != SOLO:
+        return None
+    if PND and estado.get("modalidad") == "pnd":
+        return "pnd", estado.get("zona")
+    if estado.get("vista") == VISTAS_URL["comparacion"]:
+        return "pml", estado.get("nodo_a")
+    return "pml", estado.get("nodo")
+
+
+def buscar_solista(modalidad, clave):
+    """v0.8.1 · Callback de la búsqueda del tablero con el detalle abierto: cambia solo el protagonista de arriba.
+
+    Es un selector aparte (no repite las claves `nodo`/`zona` del panel del detalle) y vuelve a quedar vacío.
+    """
+    elemento = st.session_state.get(clave)
+    if elemento:
+        entrar_solo(modalidad, elemento)
+    st.session_state[clave] = None
+
+
+def enfocar_detalle(hueco):
+    """v0.8.1 · Lleva la vista al detalle recién elegido (sin animación si el sistema pide reducir movimiento).
+
+    Se dibuja en un hueco fijo (`st.empty`): así el resto de la página no cambia de posición en el árbol de Streamlit
+    y sus gráficas no se vuelven a montar en cada elección.
+    """
+    if not st.session_state.pop("enfocar", False):
+        return
+    hueco.html(f"""<script>/* enfoque {st.session_state.get("enfoque", 0)} */
+(() => {{ let n = 0; const ir = () => {{
+  const d = document.querySelector('[class*="st-key-detalle_"]');
+  if (d) {{ const suave = !matchMedia('(prefers-reduced-motion: reduce)').matches;
+           d.scrollIntoView({{behavior: suave ? 'smooth' : 'auto', block: 'start'}}); }}
+  else if (n++ < 20) setTimeout(ir, 50); }}; setTimeout(ir, 30); }})();
+</script>""", unsafe_allow_javascript=True)
 
 
 def entrar_solo_seleccion():
@@ -1277,7 +1344,7 @@ def entrar_solo_seleccion():
 
 
 def volver_al_mercado():
-    """Callback de «Volver al mercado»: ENSEMBLE con las mismas fechas, resolución, modalidad y última selección."""
+    """Callback de «Cerrar detalle»: solo el mercado, con las mismas fechas, resolución, modalidad y última selección."""
     st.session_state["escena"] = ENSEMBLE
     descartar_avisos()
 
@@ -1291,7 +1358,7 @@ def solista_pml(nodo, nodo_b=None):
     else:
         titulo = nodo
         detalle = (f"{nombres.get(nodo) or ''} · {ubicacion_de(nodo)}".lstrip(" ·") if UBICACION else "")
-    st.markdown(f'<div class="solista pml"><span class="et">SOLO · PML · NodoP</span><span class="nombre">{titulo}'
+    st.markdown(f'<div class="solista pml"><span class="et">Solista al frente · PML · NodoP</span><span class="nombre">{titulo}'
                 f'</span><span class="detalle">{detalle}</span></div>', unsafe_allow_html=True)
 
 
@@ -1299,7 +1366,7 @@ def solista_pnd(zona):
     """Encabezado de SOLO PND: la zona de carga protagonista y su Región de Control."""
     regiones = sorted(r.title() for r, zs in PND.get("regiones", {}).items() if zona in zs)
     detalle = f"Región de Control: {', '.join(regiones)}" if regiones else "Zona de carga del SIN"
-    st.markdown(f'<div class="solista pnd"><span class="et">SOLO · PND · Zona de carga</span><span class="nombre">'
+    st.markdown(f'<div class="solista pnd"><span class="et">Solista al frente · PND · Zona de carga</span><span class="nombre">'
                 f'{zona.title()}</span><span class="detalle">{detalle}</span></div>', unsafe_allow_html=True)
 
 
@@ -1359,7 +1426,8 @@ def nodos_de_lista(nodos):
 def fila_lista(clave_widget, elemento, texto, precio, horas, modalidad, ayuda):
     parcial = f" · {horas} h" if horas and horas < 24 else ""
     st.button(f"{texto} · {mxn(precio) if precio is not None else 'sin dato'}{parcial}", key=clave_widget,
-              on_click=entrar_solo, args=(modalidad, elemento), width="stretch", help=ayuda)
+              on_click=entrar_solo, args=(modalidad, elemento), width="stretch", help=ayuda,
+              type="primary" if solista_actual() == (modalidad, elemento) else "secondary")
 
 
 def lista_watchlist(filas, modalidad, clave, etiqueta, precios, titulo):
@@ -1371,46 +1439,63 @@ def lista_watchlist(filas, modalidad, clave, etiqueta, precios, titulo):
         for i, elemento in enumerate(filas[:n]):
             precio, horas = precios.get(elemento, (None, None))
             fila_lista(f"{clave}_{i}", elemento, etiqueta(elemento), precio, horas, modalidad,
-                       f"Abrir SOLO de {elemento}. Precio: promedio del día de referencia, MXN/MWh.")
+                       f"Poner al frente {elemento}. Precio: promedio del día de referencia, MXN/MWh.")
     if len(filas) > n:
         st.button(f"Mostrar {min(WATCHLIST_MAS, len(filas) - n)} más de {len(filas) - n}", key=f"mas_{clave}",
                   on_click=mostrar_mas, type="tertiary")
 
 
-def panel_ensemble(nodos, limites_activos, limites, version):
+def panel_ensemble(nodos, limites_activos, limites, version, con_detalle=False):
     """Panel derecho de ENSEMBLE (watchlist): elegir el solista (nodo PML o zona PND) y los filtros que se conservan.
 
     Orden visible: precio, tensión, búsqueda, ubicación, lista, fechas. Las fechas se dibujan primero en el código
     (contenedores) porque la lista necesita el día de referencia.
+    v0.8.1 · `con_detalle=True` (el solista ya está arriba): precio, ubicación y fechas viven en el panel del detalle,
+    así que aquí no se repiten sus claves; quedan la tensión, una búsqueda propia y la lista para cambiar de solista.
     """
     estado = st.session_state
     with st.container(key="atril"):
-        st.markdown("**Elige el solista**")
-        if PND:
+        st.markdown("**Elige otro solista**" if con_detalle else "**Elige el solista**")
+        if con_detalle:
+            st.caption("Cambia solo el protagonista de arriba. Precio, fechas y ubicación: «Vista y filtros» del detalle.")
+        elif PND:
             st.radio("Precio", list(MODALIDADES), key="modalidad", horizontal=True, format_func=MODALIDADES.get,
                      on_change=ajustar_fechas_modalidad,
                      help="PML: precio de un nodo (NodoP). PND: precio de una zona de carga. No se mezclan.")
         modo_pnd = bool(PND) and estado.get("modalidad") == "pnd"
-        c_tension, c_busqueda, c_ubicacion = st.container(), st.container(), st.expander("Ubicación")
-        c_lista, c_fechas = st.container(), st.expander("Fechas y resolución")
-        with c_fechas:
-            controles_rango(limites_activos, en_columnas=False)
-            st.caption("ENSEMBLE usa «Hasta» como día de referencia. «Desde» y la resolución se aplican al abrir SOLO.")
+        c_tension, c_busqueda = st.container(), st.container()
+        c_ubicacion = st.container() if con_detalle else st.expander("Ubicación")
+        c_lista = st.container()
+        if not con_detalle:
+            with st.expander("Fechas y resolución"):
+                controles_rango(limites_activos, en_columnas=False)
+                st.caption("ENSEMBLE usa «Hasta» como día de referencia. «Desde» y la resolución se aplican al abrir "
+                           "el detalle.")
         hasta = estado["hasta"]
 
         if modo_pnd:
             zonas = list(PND["zonas"])
             estado.setdefault("zona", ZONA_DEFECTO if ZONA_DEFECTO in zonas else zonas[0])
-            with c_ubicacion:
-                region = (_elegir("Región de Control", sorted(PND["regiones"]), "zona_region")
-                          if PND["regiones"] else None)
+            if con_detalle:
+                region = estado.get("zona_region", TODAS)
+                region = None if region == TODAS or region not in PND["regiones"] else region
+            else:
+                with c_ubicacion:
+                    region = (_elegir("Región de Control", sorted(PND["regiones"]), "zona_region")
+                              if PND["regiones"] else None)
             opciones = [z for z in PND["regiones"][region] if z in zonas] if region else zonas
             with c_busqueda:
-                if estado["zona"] not in opciones:
-                    st.caption(f"{estado['zona'].title()} está fuera de esta región; se conserva hasta que elijas otra.")
-                st.selectbox("Buscar zona de carga", ([estado["zona"]] if estado["zona"] not in opciones else [])
-                             + opciones, key="zona", format_func=str.title, on_change=entrar_solo_seleccion,
-                             help="Zona de carga del SIN según CENACE. El PND es el precio de la zona, no de un nodo.")
+                if con_detalle:
+                    st.selectbox("Buscar otra zona de carga", opciones, index=None, key="buscar_pnd",
+                                 format_func=str.title, placeholder="Nombre de la zona", on_change=buscar_solista,
+                                 args=("pnd", "buscar_pnd"))
+                else:
+                    if estado["zona"] not in opciones:
+                        st.caption(f"{estado['zona'].title()} está fuera de esta región; se conserva hasta que elijas "
+                                   "otra.")
+                    st.selectbox("Buscar zona de carga", ([estado["zona"]] if estado["zona"] not in opciones else [])
+                                 + opciones, key="zona", format_func=str.title, on_change=entrar_solo_seleccion,
+                                 help="Zona de carga del SIN según CENACE. El PND es el precio de la zona, no de un nodo.")
             dia = ens.dia_pnd(hasta, PND["limites"], str(pnd_zonas.PND_DIR))
             precios = {}
             if dia is not None:
@@ -1427,22 +1512,29 @@ def panel_ensemble(nodos, limites_activos, limites, version):
                     st.segmented_control("Tensión", list(TENSIONES), key="nodo_tension", on_change=reiniciar_lista,
                                          help="Tensión del NodoP según el Catálogo de NodosP de CENACE (no se deduce "
                                               "de la clave). «Todas» incluye también 69, 85, 138 kV y otras.")
-                with c_ubicacion:
-                    union = UBICACION["union"]
-                    region = _elegir("Región de Control", cat_nodos.regiones(union), "nodo_region")
-                    est = _elegir("Estado", cat_nodos.estados(union, region), "nodo_estado")
-                    _elegir("Zona de carga", cat_nodos.zonas(union, region, est), "nodo_zona")
-                    st.button("Limpiar ubicación", key="nodo_limpiar", on_click=limpiar_ubicacion, args=("nodo",))
+                if not con_detalle:
+                    with c_ubicacion:
+                        union = UBICACION["union"]
+                        region = _elegir("Región de Control", cat_nodos.regiones(union), "nodo_region")
+                        est = _elegir("Estado", cat_nodos.estados(union, region), "nodo_estado")
+                        _elegir("Zona de carga", cat_nodos.zonas(union, region, est), "nodo_zona")
+                        st.button("Limpiar ubicación", key="nodo_limpiar", on_click=limpiar_ubicacion, args=("nodo",))
             filtrados = nodos_de_lista(nodos)
             nombres = UBICACION.get("nombres", {}) if UBICACION else {}
             with c_busqueda:
-                actual = estado["nodo"]
-                if actual not in filtrados:
-                    st.caption(f"{actual} está fuera de este filtro; se conserva hasta que elijas otro nodo.")
-                st.selectbox("Buscar nodo · clave o nombre", ([actual] if actual not in filtrados else []) + filtrados,
-                             key="nodo", format_func=lambda n: cat_nodos.etiqueta(n, nombres),
-                             placeholder="Clave o nombre, p. ej. 06ESC", on_change=entrar_solo_seleccion,
-                             help=AYUDA_NODO if UBICACION else AYUDA_SOLO_CLAVE)
+                if con_detalle:
+                    st.selectbox("Buscar otro nodo · clave o nombre", filtrados, index=None, key="buscar_pml",
+                                 format_func=lambda n: cat_nodos.etiqueta(n, nombres),
+                                 placeholder="Clave o nombre, p. ej. 06ESC", on_change=buscar_solista,
+                                 args=("pml", "buscar_pml"), help=AYUDA_NODO if UBICACION else AYUDA_SOLO_CLAVE)
+                else:
+                    actual = estado["nodo"]
+                    if actual not in filtrados:
+                        st.caption(f"{actual} está fuera de este filtro; se conserva hasta que elijas otro nodo.")
+                    st.selectbox("Buscar nodo · clave o nombre", ([actual] if actual not in filtrados else [])
+                                 + filtrados, key="nodo", format_func=lambda n: cat_nodos.etiqueta(n, nombres),
+                                 placeholder="Clave o nombre, p. ej. 06ESC", on_change=entrar_solo_seleccion,
+                                 help=AYUDA_NODO if UBICACION else AYUDA_SOLO_CLAVE)
             dia = ens.dia_pml(hasta, limites)
             try:
                 r = consultar_ranking_pml(dia, str(DATA_DIR), version)
@@ -1453,8 +1545,9 @@ def panel_ensemble(nodos, limites_activos, limites, version):
             with c_lista:
                 lista_watchlist(filtrados, "pml", "wl_pml", str, precios,
                                 f"{len(filtrados):,} nodos · {tension} · PML promedio del {dia}")
-        st.button("Abrir en SOLO", key="abrir_solo", type="primary", icon=":material/open_in_full:",
-                  on_click=entrar_solo_seleccion, width="stretch")
+        if not con_detalle:
+            st.button("Poner al frente", key="abrir_solo", type="primary", icon=":material/open_in_full:",
+                      on_click=entrar_solo_seleccion, width="stretch")
 
 
 def kpis(celdas):
@@ -1490,7 +1583,8 @@ def lista_ranking(titulo, filas, modalidad, clave, etiqueta):
             parcial = f" · {fila_.horas} h" if fila_.horas < 24 else ""
             st.button(f"{etiqueta(fila_.elemento)} · {mxn(fila_.promedio)}{parcial}", key=f"{clave}_{i}",
                       on_click=entrar_solo, args=(modalidad, fila_.elemento), width="stretch",
-                      help=f"Abrir SOLO de {fila_.elemento}. Promedio de {fila_.horas} horas con dato, MXN/MWh.")
+                      type="primary" if solista_actual() == (modalidad, fila_.elemento) else "secondary",
+                      help=f"Poner al frente {fila_.elemento}. Promedio de {fila_.horas} horas con dato, MXN/MWh.")
 
 
 def seccion_pml(dia, total, version):
@@ -1519,7 +1613,7 @@ def seccion_pml(dia, total, version):
             lista_ranking("Más caros", ranking.head(RANKING_N), "pml", "rk_pml_caros", str)
         with baratos:
             lista_ranking("Más baratos", ranking.tail(RANKING_N).iloc[::-1], "pml", "rk_pml_baratos", str)
-        st.caption("Promedio simple de las horas con dato de cada nodo ese día, el mismo valor que su vista SOLO. "
+        st.caption("Promedio simple de las horas con dato de cada nodo ese día, el mismo valor que su detalle. "
                    + (f"{r['incompletos']:,} nodos tienen menos de 24 horas con dato. " if r["incompletos"] else "")
                    + "Un nodo sin horas con dato no entra al ranking ni se trata como cero.")
 
@@ -1558,17 +1652,30 @@ def seccion_pnd(hasta):
         with baratas:
             lista_ranking("Más baratas", ranking.tail(RANKING_N).iloc[::-1], "pnd", "rk_pnd_baratas", str.title)
         st.caption("PND publicado por CENACE para cada zona; promedio simple de sus horas con dato ese día, el mismo "
-                   "valor que su vista SOLO. No se compara con el PML de ningún nodo.")
+                   "valor que su detalle. No se compara con el PML de ningún nodo.")
 
 
-def vista_ensemble(limites, nodos, version, limites_activos):
-    """v0.8.0 · ENSEMBLE: el mercado del día de referencia, PML y PND en secciones separadas, y el panel derecho."""
+def vista_ensemble(limites, nodos, version, limites_activos, con_detalle=False):
+    """v0.8.0 · ENSEMBLE: el mercado del día de referencia, PML y PND en secciones separadas, y el panel derecho.
+
+    v0.8.1 · Se dibuja siempre. Con el detalle abierto arriba (`con_detalle`), la URL es la del detalle y el panel
+    derecho no repite los controles del detalle.
+    """
+    dia = dia_de_consulta(limites_activos)  # el mismo valor inicial que daría el panel del detalle
+    st.session_state.setdefault("desde", dia)
+    st.session_state.setdefault("hasta", dia)
+    rotulo = st.empty()  # siempre en el mismo lugar: el tablero no cambia de posición al abrir o cerrar el detalle
+    if con_detalle:
+        rotulo.markdown('<div class="banda-et"><b>Mercado · ENSEMBLE</b><span>la banda sigue aquí · el día de '
+                    'referencia de todos los nodos y zonas de carga · toca otro para ponerlo al frente</span></div>',
+                    unsafe_allow_html=True)
     with st.container(key="ensemble"):
         principal, derecho = st.columns([2.7, 1], gap="large")
         with derecho:
-            panel_ensemble(nodos, limites_activos, limites, version)
+            panel_ensemble(nodos, limites_activos, limites, version, con_detalle)
         with principal:
-            actualizar_url_ensemble()
+            if not con_detalle:
+                actualizar_url_ensemble()
             hasta = st.session_state["hasta"]
             seccion_pml(ens.dia_pml(hasta, limites), len(nodos), version)
             if PND:
@@ -1584,14 +1691,14 @@ def metodologia_ensemble():
 - **Promedio del día:** el mismo valor que la vista SOLO de ese nodo o zona para ese día: promedio simple de sus horas con dato (fuera de la ventana horaria PML, suma ÷ horas válidas del diario). El tablero solo **ordena** esos valores y **cuenta** elementos; no hay índices, promedios entre nodos ni ponderaciones nuevas.
 - **Distribución:** cuántos nodos (o zonas) tienen su promedio del día en cada intervalo de precio. Agrupa los mismos promedios para dibujarlos; no es un indicador nuevo.
 - **Faltantes:** un nodo o una zona sin horas con dato ese día no entra al ranking ni se trata como cero; se cuenta como «sin dato». Si un día PND no tiene dato, se usa el último día anterior con dato y se dice.
-- **Solo:** tocar un nodo o una zona abre su vista SOLO con las fechas y la resolución del panel. «Volver al mercado» regresa con los mismos filtros.
+- **Solista al frente:** tocar un nodo o una zona muestra su detalle arriba (histórico, comparación, componentes o PND) con las fechas y la resolución del panel; el tablero sigue debajo en la misma página. Tocar otro cambia solo el protagonista. «Cerrar detalle» deja solo el mercado con los mismos filtros.
 """)
 
 
 def conservar_widgets():
     """v0.7.0 · Streamlit borra el estado de un widget que no se dibuja en una corrida. Al pasar a PND (o volver a
     PML) se ocultan pestañas y selectores de la otra modalidad; reescribir su valor lo conserva para el regreso."""
-    claves = ["vista", "zona", "zona_region", "nodo_tension"] + [f"{n}{s}" for n in ("nodo", "nodo_a", "nodo_b")
+    claves = ["vista", "zona", "zona_region", "nodo_tension", "modalidad"] + [f"{n}{s}" for n in ("nodo", "nodo_a", "nodo_b")
                                                 for s in ("", "_region", "_estado", "_zona")]
     for clave in claves:
         if clave in st.session_state:
@@ -1649,17 +1756,9 @@ leer_url(nodos, limites)
 # barra lateral (en móvil quedaba sobre los resultados o como un icono sin texto). Cerrarlo no borra la selección.
 # v0.5: las vistas son una barra de pestañas visible arriba; nodo, fechas y resolución siguen en el panel.
 conservar_widgets()
-# v0.8.0 · Graphite Trading: ENSEMBLE (tablero del mercado) o SOLO (un nodo o una zona). Ver escena.py.
+# v0.8.1 · Una sola página: sin selección, solo el mercado (ENSEMBLE). Con un nodo o una zona elegidos (o un enlace
+# con nodo, zona, vista o modalidad), su detalle aparece ARRIBA y el mismo ENSEMBLE sigue debajo. Ver escena.py.
 en_solo = st.session_state["escena"] == SOLO
-if en_solo:
-    st.button("Volver al mercado", key="volver", icon=":material/arrow_back:", on_click=volver_al_mercado,
-              help="Regresa al tablero ENSEMBLE con las mismas fechas, resolución y selección.")
-if PND and en_solo:
-    # v0.7.0 · Modalidad: PML por nodo (como siempre) o PND por zona de carga. Sin PND publicado no se dibuja.
-    # v0.8.0: en ENSEMBLE el mismo selector va en el panel derecho.
-    st.radio("Precio", list(MODALIDADES), key="modalidad", horizontal=True, format_func=MODALIDADES.get,
-             on_change=ajustar_fechas_modalidad,
-             help="PML: precio de un nodo (NodoP). PND: precio de una zona de carga, con el que se liquida la demanda.")
 modo_pnd = bool(PND) and st.session_state.get("modalidad") == "pnd"
 if en_solo:
     subtitulo.caption(("Precio de zona de carga (PND) · " if modo_pnd else "Precio Marginal Local · ")
@@ -1668,50 +1767,69 @@ else:
     subtitulo.caption("Mercado del Día en Adelanto · SIN (CENACE) · MXN/MWh · PML por nodo y PND por zona de carga, "
                       "por separado · datos diarios publicados, no en tiempo real")
 limites_activos = PND["limites"] if modo_pnd else limites
-col_pestanas, col_rangos = st.columns([3, 1], vertical_alignment="bottom")
-with col_pestanas, st.container(key="pestanas"):
-    if not en_solo:
-        st.markdown("**Mercado · ENSEMBLE** · el día de referencia de todos los nodos y zonas de carga")
-    elif modo_pnd:
-        st.markdown("**Precio de zona de carga (PND)** · histórico por zona")
-    else:
-        vista = st.radio("Vista", list(VISTAS), key="vista", horizontal=True, label_visibility="collapsed",
-                         format_func=lambda v: v.split(". ", 1)[1])
-with col_rangos:
-    botones_rango(limites_activos)
-# Si el enlace trae problemas, el panel abre solo para corregirlos. v0.8.0: en ENSEMBLE el panel es la columna derecha.
-panel = st.expander("Vista y filtros", expanded=st.session_state["panel_abierto"]) if en_solo else None
-# El contenido va en un contenedor creado antes que el pie: si una vista se detiene con st.stop()
-# (sin datos, fechas invertidas), metodología y fechas disponibles siguen visibles debajo.
-contenido = st.container()
+# Detalle arriba y mercado debajo. El mercado se dibuja primero en el código: si el detalle se detiene con st.stop()
+# (sin datos, fechas invertidas, enlace con problemas), el tablero, la metodología y el pie siguen visibles.
+# Los cuatro huecos existen siempre, en el mismo orden: abrir, cambiar o cerrar el detalle no mueve el tablero de
+# lugar y Streamlit no vuelve a montar sus gráficas (transición más rápida).
+enfocar_detalle(st.empty())
+detalle = st.container(key=f"detalle_{'pnd' if modo_pnd else 'pml'}") if en_solo else st.empty()
+encabezado = st.container()
+mercado = st.container()
 if not en_solo:
-    metodologia_ensemble()
-if not en_solo and PND:
-    metodologia()
+    with encabezado:
+        col_pestanas, col_rangos = st.columns([3, 1], vertical_alignment="bottom")
+        with col_pestanas, st.container(key="pestanas"):
+            st.markdown("**Mercado · ENSEMBLE** · el día de referencia de todos los nodos y zonas de carga")
+        with col_rangos:
+            botones_rango(limites_activos)
+metodologia_ensemble()
+metodologia()
+if PND:
     metodologia_pnd()
+if PND and not en_solo:
     lp = PND["limites"]
     st.caption(f"PML Explorer {VERSION_APP} · PML: esquema v{metadata()['version_esquema']}, {limites['desde']} a "
                f"{limites['hasta']}, actualización {actualizado_cdmx(limites['generado_utc'])} · PND: contrato v1, "
                f"{lp['desde']} a {lp['hasta']} ({lp['zonas']} zonas), actualización "
                f"{actualizado_cdmx(lp['generado_utc'])} · Ciudad de México.")
 elif modo_pnd:
-    metodologia_pnd()
     lp = PND["limites"]
     st.caption(f"PML Explorer {VERSION_APP} · PND: contrato v1 · Fechas de operación disponibles: {lp['desde']} a "
                f"{lp['hasta']} ({lp['zonas']} zonas de carga) · Actualización del paquete PND: "
                f"{actualizado_cdmx(lp['generado_utc'])}, Ciudad de México · Fuente: CENACE SW-PEND, MDA, SIN.")
 else:
-    metodologia()
     st.caption(f"PML Explorer {VERSION_APP} · Datos: esquema v{metadata()['version_esquema']} · "
                f"Fechas de operación disponibles: {limites['desde']} a {limites['hasta']} (diario); "
                f"{limites['horario_desde']} a {limites['horario_hasta']} (horario). "
                f"Actualización del paquete: {actualizado_cdmx(limites['generado_utc'])}, Ciudad de México."
                + (f" · Nombres y ubicación: Catálogo de NodosP de CENACE, versión "
                   f"{UBICACION['manifiesto']['version_catalogo']}." if UBICACION else ""))
-with contenido:
-    if not en_solo:
-        vista_ensemble(limites, nodos, version, limites_activos)
-    elif modo_pnd:
-        vista_pnd(panel)
-    else:
-        VISTAS[vista](limites, nodos, fechas_nodo, version, panel)
+with mercado:
+    vista_ensemble(limites, nodos, version, limites_activos, con_detalle=en_solo)
+if en_solo:
+    with detalle:
+        # Cerrar y Precio en una sola fila: el solista queda más arriba (en móvil se acomodan en dos filas).
+        with st.container(key="cierre", horizontal=True, gap="medium", vertical_alignment="bottom"):
+            st.button("Cerrar detalle", key="volver", icon=":material/close:", on_click=volver_al_mercado,
+                      help="Deja solo el tablero ENSEMBLE, con las mismas fechas, resolución y selección.")
+            if PND:
+                # v0.7.0 · Modalidad: PML por nodo o PND por zona de carga. Sin PND publicado no se dibuja.
+                st.radio("Precio", list(MODALIDADES), key="modalidad", horizontal=True, format_func=MODALIDADES.get,
+                         on_change=ajustar_fechas_modalidad, width="content",
+                         help="PML: precio de un nodo (NodoP). PND: precio de una zona de carga, con el que se liquida "
+                              "la demanda.")
+        col_pestanas, col_rangos = st.columns([3, 1], vertical_alignment="bottom")
+        with col_pestanas, st.container(key="pestanas"):
+            if modo_pnd:
+                st.markdown("**Precio de zona de carga (PND)** · histórico por zona")
+            else:
+                vista = st.radio("Vista", list(VISTAS), key="vista", horizontal=True, label_visibility="collapsed",
+                                 format_func=lambda v: v.split(". ", 1)[1])
+        with col_rangos:
+            botones_rango(limites_activos)
+        # Si el enlace trae problemas, el panel abre solo para corregirlos.
+        panel = st.expander("Vista y filtros", expanded=st.session_state["panel_abierto"])
+        if modo_pnd:
+            vista_pnd(panel)
+        else:
+            VISTAS[vista](limites, nodos, fechas_nodo, version, panel)

@@ -1,5 +1,18 @@
 # Validaciones y aceptación pendiente
 
+## 2026-11-22 · v0.8.1 Solista al frente, Ensemble siempre visible (Issue #25)
+
+Mismo entorno y método que las entradas de v0.8.0 (servidor local, paquete público PML al 2026-11-21 y PND al 2026-11-19; `main` = v0.8.0, `1b0d37f`).
+
+- **Pruebas:** 199 passed, 4 skipped. Nuevas (`SolistaAlFrente`, 6): sin selección solo mercado (A1); enlace con nodo muestra detalle y tablero sin claves repetidas (A2); cambiar de solista desde el ranking conserva fechas y resolución, resalta la fila y «Cerrar detalle» deja solo el tablero (A3); la búsqueda del tablero cambia solo el protagonista y vuelve a quedar vacía (A3); una zona desde el detalle PML abre el detalle PND sin indicadores PML y con las dos secciones separadas debajo (A4); un detalle sin datos conserva su aviso y el tablero (A6).
+- **Regresión (A6):** en los 14 enlaces, el contenido del detalle en v0.8.1 (métricas, textos, avisos, tablas y URL) es idéntico al de SOLO en `main`. Las 12 descargas CSV tienen el mismo nombre y SHA-256. `data/`, `pnd/`, `scripts/` y los módulos de cálculo no cambian.
+- **Responsive (A7):** sin desplazamiento horizontal en 320, 390, 768, 1024 y 1440 px para «antes de seleccionar», PML histórico, spread, componentes y PND al frente con el tablero debajo (25 capturas en `docs/capturas/v0.8.1-solista/`, más `foco-pml-*` y `foco-pnd-*`: elegir desde el tablero lleva la vista al detalle, que queda arriba de la pantalla, en 1440 y 390 px).
+- **Rendimiento local (A8):** 5 sesiones nuevas por versión tras reiniciar el servidor; corridas 2–5 por mediana.
+  - Carga del tablero: 3.64 s en frío y 1.43 s con caché (`main`: 3.72 s y 1.48 s).
+  - Tablero → detalle: 1.07 s (`main`, ENSEMBLE → SOLO: 0.69 s). Es más lento porque ahora el tablero se vuelve a dibujar debajo del detalle; el tiempo en el servidor es casi igual (0.41 s contra 0.38 s) y la diferencia está en el navegador.
+  - Cerrar detalle: 0.30 s (`main`, volver al mercado: 0.48 s).
+- **Pendiente:** validación visual de Eduardo y prueba en Community Cloud, que requiere despliegue autorizado.
+
 ## 2026-11-20 · v0.8.0, segunda iteración visual (Graphite híbrido, watchlist con tensión, congestión en SOLO)
 
 Atiende la dirección de producto de los comentarios en #19 y #24. Mismo entorno y método que la entrada siguiente.

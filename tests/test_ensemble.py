@@ -221,6 +221,79 @@ class EscenasApp(unittest.TestCase):
 
 
 @unittest.skipUnless((v.DATA_DIR / "metadata.json").is_file(), "Sin paquete público en data/")
+class SolistaAlFrente(unittest.TestCase):
+    """v0.8.1 · Una sola página: el detalle aparece arriba y el mismo ENSEMBLE sigue debajo (Issue #25, A1–A6)."""
+
+    abrir = EscenasApp.abrir
+    boton = EscenasApp.boton
+
+    def secciones(self, app):
+        return [m.value for m in app.markdown if "seccion-et" in m.value]
+
+    def test_sin_seleccion_solo_mercado(self):  # A1
+        app = self.abrir()
+        self.assertNotIn("volver", [b.key for b in app.button])
+        self.assertNotIn("buscar_pml", [s.key for s in app.selectbox])
+        self.assertTrue(self.secciones(app))
+
+    def test_enlace_con_nodo_muestra_detalle_y_mercado(self):  # A2, deep link
+        app = self.abrir(vista="historico", nodo="01AGU-230")
+        self.assertEqual(app.session_state["escena"], "solo")
+        self.assertIn("Promedio horario", [m.label for m in app.metric])  # el detalle
+        self.assertTrue(self.secciones(app))                               # y la banda debajo
+        self.assertTrue(any(b.key.startswith("wl_pml_") for b in app.button))
+        self.assertEqual(dict(app.query_params)["nodo"], "01AGU-230")      # la URL es la del detalle
+        claves = [s.key for s in app.selectbox]
+        self.assertEqual(claves.count("nodo"), 1)                          # sin claves repetidas
+        self.assertIn("buscar_pml", claves)
+
+    def test_cambiar_de_solista_conserva_filtros_y_mercado(self):  # A3
+        app = self.abrir(vista="historico", nodo="01AGU-230")
+        app.radio(key="resolucion").set_value("diaria").run()
+        filtros = {k: app.query_params[k] for k in ("desde", "hasta", "resolucion")}
+        boton = self.boton(app, "rk_pml_baratos_0")
+        nodo, valor = boton.label.split(" · ")[:2]
+        boton.click().run()
+        self.assertFalse(app.exception, app.exception)
+        self.assertEqual(dict(app.query_params), {"vista": "historico", "nodo": nodo, **filtros})
+        self.assertEqual({m.label: m.value for m in app.metric}["Promedio horario"], valor)
+        self.assertTrue(self.secciones(app))
+        self.assertEqual(self.boton(app, "rk_pml_baratos_0").proto.type, "primary")  # el solista resaltado
+        self.boton(app, "volver").click().run()
+        self.assertEqual(app.session_state["escena"], "ensemble")
+        self.assertEqual(dict(app.query_params), filtros)
+        self.assertEqual(len(app.metric), 0)
+        self.assertTrue(self.secciones(app))
+
+    def test_busqueda_del_tablero_cambia_solo_el_protagonista(self):  # A3
+        app = self.abrir(vista="componentes", nodo="01AAN-85")
+        app.segmented_control(key="nodo_tension").set_value("230 kV").run()
+        app.selectbox(key="buscar_pml").set_value("01AGU-230").run()
+        self.assertFalse(app.exception, app.exception)
+        self.assertEqual(app.query_params["nodo"], "01AGU-230")
+        self.assertEqual(app.query_params["vista"], "historico")
+        self.assertIsNone(app.selectbox(key="buscar_pml").value)  # la búsqueda vuelve a quedar vacía
+
+    def test_zona_desde_detalle_pml_abre_detalle_pnd(self):  # A4
+        app = self.abrir(vista="historico", nodo="01AAN-85")
+        if not any(b.key.startswith("rk_pnd_caras") for b in app.button):
+            self.skipTest("Sin PND publicado en data/")
+        boton = self.boton(app, "rk_pnd_caras_0")
+        boton.click().run()
+        self.assertFalse(app.exception, app.exception)
+        self.assertEqual(app.query_params["modalidad"], "pnd")
+        etiquetas = [m.label for m in app.metric]
+        self.assertIn("Horas con PND < 0", etiquetas)
+        self.assertNotIn("Horas con PML < 0", etiquetas)  # PML y PND no se mezclan
+        self.assertEqual(len(self.secciones(app)), 2)     # la banda sigue con sus dos secciones separadas
+
+    def test_detalle_sin_datos_no_oculta_el_mercado(self):  # A6: los avisos del detalle siguen; el tablero también
+        app = self.abrir(vista="historico", nodo="99XXX-999")
+        self.assertTrue(app.error or app.warning)
+        self.assertTrue(self.secciones(app))
+
+
+@unittest.skipUnless((v.DATA_DIR / "metadata.json").is_file(), "Sin paquete público en data/")
 class EnsembleConPndDePrueba(unittest.TestCase):
     """AC-G07: PML y PND en secciones separadas; sin PND publicado, el tablero es solo PML."""
 
