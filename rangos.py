@@ -5,7 +5,7 @@ del paquete público (`limites["hasta"]`, que viene de `diario_hasta` en metadat
 """
 from datetime import timedelta
 
-RANGOS_RAPIDOS = ("Último día", "Últimos 7 días", "Mes en curso")
+RANGOS_RAPIDOS = ("Último día", "Últimos 7 días", "Mes en curso", "Año en curso")
 
 
 def rango_rapido(opcion, limites):
@@ -14,6 +14,7 @@ def rango_rapido(opcion, limites):
     - «Último día»: el último día del paquete.
     - «Últimos 7 días»: los 7 días que terminan en el último día (inclusivo).
     - «Mes en curso»: del día 1 del mes del último día hasta ese último día (mes parcial).
+    - «Año en curso» (v0.8.2, YTD): del 1 de enero del año del último día hasta ese último día.
     """
     fin = limites["hasta"]
     if opcion == "Último día":
@@ -22,6 +23,8 @@ def rango_rapido(opcion, limites):
         inicio = fin - timedelta(days=6)
     elif opcion == "Mes en curso":
         inicio = fin.replace(day=1)
+    elif opcion == "Año en curso":
+        inicio = fin.replace(month=1, day=1)
     else:
         raise ValueError(f"Rango rápido desconocido: {opcion!r}")
     # Si el paquete empieza después del inicio calculado, no se inventan días anteriores.

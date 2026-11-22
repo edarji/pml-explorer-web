@@ -49,6 +49,13 @@ class RangosRapidos(unittest.TestCase):
             inicio, fin = rango_rapido(opcion, self.L)
             self.assertTrue(self.L["desde"] <= inicio <= fin <= self.L["hasta"], opcion)
 
+    def test_ytd_desde_el_1_de_enero_del_ultimo_dato(self):  # v0.8.2, Issue #27 (Eduardo: «Y2D» = YTD)
+        self.assertEqual(rango_rapido("Año en curso", self.L), (date(2026, 1, 1), date(2026, 11, 3)))
+        L = limites(date(2023, 1, 1), date(2027, 1, 1))  # primer día del año: YTD es solo ese día
+        self.assertEqual(rango_rapido("Año en curso", L), (date(2027, 1, 1), date(2027, 1, 1)))
+        L = limites(date(2026, 5, 10), date(2026, 11, 3))  # el paquete empieza a mitad de año: no se inventa enero
+        self.assertEqual(rango_rapido("Año en curso", L), (date(2026, 5, 10), date(2026, 11, 3)))
+
     def test_opcion_desconocida_falla(self):
         with self.assertRaises(ValueError):
             rango_rapido("Ayer", self.L)
