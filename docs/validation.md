@@ -1,5 +1,20 @@
 # Validaciones y aceptación pendiente
 
+## 2026-11-22 · v0.8.2 Terminal persistente: barra y lista fijas, solista compacto, YTD (Issue #27, fase P0)
+
+Mismo entorno y método que las entradas anteriores (servidor local; paquete PML al 2026-11-21 y PND al 2026-11-19; `main` = v0.8.1, `79710cd`).
+
+- **Pruebas:** 202 passed, 4 skipped. Nuevas: YTD en `tests/test_rangos.py` (1 ene del año del último dato; 1 de enero = un solo día; paquete que empieza a mitad de año) y `TerminalPersistente` (fechas, resolución, rangos y lista una sola vez en ENSEMBLE, detalle y spread; YTD deja `desde`=1 ene, `hasta`=último día, resolución diaria, y su enlace abre las mismas cifras). Se adaptaron 3 pruebas que usaban el selector `nodo` del panel derecho: ahora la lista tiene su propia búsqueda (`buscar_pml`).
+- **Regresión (A7):** en los 14 enlaces, el contenido del detalle (métricas, textos, avisos, tablas y URL) es idéntico al de `main`. Las 12 descargas CSV tienen el mismo nombre y SHA-256. `data/`, `pnd/`, `scripts/` y los módulos de cálculo no cambian.
+- **Fijos al desplazarse (A1, A2), Chromium:** en 1440 px la barra (71 px) y la lista quedan en su lugar arriba, a media página sobre la gráfica y sobre el tablero. Elegir en la lista con la página desplazada deja el detalle justo bajo la barra y conserva fechas y resolución en la URL. En iPhone 13 (390 px) la barra mide 137 px, «Cambiar nodo» lleva a la lista justo bajo la barra y elegir regresa al detalle; sin desplazamiento horizontal.
+- **Responsive (A6):** sin desplazamiento horizontal en 320, 390, 768, 1024 y 1440 px. Capturas en `docs/capturas/v0.8.2-terminal/`.
+- **Rendimiento local:** 5 sesiones nuevas por versión tras reiniciar los servidores; corridas 2–5 por mediana.
+  - Carga del tablero: 3.57 s en frío y 1.42 s con caché (`main`: 4.07 s y 1.47 s).
+  - Tablero → detalle: 1.05 s (`main`: 0.97 s).
+  - Cerrar detalle: 0.25 s (`main`: 0.34 s).
+- **YoY:** queda para una fase 2 (consulta y reglas de cobertura propias). No hay ningún control YoY en esta versión.
+- **Pendiente:** revisión de ChatGPT, validación visual de Eduardo y prueba en Community Cloud, que requiere despliegue autorizado.
+
 ## 2026-11-22 · v0.8.1 Solista al frente, Ensemble siempre visible (Issue #25)
 
 Mismo entorno y método que las entradas de v0.8.0 (servidor local, paquete público PML al 2026-11-21 y PND al 2026-11-19; `main` = v0.8.0, `1b0d37f`).

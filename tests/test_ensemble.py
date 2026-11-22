@@ -170,7 +170,7 @@ class EscenasApp(unittest.TestCase):
         self.boton(app, "volver").click().run()
         self.assertEqual(app.session_state["escena"], "ensemble")
         self.assertEqual(dict(app.query_params), filtros)
-        self.assertEqual(app.selectbox(key="nodo").value, nodo)  # última selección conservada
+        self.assertEqual(app.session_state["nodo"], nodo)  # última selección conservada
 
     def test_comparar_usa_al_solista_como_nodo_a(self):  # D3
         app = self.abrir()
@@ -181,10 +181,10 @@ class EscenasApp(unittest.TestCase):
         self.assertFalse(app.exception)
         self.assertEqual(app.selectbox(key="nodo_a").value, nodo)
 
-    def test_panel_derecho_abre_solo(self):  # AC-G04
+    def test_panel_derecho_abre_solo(self):  # AC-G04 · v0.8.2: la búsqueda de la lista permanente
         app = self.abrir()
         app.segmented_control(key="nodo_tension").set_value("230 kV").run()
-        app.selectbox(key="nodo").set_value("01AGU-230").run()
+        app.selectbox(key="buscar_pml").set_value("01AGU-230").run()
         self.assertEqual(app.session_state["escena"], "solo")
         self.assertEqual(app.query_params["nodo"], "01AGU-230")
 
@@ -192,19 +192,17 @@ class EscenasApp(unittest.TestCase):
         import catalogo as cat
         df, _ = cat.cargar()
         kv = dict(zip(df["nodo"], df["tension_kv"]))
-        app = self.abrir()
+        app = self.abrir(vista="historico", nodo="01AAN-85")
         self.assertEqual(app.segmented_control(key="nodo_tension").value, "400 kV")
-        opciones = app.selectbox(key="nodo").options
-        actual = app.selectbox(key="nodo").value
-        # El nodo elegido (01AAN-85, 85 kV) se conserva al inicio con aviso; el resto son 400 kV según el catálogo.
-        self.assertEqual(opciones[0].split(" · ")[0], actual)
-        self.assertIn(f"{actual} está fuera de este filtro", " ".join(c.value for c in app.caption))
-        self.assertTrue(all(kv[o.split(" · ")[0]] == 400.0 for o in opciones[1:]))
-        self.assertEqual(len(opciones) - 1, sum(1 for v in kv.values() if v == 400.0))
+        # v0.8.2 · La búsqueda de la lista permanente es aparte del selector del detalle: solo nodos de 400 kV según
+        # el catálogo, y el nodo del detalle (01AAN-85, 85 kV) no cambia por filtrar la lista.
+        opciones = app.selectbox(key="buscar_pml").options
+        self.assertTrue(all(kv[o.split(" · ")[0]] == 400.0 for o in opciones))
+        self.assertEqual(len(opciones), sum(1 for v in kv.values() if v == 400.0))
         filas = [b for b in app.button if b.key.startswith("wl_pml_")]
         self.assertTrue(0 < len(filas) <= 6)  # lista corta: no se dibujan miles de botones
         app.segmented_control(key="nodo_tension").set_value("Todas").run()
-        self.assertEqual(app.selectbox(key="nodo").value, actual)  # cambiar el filtro no pierde el nodo
+        self.assertEqual(app.selectbox(key="nodo").value, "01AAN-85")  # filtrar la lista no pierde el nodo
 
     def test_watchlist_abre_solo_con_el_mismo_precio(self):
         app = self.abrir()
@@ -233,7 +231,7 @@ class SolistaAlFrente(unittest.TestCase):
     def test_sin_seleccion_solo_mercado(self):  # A1
         app = self.abrir()
         self.assertNotIn("volver", [b.key for b in app.button])
-        self.assertNotIn("buscar_pml", [s.key for s in app.selectbox])
+        self.assertIn("buscar_pml", [s.key for s in app.selectbox])  # v0.8.2: la lista es permanente
         self.assertTrue(self.secciones(app))
 
     def test_enlace_con_nodo_muestra_detalle_y_mercado(self):  # A2, deep link
@@ -291,6 +289,37 @@ class SolistaAlFrente(unittest.TestCase):
         app = self.abrir(vista="historico", nodo="99XXX-999")
         self.assertTrue(app.error or app.warning)
         self.assertTrue(self.secciones(app))
+
+
+@unittest.skipUnless((v.DATA_DIR / "metadata.json").is_file(), "Sin paquete público en data/")
+class TerminalPersistente(unittest.TestCase):
+    """v0.8.2 · Barra superior con precio, rangos (1D/7D/Mes/YTD) y fechas; lista permanente a la derecha (Issue #27)."""
+
+    abrir = EscenasApp.abrir
+
+    def test_controles_una_sola_vez_en_ambas_escenas(self):  # sin widgets duplicados
+        for parametros in ({}, {"vista": "historico", "nodo": "01AAN-85"}, {"vista": "comparacion"}):
+            with self.subTest(parametros=parametros):
+                app = self.abrir(**parametros)
+                self.assertEqual([d.key for d in app.date_input], ["desde", "hasta"])
+                self.assertEqual([r.key for r in app.radio].count("resolucion"), 1)
+                rangos = [b.key for b in app.button if b.key.startswith("rango_")]
+                self.assertEqual(rangos, [f"rango_{o}" for o in ("Último día", "Últimos 7 días", "Mes en curso",
+                                                                   "Año en curso")])
+                self.assertIn("buscar_pml", [s.key for s in app.selectbox])  # la lista siempre está
+
+    def test_ytd_es_1_de_enero_al_ultimo_dia_y_enlace_reproducible(self):  # A4
+        hasta = date.fromisoformat(v.metadata()["diario_hasta"])
+        app = self.abrir(vista="historico", nodo="01AAN-85")
+        app.button(key="rango_Año en curso").click().run()
+        self.assertFalse(app.exception, app.exception)
+        esperado = {"desde": str(max(hasta.replace(month=1, day=1),
+                                     date.fromisoformat(v.metadata()["diario_desde"]))),
+                    "hasta": str(hasta), "resolucion": "diaria"}  # YTD en horaria pasa a diaria
+        self.assertEqual({k: app.query_params[k] for k in esperado}, esperado)
+        self.assertEqual(app.button(key="rango_Año en curso").proto.type, "primary")
+        enlace = self.abrir(**dict(app.query_params))  # el enlace abre el mismo análisis
+        self.assertEqual({m.label: m.value for m in enlace.metric}, {m.label: m.value for m in app.metric})
 
 
 @unittest.skipUnless((v.DATA_DIR / "metadata.json").is_file(), "Sin paquete público en data/")
