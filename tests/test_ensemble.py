@@ -5,6 +5,7 @@ Con el paquete público real de data/ y pnd/ (se omiten si no están) y con un p
 from datetime import date, timedelta
 from pathlib import Path
 import random
+import re
 import shutil
 import sys
 import tempfile
@@ -15,6 +16,12 @@ import ensemble as ens
 import pnd
 import vista1 as v
 from test_pnd import DESDE, HASTA, SIN_DATO, ZONAS, armar_paquete
+
+
+def etiqueta_rail(label):
+    """v0.8.3 · Fila del rail «*clave* **precio**» → (clave, precio)."""
+    m = re.fullmatch(r"\*(.+)\* \*\*(.+?)\*\*", label)
+    return m.group(1).replace("\\", ""), m.group(2).split(" · ")[0]
 
 
 def muestra(ranking, n=12):
@@ -207,7 +214,7 @@ class EscenasApp(unittest.TestCase):
     def test_watchlist_abre_solo_con_el_mismo_precio(self):
         app = self.abrir()
         fila = next(b for b in app.button if b.key == "wl_pml_0")
-        nodo, valor = fila.label.split(" · ")[:2]
+        nodo, valor = etiqueta_rail(fila.label)
         fila.click().run()
         self.assertEqual(app.query_params["nodo"], nodo)
         self.assertEqual({m.label: m.value for m in app.metric}["Promedio horario"], valor)
@@ -320,6 +327,73 @@ class TerminalPersistente(unittest.TestCase):
         self.assertEqual(app.button(key="rango_Año en curso").proto.type, "primary")
         enlace = self.abrir(**dict(app.query_params))  # el enlace abre el mismo análisis
         self.assertEqual({m.label: m.value for m in enlace.metric}, {m.label: m.value for m in app.metric})
+
+
+@unittest.skipUnless((v.DATA_DIR / "metadata.json").is_file(), "Sin paquete público en data/")
+class RailIzquierdo(unittest.TestCase):
+    """v0.8.3 · Rail izquierdo con «Nodos | Zonas» en el mismo panel, sincronizado con «Precio» de la cabecera (#29)."""
+
+    abrir = EscenasApp.abrir
+
+    def con_pnd(self, app):
+        if "rail_modo" not in [s.key for s in app.segmented_control]:
+            self.skipTest("Sin PND publicado en pnd/")
+
+    def test_un_solo_selector_de_modalidad_y_rail_sin_claves_repetidas(self):
+        for parametros in ({}, {"vista": "historico", "nodo": "01AAN-85"}, {"modalidad": "pnd", "zona": "MONTERREY"}):
+            with self.subTest(parametros=parametros):
+                app = self.abrir(**parametros)
+                self.con_pnd(app)
+                self.assertEqual([r.key for r in app.radio].count("modalidad"), 1)
+                self.assertEqual([s.key for s in app.segmented_control].count("rail_modo"), 1)
+                claves = [w.key for w in list(app.button) + list(app.selectbox) + list(app.segmented_control) if w.key]
+                self.assertEqual(len(claves), len(set(claves)))
+
+    def test_zonas_en_el_rail_cambia_la_cabecera_y_la_lista(self):
+        app = self.abrir()
+        self.con_pnd(app)
+        self.assertEqual(app.segmented_control(key="rail_modo").value, "Nodos")
+        app.segmented_control(key="rail_modo").set_value("Zonas").run()
+        self.assertFalse(app.exception, app.exception)
+        self.assertEqual(app.radio(key="modalidad").value, "pnd")
+        botones = [b.key for b in app.button]
+        self.assertTrue(any(k.startswith("wl_pnd_") for k in botones))
+        self.assertFalse(any(k.startswith("wl_pml_") for k in botones))  # PML y PND no se mezclan
+        self.assertIn("buscar_pnd", [s.key for s in app.selectbox])
+        self.assertNotIn("nodo_tension", [s.key for s in app.segmented_control])
+        app.segmented_control(key="rail_modo").set_value("Nodos").run()
+        self.assertEqual(app.radio(key="modalidad").value, "pml")
+        self.assertTrue(any(b.key.startswith("wl_pml_") for b in app.button))
+
+    def test_cabecera_mueve_las_pestanas_del_rail(self):
+        app = self.abrir()
+        self.con_pnd(app)
+        app.radio(key="modalidad").set_value("pnd").run()
+        self.assertEqual(app.segmented_control(key="rail_modo").value, "Zonas")
+        app.radio(key="modalidad").set_value("pml").run()
+        self.assertEqual(app.segmented_control(key="rail_modo").value, "Nodos")
+
+    def test_zonas_con_detalle_pml_abre_pnd_y_conserva_el_nodo(self):
+        app = self.abrir(vista="historico", nodo="01AAN-85")
+        self.con_pnd(app)
+        app.segmented_control(key="rail_modo").set_value("Zonas").run()
+        self.assertEqual(app.query_params["modalidad"], "pnd")
+        self.assertIn("Horas con PND < 0", [m.label for m in app.metric])
+        fila = next(b for b in app.button if b.key == "wl_pnd_0")
+        zona, valor = etiqueta_rail(fila.label)
+        fila.click().run()
+        self.assertEqual(app.query_params["zona"].title(), zona)
+        self.assertEqual({m.label: m.value for m in app.metric}["Promedio horario"], valor)  # mismo precio
+        app.segmented_control(key="rail_modo").set_value("Nodos").run()
+        self.assertEqual(app.query_params["nodo"], "01AAN-85")  # la selección PML se conserva
+
+    def test_quitar_la_pestana_activa_no_cambia_la_modalidad(self):
+        app = self.abrir()
+        self.con_pnd(app)
+        app.segmented_control(key="rail_modo").set_value(None).run()
+        self.assertFalse(app.exception, app.exception)
+        self.assertEqual(app.radio(key="modalidad").value, "pml")
+        self.assertEqual(app.segmented_control(key="rail_modo").value, "Nodos")
 
 
 @unittest.skipUnless((v.DATA_DIR / "metadata.json").is_file(), "Sin paquete público en data/")

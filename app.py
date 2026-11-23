@@ -24,7 +24,7 @@ from vista1 import (DATA_DIR, RESOLUCIONES, UMBRAL_DESCUADRE, DatosNoDisponibles
                     cobertura_horaria, estadisticas, huella_paquete,
                     inspeccionar_paquete, marcar_periodos, metadata, observado, serie)
 
-VERSION_APP = "v0.8.2 beta"  # versión de la aplicación; el esquema de datos y la fecha vienen del paquete
+VERSION_APP = "v0.8.3 beta"  # versión de la aplicación; el esquema de datos y la fecha vienen del paquete
 REPO = "https://github.com/edarji/pml-explorer-web/blob/main"
 COBERTURA_ESCASA = 80  # % de horas con dato bajo el cual se advierte explícitamente
 SITIO_MERCADOS = "https://edarji.net/mercados/"
@@ -203,7 +203,7 @@ button[kind=primary],button[kind=primary] p{color:#000}
    y el ENSEMBLE sigue debajo en la misma página. */
 .st-key-detalle_pml,.st-key-detalle_pnd{background:#F7F7F8;border:1px solid #D5D7DB;border-top:4px solid #FFB000;
   border-radius:.9rem;padding:.9rem 1.2rem 1rem;box-shadow:0 2px 12px rgba(17,23,32,.08);
-  scroll-margin-top:calc(var(--alto-st) + var(--alto-barra) + .5rem)}
+  scroll-margin-top:calc(var(--alto-st) + var(--alto-barra) + var(--aire,.5rem))}
 .st-key-detalle_pnd{border-top-color:#0A84FF}
 .st-key-detalle_pnd .solista{border-left-color:#0A84FF}
 .solista .nombre{font-size:2rem}
@@ -234,7 +234,7 @@ button[kind=primary],button[kind=primary] p{color:#000}
 [data-testid=stHeader]{background:#E8E9EC}
 /* Streamlit envuelve cada contenedor en stLayoutWrapper: lo fijo es esa envoltura (si no, no se pega al desplazarse). */
 [data-testid=stLayoutWrapper]:has(> .st-key-barra){position:sticky;top:var(--alto-st);z-index:30}
-.st-key-barra{background:#E8E9EC;border-bottom:1px solid #D5D7DB;padding:.3rem 0 .35rem;flex-wrap:wrap;row-gap:.3rem;
+.st-key-barra{background:#E8E9EC;border-bottom:1px solid #D5D7DB;padding:.55rem 0 .6rem;flex-wrap:wrap;row-gap:.35rem;
   box-shadow:0 6px 10px -8px rgba(17,23,32,.18)}
 .st-key-barra .st-key-marca{width:auto;flex:0 1 auto;flex-wrap:nowrap;min-width:0}
 .st-key-barra > [data-testid=stLayoutWrapper]:has(> .st-key-marca){flex:0 0 auto;width:auto;max-width:20rem}
@@ -256,17 +256,54 @@ button[kind=primary],button[kind=primary] p{color:#000}
 .estado-barra .activo{font-weight:700;color:#1C1C1E}
 .chip-cambiar{display:none;align-items:center;min-height:2rem;padding:.15rem .8rem;border-radius:999px;
   background:#FFB000;color:#000 !important;font-weight:600;font-size:.85rem;text-decoration:none !important}
-#elige-solista{scroll-margin-top:calc(var(--alto-st) + var(--alto-barra) + .5rem)}
-.st-key-shell [data-testid=stColumn]:has(.st-key-atril){position:sticky;
-  top:calc(var(--alto-st) + var(--alto-barra) + .6rem);align-self:flex-start;
-  max-height:calc(100dvh - var(--alto-st) - var(--alto-barra) - 1.2rem);overflow-y:auto;overscroll-behavior:contain}
-.st-key-atril{padding:.8rem .9rem .6rem}
-.atril-et{font-weight:700;font-size:1.02rem}
+#elige-solista{scroll-margin-top:calc(var(--alto-st) + var(--alto-barra) + 1.1rem)}
+/* v0.8.3 · Rail izquierdo compacto (Issue #29): «Elige el solista» pasa a la IZQUIERDA con ~la mitad del ancho anterior
+   (245 px → 172–200 px; 187 px en 1440) y un solo panel con «Nodos» (PML) y «Zonas» (PND). El área principal gana el
+   ancho. Más aire entre la cabecera fija y el contenido (--aire). Sin position:fixed: nada se superpone a la gráfica. */
+:root{--ancho-rail:clamp(172px,13vw,200px);--aire:1.1rem}
+.st-key-shell{margin-top:var(--aire)}
+.st-key-shell > div > [data-testid=stHorizontalBlock],.st-key-shell > [data-testid=stHorizontalBlock]{gap:1.1rem}
+.st-key-shell [data-testid=stColumn]:has(.st-key-atril){flex:0 0 var(--ancho-rail) !important;
+  width:var(--ancho-rail) !important;min-width:0;position:sticky;
+  top:calc(var(--alto-st) + var(--alto-barra) + var(--aire));align-self:flex-start;
+  max-height:calc(100dvh - var(--alto-st) - var(--alto-barra) - var(--aire) - .6rem);overflow-y:auto;
+  overscroll-behavior:contain;scrollbar-width:thin}
+.st-key-shell [data-testid=stColumn]:not(:has(.st-key-atril)){flex:1 1 0 !important;width:auto !important;min-width:0}
+.st-key-atril{padding:.65rem .6rem .5rem;gap:.8rem}
+.st-key-atril .atril-et,.st-key-atril .lista-et{padding-bottom:.35rem}
+.atril-et{font-weight:700;font-size:.95rem;line-height:1.25}
+.st-key-atril [data-testid=stWidgetLabel] p{font-size:.78rem}
+.st-key-rail_modo [data-testid=stButtonGroup] > div{flex-wrap:nowrap;width:100%}
+.st-key-rail_modo button{flex:1 1 0;min-width:0;padding:.15rem .3rem;min-height:2.1rem}
+.st-key-rail_modo button p{font-size:.85rem;font-weight:600}
+.st-key-rail_modo button[aria-checked=true]{background:#1C1C1E !important;border-color:#1C1C1E !important}
+.st-key-rail_modo button[aria-checked=true] p{color:#FFFFFF !important}
+.st-key-nodo_tension [data-testid=stButtonGroup] > div{flex-wrap:nowrap;width:100%}
+.st-key-nodo_tension button{flex:1 1 0;min-width:0;padding:.1rem .15rem;min-height:1.9rem}
+.st-key-nodo_tension button p{font-size:.74rem}
+.st-key-atril [data-testid=stSelectbox] [data-baseweb=select] > div{min-height:2.1rem;font-size:.8rem}
+.st-key-atril [data-testid=stExpander] summary{padding:.35rem .55rem}
+.st-key-atril [data-testid=stExpander] summary p{font-size:.8rem}
+.st-key-atril .lista-et{font-size:.72rem;line-height:1.35;margin:0}
+/* Lista de dos líneas: clave o zona arriba (recortada con «…»; el texto completo sigue en la etiqueta accesible y en
+   la ayuda al pasar el cursor) y el precio del día abajo. */
+[class*=st-key-wl_] button{min-height:0;padding:.3rem .55rem}
+[class*=st-key-wl_] button p{white-space:normal;line-height:1.25;font-size:.8rem;text-align:left;min-width:0;width:100%}
+[class*=st-key-wl_] button p em{display:block;font-style:normal;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+[class*=st-key-wl_] button p strong{display:block;font-weight:600;font-variant-numeric:tabular-nums;color:#3A3D42}
+[class*=st-key-wl_] button[kind=primary] p strong{color:#1C1C1E}
+/* La búsqueda es angosta: su lista desplegable se abre con el ancho suficiente para leer clave y nombre completos. */
+[data-testid=stSelectboxVirtualDropdown]{min-width:min(22rem,calc(100vw - 2rem))}
+[data-testid=stSelectboxVirtualDropdown] [role=listbox],[data-testid=stSelectboxVirtualDropdown] [role=listbox] > [role=presentation],
+[data-testid=stSelectboxVirtualDropdown] [role=listbox] > [role=presentation] > [role=presentation]{width:100% !important}
 @media (max-width:1024px){
-.st-key-shell > div > [data-testid=stHorizontalBlock],.st-key-shell > [data-testid=stHorizontalBlock]{flex-direction:column;gap:1rem}
-.st-key-shell [data-testid=stColumn]{width:100% !important;flex:1 1 100% !important}
-.st-key-shell [data-testid=stColumn]:has(.st-key-atril){position:static;max-height:none;overflow:visible}
+.st-key-shell > div > [data-testid=stHorizontalBlock],.st-key-shell > [data-testid=stHorizontalBlock]{flex-direction:column-reverse;gap:1rem}
+.st-key-shell [data-testid=stColumn],.st-key-shell [data-testid=stColumn]:not(:has(.st-key-atril)){width:100% !important;flex:1 1 100% !important}
+.st-key-shell [data-testid=stColumn]:has(.st-key-atril){flex:1 1 100% !important;width:100% !important;position:static;
+  max-height:none;overflow:visible}
+.st-key-atril{padding:.8rem .9rem .6rem}
 .chip-cambiar{display:inline-flex}
+:root{--aire:.8rem}
 }
 .st-key-marca [data-testid=stElementContainer]:has(.chip-cambiar){margin-left:auto;width:auto}
 @media (max-width:640px){
@@ -1480,7 +1517,7 @@ def actualizar_url_ensemble():
 
 TENSIONES = {"400 kV": 400.0, "230 kV": 230.0, "115 kV": 115.0, "Todas": None}
 TENSION_INICIAL = "400 kV"
-WATCHLIST_N = 6    # filas visibles de la lista del panel derecho; «Mostrar más» agrega WATCHLIST_MAS
+WATCHLIST_N = 6    # filas visibles de la lista del rail (v0.8.3: izquierdo); «Mostrar más» agrega WATCHLIST_MAS
 WATCHLIST_MAS = 25
 
 
@@ -1513,33 +1550,63 @@ def nodos_de_lista(nodos):
     return cat_nodos.filtrar(filas, elegido["region"], elegido["zona"], elegido["estado"])
 
 
-def fila_lista(clave_widget, elemento, texto, precio, horas, modalidad, ayuda):
+def md_literal(texto):
+    """Escapa los signos de Markdown de un texto que va dentro de la etiqueta de un botón."""
+    return "".join("\\" + c if c in "\\`*_[]~<>#|" else c for c in str(texto))
+
+
+def etiqueta_fila(texto, precio, horas):
+    """v0.8.3 · Etiqueta de dos líneas para el rail angosto: «*clave*» arriba (el CSS la recorta con «…») y
+    «**precio**» abajo. Mismo valor que antes (`mxn`), mismo aviso de horas parciales."""
     parcial = f" · {horas} h" if horas and horas < 24 else ""
-    st.button(f"{texto} · {mxn(precio) if precio is not None else 'sin dato'}{parcial}", key=clave_widget,
+    return f"*{md_literal(texto)}* **{mxn(precio) if precio is not None else 'sin dato'}{parcial}**"
+
+
+def fila_lista(clave_widget, elemento, texto, precio, horas, modalidad, ayuda):
+    st.button(etiqueta_fila(texto, precio, horas), key=clave_widget,
               on_click=entrar_solo, args=(modalidad, elemento), width="stretch", help=ayuda,
               type="primary" if solista_actual() == (modalidad, elemento) else "secondary")
 
 
-def lista_watchlist(filas, modalidad, clave, etiqueta, precios, titulo):
-    """Lista del panel derecho: muestra solo las primeras filas (no miles de botones) y «Mostrar más»."""
+def lista_watchlist(filas, modalidad, clave, etiqueta, precios, titulo, nombre=None):
+    """Lista del rail: muestra solo las primeras filas (no miles de botones) y «Mostrar más».
+
+    v0.8.3 · `nombre(elemento)` da el nombre completo para la ayuda (la fila angosta puede recortarlo)."""
     st.session_state.setdefault("wl_n", WATCHLIST_N)
     n = st.session_state["wl_n"]
     st.markdown(f'<div class="lista-et">{titulo}</div>', unsafe_allow_html=True)
     with st.container(key=clave):
         for i, elemento in enumerate(filas[:n]):
             precio, horas = precios.get(elemento, (None, None))
+            completo = nombre(elemento) if nombre else etiqueta(elemento)
             fila_lista(f"{clave}_{i}", elemento, etiqueta(elemento), precio, horas, modalidad,
-                       f"Poner al frente {elemento}. Precio: promedio del día de referencia, MXN/MWh.")
+                       f"Poner al frente {completo}. Precio: promedio del día de referencia, MXN/MWh.")
     if len(filas) > n:
-        st.button(f"Mostrar {min(WATCHLIST_MAS, len(filas) - n)} más de {len(filas) - n}", key=f"mas_{clave}",
+        st.button(f"Mostrar {min(WATCHLIST_MAS, len(filas) - n)} más ({len(filas) - n})", key=f"mas_{clave}",
                   on_click=mostrar_mas, type="tertiary")
 
 
-def atril(nodos, limites, version, con_detalle):
-    """v0.8.2 · Panel derecho permanente «Elige otro solista» (watchlist): siempre visible junto al detalle y el tablero.
+MODOS_RAIL = {"Nodos": "pml", "Zonas": "pnd"}  # v0.8.3 · pestañas del rail ↔ modalidad de precio de la cabecera
 
-    Precio (PML/PND), fechas y resolución están en la barra superior. Aquí: tensión, búsqueda, ubicación y la lista
-    con el precio del día de referencia. Las claves son propias (`buscar_*`, `lista_*`): no repiten las del detalle.
+
+def cambiar_modo_rail():
+    """v0.8.3 · Callback de «Nodos | Zonas» del rail: cambia la MISMA modalidad que el selector «Precio» de la
+    cabecera (no hay un segundo estado de modalidad). Volver a tocar la pestaña activa no la desmarca."""
+    elegido = st.session_state.get("rail_modo")
+    if elegido is None:
+        return
+    st.session_state["modalidad"] = MODOS_RAIL[elegido]
+    ajustar_fechas_modalidad()
+    reiniciar_lista()
+
+
+def atril(nodos, limites, version, con_detalle):
+    """v0.8.2 · Panel permanente «Elige el solista» (watchlist): siempre visible junto al detalle y el tablero.
+
+    v0.8.3 · Es un rail IZQUIERDO angosto con dos modos en el mismo panel: «Nodos» (PML/NodoP) y «Zonas» (PND/zona
+    de carga). Las pestañas siguen a la modalidad de la cabecera y la cambian por callback: hay un solo estado
+    (`modalidad`). Fechas y resolución siguen en la barra superior. Las claves son propias (`rail_modo`,
+    `buscar_*`, `lista_*`): no repiten las del detalle.
     """
     estado = st.session_state
     modo_pnd = bool(PND) and estado.get("modalidad") == "pnd"
@@ -1547,13 +1614,22 @@ def atril(nodos, limites, version, con_detalle):
     with st.container(key="atril"):
         st.markdown('<div id="elige-solista" class="atril-et">' + ("Elige otro solista" if con_detalle
                     else "Elige el solista") + "</div>", unsafe_allow_html=True)
+        if PND:
+            # Se fija antes de dibujar el control: así sigue siempre a la modalidad (también si cambió en la cabecera).
+            estado["rail_modo"] = "Zonas" if modo_pnd else "Nodos"
+            st.segmented_control("Mostrar", list(MODOS_RAIL), key="rail_modo", on_change=cambiar_modo_rail,
+                                 label_visibility="collapsed", width="stretch",
+                                 help="Nodos: PML por NodoP. Zonas: PND por zona de carga. Cambia también el precio "
+                                      "de la cabecera; PML y PND no se mezclan.")
+        else:
+            st.caption("PND por zona de carga no está en esta publicación: solo nodos PML.")
         if modo_pnd:
             zonas = list(PND["zonas"])
-            with st.expander("Ubicación"):
+            with st.expander("Región"):
                 region = (_elegir("Región de Control", sorted(PND["regiones"]), "lista_zona_region")
                           if PND["regiones"] else None)
             opciones = [z for z in PND["regiones"][region] if z in zonas] if region else zonas
-            st.selectbox("Buscar zona de carga", opciones, index=None, key="buscar_pnd", format_func=str.title,
+            st.selectbox("Buscar zona", opciones, index=None, key="buscar_pnd", format_func=str.title,
                          placeholder="Nombre de la zona", on_change=buscar_solista, args=("pnd", "buscar_pnd"),
                          help="Zona de carga del SIN según CENACE. El PND es el precio de la zona, no de un nodo.")
             dia = ens.dia_pnd(hasta, PND["limites"], str(pnd_zonas.PND_DIR))
@@ -1562,18 +1638,19 @@ def atril(nodos, limites, version, con_detalle):
                 r = consultar_ranking_pnd(dia, str(pnd_zonas.PND_DIR), PND["version"])
                 precios = dict(zip(r["elemento"], zip(r["promedio"], r["horas"])))
             lista_watchlist(opciones, "pnd", "wl_pnd", str.title, precios,
-                            f"{len(opciones):,} zonas · PND promedio del {dia or '—'} · MXN/MWh")
+                            f"{len(opciones):,} zonas · PND promedio<br>del {dia or '—'} · MXN/MWh")
         else:
             estado.setdefault("nodo_tension", TENSION_INICIAL)
             if UBICACION:
-                st.segmented_control("Tensión", list(TENSIONES), key="nodo_tension", on_change=reiniciar_lista,
+                st.segmented_control("Tensión (kV)", list(TENSIONES), key="nodo_tension", on_change=reiniciar_lista,
+                                     format_func=lambda t: t.replace(" kV", ""), width="stretch",
                                      help="Tensión del NodoP según el Catálogo de NodosP de CENACE (no se deduce "
                                           "de la clave). «Todas» incluye también 69, 85, 138 kV y otras.")
             filtrados = nodos_de_lista(nodos)
             nombres = UBICACION.get("nombres", {}) if UBICACION else {}
-            st.selectbox("Buscar nodo · clave o nombre", filtrados, index=None, key="buscar_pml",
+            st.selectbox("Buscar nodo", filtrados, index=None, key="buscar_pml",
                          format_func=lambda n: cat_nodos.etiqueta(n, nombres),
-                         placeholder="Clave o nombre, p. ej. 06ESC", on_change=buscar_solista,
+                         placeholder="Clave o nombre", on_change=buscar_solista,
                          args=("pml", "buscar_pml"), help=AYUDA_NODO if UBICACION else AYUDA_SOLO_CLAVE)
             if UBICACION:
                 with st.expander("Ubicación"):
@@ -1590,7 +1667,8 @@ def atril(nodos, limites, version, con_detalle):
                 precios = {}
             tension = estado.get("nodo_tension") or "Todas"
             lista_watchlist(filtrados, "pml", "wl_pml", str, precios,
-                            f"{len(filtrados):,} nodos · {tension} · PML promedio del {dia} · MXN/MWh")
+                            f"{len(filtrados):,} nodos · {tension} · PML promedio<br>del {dia} · MXN/MWh",
+                            nombre=lambda n: cat_nodos.etiqueta(n, nombres))
 
 
 def kpis(celdas):
@@ -1803,8 +1881,9 @@ with barra, st.container(key="marca", horizontal=True, vertical_alignment="cente
         subtitulo = st.empty()
         subtitulo.caption("Precio Marginal Local · Mercado del Día en Adelanto · SIN (CENACE) · MXN/MWh · "
                           "datos diarios publicados, no en tiempo real")
-    # v0.8.2 · Tableta y móvil: la lista no queda fija a la derecha (taparía la gráfica); este botón lleva a ella.
-    st.markdown('<a class="chip-cambiar" href="#elige-solista">Cambiar nodo</a>', unsafe_allow_html=True)
+    # v0.8.2 · Tableta y móvil: la lista no queda fija al lado (taparía la gráfica); este botón lleva a ella.
+    # v0.8.3 · El texto depende de la modalidad (se conoce más abajo): hueco reservado, «Cambiar zona» en PND.
+    chip = st.empty()
 
 if not (DATA_DIR / "metadata.json").is_file():
     st.info("Los derivados públicos de CENACE todavía no están disponibles en esta publicación.")
@@ -1853,18 +1932,20 @@ else:
     subtitulo.caption("Mercado del Día en Adelanto · SIN (CENACE) · MXN/MWh · PML por nodo y PND por zona de carga, "
                       "por separado · datos diarios publicados, no en tiempo real")
 limites_activos = PND["limites"] if modo_pnd else limites
+chip.markdown(f'<a class="chip-cambiar" href="#elige-solista">Cambiar {"zona" if modo_pnd else "nodo"}</a>',
+              unsafe_allow_html=True)
 st.html(ALTO_BARRA_JS, unsafe_allow_javascript=True)
 with barra:
     barra_controles(limites_activos, en_solo, modo_pnd)
-# Detalle arriba y mercado debajo, en la columna izquierda; «Elige otro solista» en la columna derecha, fija al
-# desplazarse. El mercado y la lista se dibujan primero en el código: si el detalle se detiene con st.stop() (sin
+# v0.8.3 · «Elige el solista» es el rail IZQUIERDO angosto, fijo al desplazarse; detalle arriba y mercado debajo, en
+# la columna principal (≤ 1024 px el rail pasa al final, ver CSS). El mercado y la lista se dibujan primero en el código: si el detalle se detiene con st.stop() (sin
 # datos, fechas invertidas, enlace con problemas), el tablero, la lista, la metodología y el pie siguen visibles.
 # Los huecos existen siempre, en el mismo orden: abrir, cambiar o cerrar el detalle no mueve el tablero de lugar
 # y Streamlit no vuelve a montar sus gráficas.
 enfocar_detalle(st.empty())
 with st.container(key="shell"):
-    izquierda, derecha = st.columns([2.9, 1], gap="large")
-with izquierda:
+    rail, principal = st.columns([1, 5], gap="small")  # anchos reales en CSS: rail 172–200 px, principal el resto
+with principal:
     detalle = st.container(key=f"detalle_{'pnd' if modo_pnd else 'pml'}") if en_solo else st.empty()
     mercado = st.container()
 metodologia_ensemble()
@@ -1891,7 +1972,7 @@ else:
                   f"{UBICACION['manifiesto']['version_catalogo']}." if UBICACION else ""))
 with mercado:
     vista_ensemble(limites, nodos, version, con_detalle=en_solo)
-with derecha:
+with rail:
     atril(nodos, limites, version, con_detalle=en_solo)
 if en_solo:
     with detalle:

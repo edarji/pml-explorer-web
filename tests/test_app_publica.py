@@ -90,8 +90,10 @@ class AuditoriaUxV03(unittest.TestCase):
     def test_filtros_en_panel_cerrado_sin_barra_lateral(self):
         app = self.abrir()
         self.assertEqual(len(app.sidebar.children), 0)
-        panel = app.expander[0]
-        self.assertEqual(panel.label, "Vista y filtros")
+        # v0.8.3 · El rail izquierdo (con su «Ubicación») va antes en la página: se busca el panel por su etiqueta.
+        paneles = [e for e in app.expander if e.label == "Vista y filtros"]
+        self.assertEqual(len(paneles), 1)
+        panel = paneles[0]
         self.assertFalse(panel.proto.expanded)
         # v0.5: la vista se elige en la barra de pestañas; el panel conserva nodo, fechas y resolución.
         self.assertEqual(app.radio(key="vista").value, "1. PML histórico")
@@ -292,7 +294,7 @@ class EnlacesCompartibles(unittest.TestCase):
     def test_version_esquema_y_fecha_separados(self):  # AC-12
         app = self.abrir()
         pie = " ".join(c.value for c in app.caption)
-        self.assertIn(f"PML Explorer v0.8.2 beta · Datos: esquema v{self.esquema}", pie)
+        self.assertIn(f"PML Explorer v0.8.3 beta · Datos: esquema v{self.esquema}", pie)
         self.assertIn("Actualización del paquete:", pie)
 
 
