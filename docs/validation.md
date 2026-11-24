@@ -1,5 +1,15 @@
 # Validaciones y aceptación pendiente
 
+## 2026-11-24 · v0.8.4 Eje de fechas por resolución (seguimiento de la revisión de v0.8.2, Issue #19)
+
+Servidor local; paquete PML al 2026-11-24 y PND al 2026-11-19; `main` = v0.8.3 (`95f8872`).
+
+- **Problema reproducido:** con serie diaria de pocos días el eje X rotulaba horas entre fechas: «12 PM | vie 13 | 12 PM | sáb 14 …» a 900 px (PND y PML 7D, spread y componentes; con 3 días también «06 AM/06 PM»), y en mensual de 3 meses marcaba semanas («ago 23 | ago 30 | sep 06 …»). Los domingos el formato automático decía «nov 15» junto a «vie 13».
+- **Cambio:** `eje_tiempo()` en `app.py` fija las marcas en días enteros (diaria hasta 62 días: cada 1, 2 o 7 días, rótulo «13 nov») o meses enteros (mensual: «sep 2026», cada 1, 2, 3, 6 o 12 meses). Horaria y diaria de más de 62 días (YTD) no cambian. Línea y barras de congestión usan el mismo eje.
+- **Regresión de escalas** (spec real de 10 escenas vía AppTest, renderizado a 900 y 330 px): PND 7D, PML 3D/7D/mes, spread y componentes 7D muestran solo fechas; mensual 3 meses y YTD mensual solo meses; 1D horaria y YTD diaria idénticas a `main`. Fuera de `axis.tickCount`/`axis.format`, los specs y sus datos son idénticos a `main` (solo cambia el nombre interno de la vista, que es un hash del spec).
+- **Pruebas:** 212 passed, 4 skipped. Nuevas en `tests/test_ejes.py` (5): PND 7D sin «12 PM», PML 7D y spread, mes diario cada 2 días, mensual por meses, horaria y YTD sin cambio. Sin el cambio fallan 4 de 5.
+- `data/`, `pnd/`, `scripts/`, rangos, consultas y `exportar.py` no cambian: cifras, avisos y CSV son los mismos. Capturas antes/después (1440 y 390 px) en `docs/capturas/v0.8.4-eje/`.
+
 ## 2026-11-23 · v0.8.3 Rail izquierdo compacto: Nodos y Zonas, más aire para Ensemble (Issue #29)
 
 Servidor local; paquete PML al 2026-11-23 y PND al 2026-11-19; `main` = v0.8.2 (`8ee8b79`).
