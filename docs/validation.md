@@ -1,5 +1,17 @@
 # Validaciones y aceptación pendiente
 
+## 2026-11-23 · v0.8.3 Rail izquierdo compacto: Nodos y Zonas, más aire para Ensemble (Issue #29)
+
+Servidor local; paquete PML al 2026-11-23 y PND al 2026-11-19; `main` = v0.8.2 (`8ee8b79`).
+
+- **Pruebas:** 207 passed, 4 skipped. Nuevas en `RailIzquierdo`: un solo selector de modalidad y sin claves repetidas (ENSEMBLE, detalle PML y PND); «Zonas» en el rail cambia la cabecera a PND y la lista a zonas (sin filas PML); la cabecera mueve las pestañas del rail; con detalle PML, «Zonas» abre PND, la fila elegida muestra el mismo precio que su detalle y volver a «Nodos» conserva el nodo; quitar la pestaña activa no cambia la modalidad. Se adaptaron 2 pruebas (etiqueta de dos líneas de la lista; el primer expander de la página ya es «Ubicación» del rail).
+- **Regresión:** en 14 enlaces (10 PML de las tres vistas y tres resoluciones, 3 PND, 1 ENSEMBLE) las métricas, avisos, URL, gráficas (huella de la especificación) y las 13 descargas CSV (huella de contenido y nombre) son idénticas a `main`. `data/`, `pnd/`, `scripts/`, rangos y módulos de cálculo no cambian.
+- **Rail (Chromium):** 187 px en 1440 (antes 245), 200 px en 1920, mínimo 172 px; el área principal pasa de 771 a 875 px en 1440. El rail queda fijo bajo la barra (156 px) al desplazarse sobre la gráfica y sobre ENSEMBLE, sin superponerse. La búsqueda abre su lista a 350 px para leer clave y nombre completos.
+- **Aire:** de la barra fija al contenido, 49 px en 1440 (antes 31) y 44–45 px en ≤ 1024 (antes ≈ 30). Elegir deja el detalle a 156 px, 17 px bajo la barra (139 px).
+- **Sincronía PML ↔ PND:** rail → cabecera y cabecera → rail en ENSEMBLE y con detalle abierto; el chip dice «Cambiar zona» en PND.
+- **Móvil/tablet:** en ≤ 1024 px el rail va después del tablero; «Cambiar nodo/zona» lo deja a 209 px, justo bajo la barra (206 px) en iPhone 13. Sin desplazamiento horizontal en 320, 390, 768, 1024, 1440 y 1920 px. Capturas en `docs/capturas/v0.8.3-rail/`.
+- **Rendimiento local** (mediana; entre paréntesis `main`): carga en frío 3.02 s (3.41 s), con caché 1.34 s (1.38 s), lista → detalle 0.93 s (0.96 s), cerrar detalle 0.18 s (0.19 s).
+
 ## 2026-11-22 · v0.8.2 Terminal persistente: barra y lista fijas, solista compacto, YTD (Issue #27, fase P0)
 
 Mismo entorno y método que las entradas anteriores (servidor local; paquete PML al 2026-11-21 y PND al 2026-11-19; `main` = v0.8.1, `79710cd`).
