@@ -25,7 +25,7 @@ from vista1 import (DATA_DIR, RESOLUCIONES, UMBRAL_DESCUADRE, DatosNoDisponibles
                     cobertura_horaria, estadisticas, huella_paquete,
                     inspeccionar_paquete, marcar_periodos, metadata, observado, serie)
 
-VERSION_APP = "v0.8.5 beta"  # versión de la aplicación; el esquema de datos y la fecha vienen del paquete
+VERSION_APP = "v0.8.6 beta"  # versión de la aplicación; el esquema de datos y la fecha vienen del paquete
 REPO = "https://github.com/edarji/pml-explorer-web/blob/main"
 COBERTURA_ESCASA = 80  # % de horas con dato bajo el cual se advierte explícitamente
 SITIO_MERCADOS = "https://edarji.net/mercados/"
@@ -551,6 +551,29 @@ def configurar(grafica_, oscuro=False):
             .configure_title(color=secundario, fontSize=12, fontWeight="normal", anchor="start"))
 
 
+# v0.8.6 · Eje de tiempo por resolución. Con pocos días la escala temporal de Vega elegía marcas cada 6 o 12 horas
+# («12 PM», «06 AM») aunque cada punto es un día, y con pocos meses marcas semanales. Solo cambia dónde van las marcas
+# del eje y cómo se rotulan; los datos, los puntos y el recuadro no cambian.
+DIAS_CON_MARCA_DIARIA = 62   # hasta ~2 meses de serie diaria: una marca por día (o cada 2 o 7 días)
+
+
+def eje_tiempo(periodos, resolucion):
+    """Eje X común de las gráficas de tiempo: marcas en días enteros (diaria) o meses enteros (mensual)."""
+    estilo = dict(grid=False, domain=False, tickColor=EJE)
+    fechas = pd.to_datetime(pd.Series(periodos)).dropna()
+    if fechas.empty or resolucion == "horaria":
+        return alt.Axis(**estilo)
+    if resolucion == "diaria":
+        dias = (fechas.max() - fechas.min()).days + 1
+        if dias > DIAS_CON_MARCA_DIARIA:
+            return alt.Axis(**estilo)  # rangos largos: Vega ya marca meses
+        paso = 1 if dias <= 10 else 2 if dias <= 20 else 7
+        return alt.Axis(**estilo, tickCount={"interval": "day", "step": paso}, format="%d %b")
+    meses = (fechas.max().year - fechas.min().year) * 12 + fechas.max().month - fechas.min().month + 1
+    paso = next(p for p in (1, 2, 3, 6, 12, 24) if meses / p <= 12)
+    return alt.Axis(**estilo, tickCount={"interval": "month", "step": paso}, format="%b %Y")
+
+
 def barras_congestion(df, resolucion, etiqueta, dominio, positivo=AZUL):
     """v0.8.0 · Barras de congestión del mismo periodo bajo la gráfica principal de SOLO.
 
@@ -567,7 +590,7 @@ def barras_congestion(df, resolucion, etiqueta, dominio, positivo=AZUL):
     recuadro.append(alt.Tooltip("congestion:Q", title="Congestión (MXN/MWh)", format=",.2f"))
     barras = alt.Chart(df).mark_bar(opacity=.9).encode(
         x=alt.X("ini:T", title=None, scale=alt.Scale(domain=dominio),
-                axis=alt.Axis(grid=False, domain=False, tickColor=EJE)),
+                axis=eje_tiempo(df["periodo"], resolucion)),
         x2="fin:T", y2=alt.datum(0),
         y=alt.Y("congestion:Q", title=None,
                 axis=alt.Axis(orient="right", domain=False, ticks=False, gridColor=REJILLA, tickCount=3,
@@ -605,7 +628,7 @@ def grafica(df, y, titulo_y, resolucion, color=None, nodo="", cero=False, titulo
                      minExtent=EJE_Y_ANCHO, maxExtent=EJE_Y_ANCHO)
     base = alt.Chart(df).encode(
         x=alt.X("periodo:T", title=None, scale=alt.Scale(domain=dominio),
-                axis=alt.Axis(grid=False, domain=False, tickColor=EJE)),
+                axis=eje_tiempo(df["periodo"], resolucion)),
         y=alt.Y(f"{y}:Q", title=None, scale=alt.Scale(zero=False), axis=eje_y),
     )
     # v0.8.0 · Línea ámbar marcada con un degradado debajo (solo presentación; los valores son los mismos).
@@ -876,7 +899,7 @@ def grafica_series(df, columnas, colores, resolucion, titulo_serie="Serie", nodo
         recuadro.append(alt.Tooltip("hora_txt:N", title="Hora"))
     recuadro.append(alt.Tooltip("valor:Q", title="MXN/MWh", format=",.2f"))
     base = alt.Chart(largo).encode(
-        x=alt.X("periodo:T", title=None, axis=alt.Axis(grid=False, domain=False, tickColor=EJE)),
+        x=alt.X("periodo:T", title=None, axis=eje_tiempo(largo["periodo"], resolucion)),
         y=alt.Y("valor:Q", title=None, scale=alt.Scale(zero=False),
                 axis=alt.Axis(orient="right", domain=False, ticks=False, gridColor=REJILLA, tickCount=5)),
         color=alt.Color("serie:N", title=None, sort=columnas, scale=alt.Scale(domain=columnas, range=colores),
@@ -1297,7 +1320,7 @@ def vista_3(limites, nodos, fechas_nodo, version, panel):
         with izq:
             st.markdown("**Componentes del PML (barras apiladas, MXN/MWh)** · los negativos quedan debajo del cero")
             st.altair_chart(configurar((alt.Chart(largo).mark_bar().encode(
-                x=alt.X("periodo:T", title=None, axis=alt.Axis(grid=False, domain=False, tickColor=EJE)),
+                x=alt.X("periodo:T", title=None, axis=eje_tiempo(largo["periodo"], resolucion)),
                 y=alt.Y("valor:Q", title=None, stack="zero",
                         axis=alt.Axis(orient="right", domain=False, ticks=False, gridColor=REJILLA, tickCount=5)),
                 color=alt.Color("componente:N", title=None, sort=list(nombres.values()),
