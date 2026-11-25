@@ -25,7 +25,7 @@ from vista1 import (DATA_DIR, RESOLUCIONES, UMBRAL_DESCUADRE, DatosNoDisponibles
                     cobertura_horaria, estadisticas, huella_paquete,
                     inspeccionar_paquete, marcar_periodos, metadata, observado, serie)
 
-VERSION_APP = "v0.8.7 beta"  # versión de la aplicación; el esquema de datos y la fecha vienen del paquete
+VERSION_APP = "v0.8.8 beta"  # versión de la aplicación; el esquema de datos y la fecha vienen del paquete
 REPO = "https://github.com/edarji/pml-explorer-web/blob/main"
 COBERTURA_ESCASA = 80  # % de horas con dato bajo el cual se advierte explícitamente
 SITIO_MERCADOS = "https://edarji.net/mercados/"
@@ -421,6 +421,25 @@ button[kind=primary],button[kind=primary] p{color:#000}
 .st-key-ficha .rango{width:100%;margin-right:0}
 .st-key-ficha .fila{width:calc(50% - .6rem);margin-right:.6rem}
 }
+/* v0.8.8 · Pulido visual (Issue #31). Canvas más ancho: hasta 1640 px con márgenes laterales de 20–32 px (antes un
+   máximo fijo de 1240 px dejaba ~100 px vacíos por lado en 1440 y ~340 en 1920). Más aire en la barra fija: más
+   relleno vertical y más separación entre la marca, los controles y la línea de estado, sin agregar filas. */
+.block-container{max-width:1640px;padding-left:clamp(1rem,2.2vw,2rem);padding-right:clamp(1rem,2.2vw,2rem)}
+.st-key-barra{padding:.8rem 0 .8rem;row-gap:.55rem;column-gap:1.6rem}
+.st-key-controles{row-gap:.5rem;column-gap:1.1rem}
+.st-key-ticker{padding-top:.55rem}
+@media (max-width:1024px){
+.st-key-barra{column-gap:1rem}
+.st-key-controles{column-gap:.8rem}
+}
+@media (max-width:640px){
+.st-key-barra{padding:.6rem 0 .65rem;row-gap:.45rem}
+.st-key-controles{row-gap:.4rem;column-gap:.5rem}
+.st-key-ticker{padding-top:.45rem}
+}
+@media (max-width:400px){
+.st-key-controles{column-gap:.3rem}
+}
 </style>"""
 ASSETS = Path(__file__).resolve().parent / "assets"
 NARANJA = "#FFB000"  # v0.6.3: ámbar del logo sax (nombre conservado: es la serie principal en las tres vistas)
@@ -591,6 +610,29 @@ def eje_tiempo(periodos, resolucion):
     return alt.Axis(**estilo, tickCount={"interval": "month", "step": paso}, format="%b %Y")
 
 
+# v0.8.8 · Línea limpia (Issue #31): sin un punto en cada periodo. Para que la línea no una en silencio dos periodos
+# separados por un faltante, la serie se parte en tramos de periodos consecutivos (`tramo`) y cada tramo es su propia
+# línea; un periodo aislado (tramo de uno) sí lleva su punto, porque una línea de un solo punto no se ve. Solo
+# presentación: no se agregan filas, no se interpola ni se suaviza ningún valor.
+PASO_PERIODO = {"horaria": "h", "diaria": "D", "mensual": "MS"}
+
+
+def tramos(periodos, resolucion):
+    """(tramo, aislado) por fila: tramo cambia tras cada hueco de uno o más periodos sin dato."""
+    fechas = pd.to_datetime(pd.Series(periodos)).reset_index(drop=True)
+    if fechas.empty:
+        return pd.Series(dtype=int), pd.Series(dtype=bool)
+    if resolucion == "mensual":
+        indice = fechas.dt.year * 12 + fechas.dt.month
+    elif resolucion == "diaria":
+        indice = (fechas - pd.Timestamp("2000-01-01")).dt.days
+    else:
+        indice = (fechas - pd.Timestamp("2000-01-01")) // pd.Timedelta(hours=1)
+    tramo = (indice.diff().fillna(1) != 1).cumsum().astype(int)
+    aislado = tramo.map(tramo.value_counts()) == 1
+    return tramo, aislado
+
+
 def barras_congestion(df, resolucion, etiqueta, dominio, positivo=AZUL):
     """v0.8.0 · Barras de congestión del mismo periodo bajo la gráfica principal de SOLO.
 
@@ -622,12 +664,13 @@ def barras_congestion(df, resolucion, etiqueta, dominio, positivo=AZUL):
 
 
 def grafica(df, y, titulo_y, resolucion, color=None, nodo="", cero=False, titulo_serie=None, congestion=None):
-    """Línea con puntos; los periodos parciales se marcan con ▼.
+    """Línea limpia (v0.8.8: sin un punto por periodo); los periodos parciales se marcan con ▼.
 
     v0.5.1: al pasar el mouse cerca de la línea se marca el punto más cercano y aparece un recuadro pequeño
     con nodo, valor, fecha y hora (horaria) u horas con dato (diaria y mensual).
     """
-    df = campos_recuadro(df, resolucion, nodo)
+    df = campos_recuadro(df, resolucion, nodo).sort_values("periodo").reset_index(drop=True)
+    df["tramo"], df["aislado"] = tramos(df["periodo"], resolucion)
     recuadro = [alt.Tooltip("nodo_txt:N", title=titulo_serie or ("Nodos" if " − " in nodo else "Nodo")),
                 alt.Tooltip("fecha_txt:N", title="Fecha")]
     if resolucion == "horaria":
@@ -653,20 +696,18 @@ def grafica(df, y, titulo_y, resolucion, color=None, nodo="", cero=False, titulo
     serie = color or NARANJA
     area = base.mark_area(clip=True, line=False, color=DEGRADADOS.get(serie, serie),
                           opacity=1 if serie in DEGRADADOS else .12).encode(
-        y=alt.Y(f"{y}:Q", title=None, stack=None, scale=alt.Scale(zero=False), axis=eje_y), y2=alt.value(ALTO_SOLO))
-    linea = base.mark_line(color=color or NARANJA, strokeWidth=2.4)
+        y=alt.Y(f"{y}:Q", title=None, stack=None, scale=alt.Scale(zero=False), axis=eje_y), y2=alt.value(ALTO_SOLO),
+        detail="tramo:N")
+    linea = base.mark_line(color=color or NARANJA, strokeWidth=2).encode(detail="tramo:N")
     # v0.6.4 · `cero=True` (spread): línea de referencia en 0 para leer el signo de un vistazo.
     capas = [area] + ([alt.Chart(df).mark_rule(color=CERO, strokeWidth=1, strokeDash=[4, 3]).encode(y=alt.datum(0))]
                       if cero else []) + [linea]
-    # Con muchos periodos solo se dibujan los puntos parciales, para no saturar la gráfica.
-    puntos = base if len(df) <= 400 else base.transform_filter("datum.parcial")
+    # v0.8.8 · Sin puntos permanentes: solo un triángulo ▼ discreto en los periodos parciales (diaria y mensual; el
+    # aviso de abajo los enumera) y un punto en los periodos aislados entre faltantes.
     if resolucion != "horaria":
-        capas.append(puntos.mark_point(size=50, filled=True, color=color or NARANJA).encode(
-            shape=alt.Shape("parcial:N", title="Periodo",
-                            scale=alt.Scale(domain=[False, True], range=["circle", "triangle-down"]),
-                            legend=alt.Legend(labelExpr="datum.value ? 'parcial' : 'completo'", orient="top",
-                                              direction="horizontal")),
-        ))
+        capas.append(base.transform_filter("datum.parcial").mark_point(
+            shape="triangle-down", size=42, filled=True, color=color or NARANJA, opacity=.9))
+    capas.append(base.transform_filter("datum.aislado").mark_point(size=28, filled=True, color=color or NARANJA))
     # Punto más cercano al mouse: invisible hasta que se acerca el cursor, y lleva el recuadro.
     cerca = alt.selection_point(on="pointerover", nearest=True, fields=["periodo"], empty=False,
                                 clear="pointerout")
@@ -908,6 +949,12 @@ def grafica_series(df, columnas, colores, resolucion, titulo_serie="Serie", nodo
     v0.5.1: el mismo recuadro pequeño al pasar el mouse (punto más cercano de cada curva).
     """
     largo = df.melt(id_vars=["periodo"], value_vars=columnas, var_name="serie", value_name="valor").dropna()
+    largo = largo.sort_values(["serie", "periodo"]).reset_index(drop=True)
+    largo["tramo"], largo["aislado"] = 0, False
+    for _, filas in largo.groupby("serie").groups.items():  # v0.8.8 · tramos por curva (ver `tramos`)
+        tramo, aislado = tramos(largo.loc[filas, "periodo"], resolucion)
+        largo.loc[filas, "tramo"], largo.loc[filas, "aislado"] = tramo.to_numpy(), aislado.to_numpy()
+    largo["aislado"] = largo["aislado"].astype(bool)
     largo["etiqueta"] = pd.to_datetime(largo["periodo"]).dt.strftime("%Y-%m" if resolucion == "mensual" else "%Y-%m-%d")
     largo = campos_recuadro(largo, resolucion, nodo or "")
     recuadro = ([alt.Tooltip("nodo_txt:N", title="Nodo")] if nodo else []) + [
@@ -931,7 +978,8 @@ def grafica_series(df, columnas, colores, resolucion, titulo_serie="Serie", nodo
     puntos = (base.mark_point(size=70, filled=True, stroke=FONDO, strokeWidth=1.5)
               .encode(opacity=alt.condition(cerca, alt.value(1), alt.value(0)), tooltip=recuadro).add_params(cerca))
     capas = ([alt.Chart(largo).mark_rule(color=CERO, strokeWidth=1, strokeDash=[4, 3]).encode(y=alt.datum(0))]
-             if cero else []) + [base.mark_line(strokeWidth=1.6), puntos]
+             if cero else []) + [base.mark_line(strokeWidth=1.6).encode(detail="tramo:N"),
+                                 base.transform_filter("datum.aislado").mark_point(size=28, filled=True), puntos]
     st.altair_chart(configurar(alt.layer(*capas).properties(background="transparent")), width="stretch")
 
 
@@ -1566,9 +1614,16 @@ def enfocar_detalle(hueco):
     hueco.html(f"""<script>/* enfoque {st.session_state.get("enfoque", 0)} */
 (() => {{ let n = 0; const ir = () => {{
   const d = document.querySelector('[class*="st-key-detalle_"]');
-  if (d) {{ const suave = !matchMedia('(prefers-reduced-motion: reduce)').matches;
-           d.scrollIntoView({{behavior: suave ? 'smooth' : 'auto', block: 'start'}}); }}
-  else if (n++ < 20) setTimeout(ir, 50); }}; setTimeout(ir, 30); }})();
+  if (!d) {{ if (n++ < 20) setTimeout(ir, 50); return; }}
+  /* v0.8.8 · Sin salto si el detalle ya está a la vista: su borde superior se ve bajo la barra fija, o el detalle
+     ocupa al menos la mitad del área visible (se está leyendo y se cambió de solista desde el rail). */
+  const b = document.querySelector('.st-key-barra'), arriba = b ? b.getBoundingClientRect().bottom : 0;
+  const r = d.getBoundingClientRect(), alto = innerHeight - arriba;
+  const borde = r.top >= arriba - 4 && r.top <= arriba + alto * .6;
+  const ocupa = Math.min(r.bottom, innerHeight) - Math.max(r.top, arriba) >= alto * .5;
+  if (borde || ocupa) return;
+  const suave = !matchMedia('(prefers-reduced-motion: reduce)').matches;
+  d.scrollIntoView({{behavior: suave ? 'smooth' : 'auto', block: 'start'}}); }}; setTimeout(ir, 30); }})();
 </script>""", unsafe_allow_javascript=True)
 
 

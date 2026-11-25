@@ -1,5 +1,20 @@
 # Validaciones y aceptación pendiente
 
+## 2026-11-25 · v0.8.8 Pulido visual: línea limpia, cabecera con aire, canvas más ancho y sin salto (Issue #31, P0)
+
+Servidor local; paquete PML al 2026-11-24 y PND al 2026-11-19; `main` = v0.8.7 (`bce1112`).
+
+- **Puntos:** en diaria y mensual cada periodo tenía un círculo (`mark_point(size=50)`, hasta 400 periodos). Ahora solo quedan ▼ en parciales, un punto en periodos aislados entre faltantes y el punto del cursor (opacidad condicional) con el mismo recuadro. Comprobado en el spec real de PML histórico (horaria, diaria, mensual), spread, componentes y PND.
+- **Faltantes:** antes la línea unía en silencio el 2026-05-07 con el 2026-05-09 en PND (el 08 no tiene archivo); ahora son dos tramos, sin fila inventada (14 filas, ninguna nula). Ningún valor se interpola ni se suaviza.
+- **Canvas (Chromium):** contenido 1240 → 1640 px máx.; márgenes 32 px por lado en 1440 (antes 100 + relleno) y 140 en 1920. Gráfica del detalle: 798 → 1,094 px en 1440; 785 → 1,281 px en 1920; 786 → 901 px en 1024. Rail 187 px en 1440 y 200 en 1920 (sin cambio). Sin desplazamiento horizontal en 320, 390, 768, 1024, 1440 y 1920 px.
+- **Cabecera:** alto de la barra 140 → 156 px en 1440 y 1920, 162 → 156 en 1024, 184 → 207 en 768 y 235 → 244 en 390; sigue fija y `--alto-barra` la mide (detalle a 17 px bajo la barra al elegir).
+- **Sin salto (Chromium, posición del contenedor que se desplaza):** con el detalle abierto y la gráfica a la vista, elegir otra fila del rail en `main` subía la página de 693 a 126 px; ahora se queda en 709. Desde ENSEMBLE más abajo sigue habiendo un solo desplazamiento hasta el detalle (17 px bajo la barra en 1440, 12 en 390). En 390, elegir desde la lista al final lleva al detalle igual que antes. Con «reducir movimiento», sin animación.
+- **Pruebas:** 243 passed, 4 skipped. Nuevas en `tests/test_pulido.py` (10): tramos (consecutivos, hueco, aislado, horaria, mensual con cambio de año, vacío), sin puntos permanentes en el spec de PML horaria/diaria/mensual, spread y componentes con recuadro y `detail` por tramo, hueco PND de 2026-05-08 en dos tramos sin filas nulas y canvas de 1640 px.
+- **Regresión:** 14/14 enlaces con detalle idéntico a `main` (métricas, textos, avisos, tablas y URL) y 12/12 CSV idénticos (nombre y sha256).
+- **Rendimiento local** (mediana de corridas 2–5; entre paréntesis `main`): carga con caché 1.52 s (1.51 s), tablero → detalle 0.96 s (0.95 s), cerrar detalle 0.24 s (0.24 s).
+- Capturas antes/después en `docs/capturas/v0.8.8-pulido/`: PML mes diaria, 3 días horaria, 12 meses mensual, PND con el hueco del 08 de mayo y spread, en 1440 y 390 px; cabecera en 1920, 1440 y 390 px.
+- **Pendiente (P1 de #31, no incluido):** microtransición (fundido corto del contenido nuevo). Se priorizó la transición sin salto, como pide la Issue.
+
 ## 2026-11-25 · v0.8.7 Drill-down del histograma PND (Issue #36)
 
 Servidor local; paquete PML al 2026-11-24 y PND al 2026-11-19; `main` = v0.8.5 (`10abaab`); después se integró `main` con v0.8.6 (eje de fechas, #33).
