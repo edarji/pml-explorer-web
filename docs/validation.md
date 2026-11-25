@@ -1,5 +1,16 @@
 # Validaciones y aceptación pendiente
 
+## 2026-11-25 · v0.8.7 Drill-down del histograma PND (Issue #36)
+
+Servidor local; paquete PML al 2026-11-24 y PND al 2026-11-19; `main` = v0.8.5 (`10abaab`); después se integró `main` con v0.8.6 (eje de fechas, #33).
+
+- **Intervalos idénticos a Vega-Lite:** límites y conteos de `ensemble.intervalos` comparados con los que calcula Vega (vl-convert) en 190 días reales (180 PND y 10 PML) y en casos borde (valor en un límite, máximo en el borde, negativos, un solo valor, valores iguales, decimales): 190/190 iguales.
+- **Conteo = lista (Chromium 1440, PND 2026-11-19):** 400–500 → 10 zonas, 700–800 → 24 y 1,900–2,000 → 1 (Riviera Maya): la altura de cada barra tocada es el número de zonas de su lista. «Ver zonas de un rango» con 500–600 → 13. Tocar Minas abre «PND · Minas» arriba con ENSEMBLE debajo y la selección del histograma se conserva; «Quitar selección» la borra. En iPhone 13 (390 px), lo mismo con el dedo.
+- **Pruebas:** 228 passed, 4 skipped. Nuevas en `tests/test_histograma.py` (9): réplica de Vega en casos borde, límites [a, b) con el máximo en la última barra, zona sin dato fuera de las barras, orden de la lista, conteo = lista en 45 días del paquete real, elegir rango → título, zonas y apertura del detalle PND, quitar, cambiar de día borra la selección, horas parciales marcadas y sin PND no hay controles.
+- **Regresión:** 14/14 enlaces con detalle idéntico a `main` (métricas, textos, avisos, tablas y URL) y 12/12 CSV idénticos (nombre y sha256). La distribución PML y los cálculos no cambian.
+- **Sin desplazamiento horizontal** en 320, 390, 768, 1440 y 1920 px. Capturas en `docs/capturas/v0.8.7-histograma/` (selección, tras tocar una zona y cierre, en 1440 y 390 px).
+- **Rendimiento local** (mediana; entre paréntesis `main`): carga con caché 1.53 s (1.45 s), tablero → detalle 1.04 s (1.00 s), cerrar detalle 0.23 s (0.22 s). Tocar una barra → lista ≈ 0.8 s (una recarga de Streamlit; sin consultas nuevas: usa el ranking del día ya en caché).
+
 ## 2026-11-24 · v0.8.6 Eje de fechas por resolución (seguimiento de la revisión de v0.8.2, Issue #19)
 
 Servidor local; paquete PML al 2026-11-24 y PND al 2026-11-19; `main` = v0.8.3 (`95f8872`); actualizado sobre v0.8.5 (`10abaab`, ticker PND) sin cambios de eje.
