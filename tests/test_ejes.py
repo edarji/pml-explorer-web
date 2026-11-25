@@ -1,4 +1,4 @@
-"""v0.8.4 · Eje de tiempo por resolución (regresión de escalas).
+"""v0.8.6 · Eje de tiempo por resolución (regresión de escalas).
 
 Con 7 días de serie diaria el eje rotulaba «12 PM» entre fechas porque la escala temporal elegía marcas cada
 12 horas. Se comprueba en el spec real de las gráficas (AppTest con el paquete público) que las marcas van en días

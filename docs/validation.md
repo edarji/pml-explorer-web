@@ -1,14 +1,26 @@
 # Validaciones y aceptación pendiente
 
-## 2026-11-24 · v0.8.4 Eje de fechas por resolución (seguimiento de la revisión de v0.8.2, Issue #19)
+## 2026-11-24 · v0.8.6 Eje de fechas por resolución (seguimiento de la revisión de v0.8.2, Issue #19)
 
-Servidor local; paquete PML al 2026-11-24 y PND al 2026-11-19; `main` = v0.8.3 (`95f8872`).
+Servidor local; paquete PML al 2026-11-24 y PND al 2026-11-19; `main` = v0.8.3 (`95f8872`); actualizado sobre v0.8.5 (`10abaab`, ticker PND) sin cambios de eje.
 
 - **Problema reproducido:** con serie diaria de pocos días el eje X rotulaba horas entre fechas: «12 PM | vie 13 | 12 PM | sáb 14 …» a 900 px (PND y PML 7D, spread y componentes; con 3 días también «06 AM/06 PM»), y en mensual de 3 meses marcaba semanas («ago 23 | ago 30 | sep 06 …»). Los domingos el formato automático decía «nov 15» junto a «vie 13».
 - **Cambio:** `eje_tiempo()` en `app.py` fija las marcas en días enteros (diaria hasta 62 días: cada 1, 2 o 7 días, rótulo «13 nov») o meses enteros (mensual: «sep 2026», cada 1, 2, 3, 6 o 12 meses). Horaria y diaria de más de 62 días (YTD) no cambian. Línea y barras de congestión usan el mismo eje.
 - **Regresión de escalas** (spec real de 10 escenas vía AppTest, renderizado a 900 y 330 px): PND 7D, PML 3D/7D/mes, spread y componentes 7D muestran solo fechas; mensual 3 meses y YTD mensual solo meses; 1D horaria y YTD diaria idénticas a `main`. Fuera de `axis.tickCount`/`axis.format`, los specs y sus datos son idénticos a `main` (solo cambia el nombre interno de la vista, que es un hash del spec).
 - **Pruebas:** 212 passed, 4 skipped. Nuevas en `tests/test_ejes.py` (5): PND 7D sin «12 PM», PML 7D y spread, mes diario cada 2 días, mensual por meses, horaria y YTD sin cambio. Sin el cambio fallan 4 de 5.
 - `data/`, `pnd/`, `scripts/`, rangos, consultas y `exportar.py` no cambian: cifras, avisos y CSV son los mismos. Capturas antes/después (1440 y 390 px) en `docs/capturas/v0.8.4-eje/`.
+
+## 2026-11-24 · v0.8.5 Ticker PND en la barra fija (Issue #34)
+
+Servidor local; paquete PML al 2026-11-24 y PND al 2026-11-19; `main` = v0.8.3 (`95f8872`). Rama desde `main`, independiente de #33 (eje de fechas).
+
+- **Cifras (paquete real):** D = 2026-11-19 y D−1 = 2026-11-18, ambos con dato. VDM CENTRO 1,008.17 ▲ +239.08; MONTERREY 584.06 ▼ −7.46; GUADALAJARA 778.38 ▲ +97.39; QUERETARO 755.34 ▲ +98.01; PUEBLA 1,101.58 ▲ +315.26; MERIDA 1,188.26 ▲ +329.80; CHIHUAHUA 470.67 ▼ −29.50; HERMOSILLO 463.11 ▼ −15.31. Cada precio es igual al ranking PND de ENSEMBLE y al promedio de SOLO PND del día (prueba).
+- **Pruebas:** 219 passed, 4 skipped. Nuevas en `tests/test_ticker.py` (12): sube/baja/igual, parcial (sin color), D−1 sin archivo sin buscar un día más antiguo, zona sin precio hoy o ayer, negativos sin %, paquete vacío, zonas de la selección presentes en el paquete, igualdad con ENSEMBLE/SOLO, cinta en ENSEMBLE con fechas y rótulo, «sin dato publicado» de D−1, tocar una zona abre el detalle PND con ENSEMBLE debajo, la cinta no cambia las fechas de un enlace y sin PND no hay cinta.
+- **Regresión:** 14/14 enlaces con detalle idéntico a `main` (métricas, textos, avisos, tablas y URL) y 12/12 CSV idénticos (nombre y sha256).
+- **Barra fija (Chromium 1440):** la cinta queda dentro de la barra (60–200 px al desplazarse sobre ENSEMBLE y sobre la gráfica); el rail y el detalle quedan a 217 px, 17 px bajo la barra. `--alto-barra` incluye la cinta. Alto de la barra: 140 px en 1440 (`main` 78 px), 235 px en 390 (`main` 146 px).
+- **Movimiento:** pista de dos copias de 1,518 px (-50 % exacto, sin salto); 48 s por vuelta (≈ 32 px/s). Se detiene con el cursor. Tocar una zona no reinicia la animación (su tiempo sigue: 4.07 s → 7.05 s). Con teclado: 8 paradas (la copia visual tiene `aria-hidden` y `tabindex=-1`), la cinta se detiene y se desplaza a la ficha enfocada. Con «reducir movimiento»: sin animación y desplazable a mano. En ≤ 640 px: sin animación, se desliza con el dedo; tocar MERIDA en iPhone 13 abre «PND · Merida».
+- **Sin desplazamiento horizontal** en 320, 390, 768, 1024, 1440 y 1920 px. Capturas en `docs/capturas/v0.8.5-ticker/`.
+- **Rendimiento local** (mediana de corridas 2–5; entre paréntesis `main`): carga en frío 3.58 s (3.93 s), con caché 1.56 s (1.64 s), tablero → detalle 1.03 s (1.07 s), cerrar detalle 0.26 s (0.25 s). La consulta de la cinta tarda 0.26 s la primera vez y 0.03 s después; en la app queda en caché por paquete.
 
 ## 2026-11-23 · v0.8.3 Rail izquierdo compacto: Nodos y Zonas, más aire para Ensemble (Issue #29)
 

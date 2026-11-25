@@ -14,6 +14,7 @@ import catalogo as cat_nodos
 import ensemble as ens
 import exportar
 import pnd as pnd_zonas
+import ticker
 
 from enlaces import PARAMETROS, VISTAS_URL, construir_enlace, leer_enlace
 from escena import ENSEMBLE, SOLO, enlace_ensemble, escena_de_enlace
@@ -24,7 +25,7 @@ from vista1 import (DATA_DIR, RESOLUCIONES, UMBRAL_DESCUADRE, DatosNoDisponibles
                     cobertura_horaria, estadisticas, huella_paquete,
                     inspeccionar_paquete, marcar_periodos, metadata, observado, serie)
 
-VERSION_APP = "v0.8.4 beta"  # versión de la aplicación; el esquema de datos y la fecha vienen del paquete
+VERSION_APP = "v0.8.6 beta"  # versión de la aplicación; el esquema de datos y la fecha vienen del paquete
 REPO = "https://github.com/edarji/pml-explorer-web/blob/main"
 COBERTURA_ESCASA = 80  # % de horas con dato bajo el cual se advierte explícitamente
 SITIO_MERCADOS = "https://edarji.net/mercados/"
@@ -257,6 +258,63 @@ button[kind=primary],button[kind=primary] p{color:#000}
 .chip-cambiar{display:none;align-items:center;min-height:2rem;padding:.15rem .8rem;border-radius:999px;
   background:#FFB000;color:#000 !important;font-weight:600;font-size:.85rem;text-decoration:none !important}
 #elige-solista{scroll-margin-top:calc(var(--alto-st) + var(--alto-barra) + 1.1rem)}
+/* v0.8.5 · Ticker PND (Issue #34): una franja dentro de la barra fija, a todo el ancho, debajo de los controles. Como
+   está dentro de .st-key-barra, el mismo ResizeObserver mide barra + cinta (--alto-barra): el rail y el enfoque del
+   detalle quedan debajo de las dos. Desplazamiento continuo con CSS (dos copias, -50 %), pausa con el cursor o el foco;
+   sin movimiento con «reducir movimiento» ni en ≤ 640 px (allí se desliza con el dedo). Los números no se animan. */
+.st-key-barra > [data-testid=stLayoutWrapper]:has(> .st-key-ticker){flex:1 1 100%;width:100%;min-width:0}
+.st-key-ticker{flex-wrap:nowrap;min-width:0;border-top:1px solid #D5D7DB;padding-top:.4rem;gap:.6rem}
+.st-key-ticker > [data-testid=stElementContainer]:has(.tk-et){flex:0 0 auto;width:auto;max-width:19rem}
+.tk-et{display:flex;flex-direction:column;font-size:.68rem;line-height:1.3;color:#5A5D63;white-space:nowrap}
+.tk-et b{color:#1C1C1E;font-weight:700}
+.st-key-ticker [data-testid=stMarkdownContainer]{margin-bottom:0}
+.tk-et .tk-corto{display:none;font-style:normal}
+.st-key-ticker > [data-testid=stLayoutWrapper]:has(> .st-key-cinta){flex:1 1 0;min-width:0}
+.st-key-cinta{overflow:hidden;min-width:0;scroll-padding-inline:1.4rem;
+  mask-image:linear-gradient(90deg,transparent 0,#000 1.2rem,#000 calc(100% - 1.2rem),transparent 100%)}
+/* Pista y copias miden lo que su contenido (no se encogen al ancho de la cinta): -50 % es justo una copia. */
+.st-key-cinta > [data-testid=stLayoutWrapper]:has(> .st-key-pista),.st-key-pista > [data-testid=stLayoutWrapper]{
+  flex:0 0 auto !important;width:max-content !important;max-width:none !important}
+.st-key-pista{flex:0 0 auto !important;flex-wrap:nowrap !important;width:max-content !important;gap:0 !important;
+  animation:tk-desliza 48s linear infinite;will-change:transform}
+.st-key-cinta:hover .st-key-pista,.st-key-cinta:focus-within .st-key-pista{animation-play-state:paused}
+@keyframes tk-desliza{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+/* Con teclado (foco visible) la cinta se detiene y se vuelve desplazable: el navegador lleva la ficha enfocada a la vista. */
+.st-key-cinta:has(:focus-visible){overflow-x:auto;mask-image:none}
+.st-key-cinta:has(:focus-visible) .st-key-pista{animation:none}
+.st-key-cinta:has(:focus-visible) .st-key-pista > [data-testid=stLayoutWrapper]:has(> .st-key-tk_copia_b){display:none}
+[class*=st-key-tk_copia_]{flex:0 0 auto !important;flex-wrap:nowrap !important;width:max-content !important;
+  padding-right:.5rem;gap:.5rem !important}
+[class*=st-key-tk_copia_] > [data-testid=stElementContainer]{width:auto !important;flex:0 0 auto}
+[class*=st-key-tka_] button,[class*=st-key-tkb_] button{min-height:2rem;padding:.1rem .7rem;border-radius:999px;
+  border:1px solid #D5D7DB;background:#F7F7F8;white-space:nowrap}
+[class*=st-key-tka_] button p,[class*=st-key-tkb_] button p{font-size:.8rem;white-space:nowrap;
+  font-variant-numeric:tabular-nums}
+[class*=st-key-tka_] button p em,[class*=st-key-tkb_] button p em{font-style:normal;font-weight:600;color:#3A3D42}
+[class*=st-key-tka_] button p strong,[class*=st-key-tkb_] button p strong{font-weight:700;color:#1C1C1E}
+[class*=st-key-tka_] button code,[class*=st-key-tkb_] button code{background:none;padding:0;font-family:inherit;
+  font-size:.78rem;font-weight:600;color:#5A5D63}
+[class*=st-key-tka_sube_] button code,[class*=st-key-tkb_sube_] button code{color:#B3261E}
+[class*=st-key-tka_baja_] button code,[class*=st-key-tkb_baja_] button code{color:#1B7F3B}
+@media (prefers-reduced-motion: reduce){
+.st-key-pista{animation:none}
+.st-key-cinta{overflow-x:auto;mask-image:none;scrollbar-width:thin}
+.st-key-pista > [data-testid=stLayoutWrapper]:has(> .st-key-tk_copia_b){display:none}
+}
+@media (max-width:640px){
+.st-key-ticker{flex-direction:column !important;align-items:stretch !important;gap:.2rem !important}
+.st-key-ticker > [data-testid=stElementContainer]:has(.tk-et){flex:0 0 auto;width:100% !important;max-width:none}
+.tk-et{flex-direction:row;flex-wrap:wrap;gap:0 .5rem;font-size:.66rem;white-space:normal}
+.tk-et .tk-largo{display:none}
+.tk-et .tk-corto{display:inline}
+.st-key-ticker > [data-testid=stLayoutWrapper]:has(> .st-key-cinta){flex:0 0 auto;width:100%}
+.st-key-pista{animation:none}
+.st-key-cinta{overflow-x:auto;mask-image:none;scroll-snap-type:x proximity;scrollbar-width:none;
+  -webkit-overflow-scrolling:touch}
+.st-key-pista > [data-testid=stLayoutWrapper]:has(> .st-key-tk_copia_b){display:none}
+[class*=st-key-tka_]{scroll-snap-align:start}
+[class*=st-key-tka_] button{min-height:40px}
+}
 /* v0.8.3 · Rail izquierdo compacto (Issue #29): «Elige el solista» pasa a la IZQUIERDA con ~la mitad del ancho anterior
    (245 px → 172–200 px; 187 px en 1440) y un solo panel con «Nodos» (PML) y «Zonas» (PND). El área principal gana el
    ancho. Más aire entre la cabecera fija y el contenido (--aire). Sin position:fixed: nada se superpone a la gráfica. */
@@ -457,6 +515,12 @@ def consultar_ranking_pnd(dia, pnd_dir, version):
     return ens.ranking_pnd(dia, pnd_dir)
 
 
+@st.cache_data(max_entries=2, show_spinner=False)
+def consultar_ticker(desde, hasta, zonas, pnd_dir, version):
+    """v0.8.5 · Cinta PND: dos lecturas pequeñas (D y D−1) con la consulta de ENSEMBLE; se invalida con el paquete."""
+    return ticker.fichas({"desde": desde, "hasta": hasta}, pnd_dir, set(zonas))
+
+
 def mxn(valor):
     """Precio con la misma precisión en indicadores y tablas: dos decimales."""
     return "—" if pd.isna(valor) else f"{valor:,.2f}"
@@ -487,7 +551,7 @@ def configurar(grafica_, oscuro=False):
             .configure_title(color=secundario, fontSize=12, fontWeight="normal", anchor="start"))
 
 
-# v0.8.4 · Eje de tiempo por resolución. Con pocos días la escala temporal de Vega elegía marcas cada 6 o 12 horas
+# v0.8.6 · Eje de tiempo por resolución. Con pocos días la escala temporal de Vega elegía marcas cada 6 o 12 horas
 # («12 PM», «06 AM») aunque cada punto es un día, y con pocos meses marcas semanales. Solo cambia dónde van las marcas
 # del eje y cómo se rotulan; los datos, los puntos y el recuadro no cambian.
 DIAS_CON_MARCA_DIARIA = 62   # hasta ~2 meses de serie diaria: una marca por día (o cada 2 o 7 días)
@@ -1877,6 +1941,57 @@ def barra_controles(limites_activos, en_solo, modo_pnd):
                     f'<span>MDA · último día publicado {limites_activos["hasta"]}</span></div>', unsafe_allow_html=True)
 
 
+TICKER_JS = """<script>
+/* v0.8.5 · La cinta lleva dos copias para dar la vuelta sin salto. La segunda es solo visual: se oculta a lectores de
+   pantalla y sale del orden del tabulador (el teclado recorre una sola vez cada zona). */
+(() => { let n = 0; const marcar = () => {
+  const b = document.querySelector('.st-key-tk_copia_b');
+  if (!b) { if (n++ < 40) setTimeout(marcar, 100); return; }
+  b.setAttribute('aria-hidden', 'true');
+  b.querySelectorAll('button').forEach(x => x.setAttribute('tabindex', '-1'));
+  new MutationObserver(() => b.querySelectorAll('button:not([tabindex])').forEach(x => x.setAttribute('tabindex', '-1')))
+    .observe(b, {childList: true, subtree: true}); };
+  marcar(); })();
+</script>"""
+CLASE_TICKER = {"sube": "sube", "baja": "baja", "igual": "igual"}
+
+
+def cinta_pnd():
+    """v0.8.5 · Ticker PND en la barra fija (Issue #34): zonas de `ticker.ZONAS_TICKER` con su promedio del último día
+    publicado del paquete PND y el cambio contra el día calendario anterior. Rojo ▲ si subió, verde ▼ si bajó, gris
+    si igual o no comparable. Tocar una zona abre su detalle PND (mismo callback que la lista). No cambia fechas,
+    resolución ni el día de referencia de ENSEMBLE. Sin paquete PND o sin datos, la cinta no se dibuja."""
+    if not PND:
+        return
+    lim = PND["limites"]
+    try:
+        datos = consultar_ticker(lim["desde"], lim["hasta"], tuple(sorted(PND["zonas"])), str(pnd_zonas.PND_DIR),
+                                 PND["version"])
+    except Exception:  # noqa: BLE001 — una falla de la cinta nunca afecta PML ni el resto de PND
+        return
+    if not datos or not datos["fichas"]:
+        return
+    dia, previo = datos["dia"], datos["dia_previo"]
+    comparativo = (f"vs {previo}" if datos["previo_publicado"] else f"{previo} sin dato publicado")
+    with st.container(key="ticker", horizontal=True, vertical_alignment="center", gap="small"):
+        st.markdown(f'<div class="tk-et"><b>PND · Zonas de carga · promedio diario (MXN/MWh)</b>'
+                    f'<span>{dia} {comparativo}<i class="tk-corto"> · CENACE · MDA · no tiempo real</i></span>'
+                    f'<span class="tk-largo">Datos publicados por CENACE · MDA · no tiempo real</span></div>',
+                    unsafe_allow_html=True)
+        with st.container(key="cinta"), st.container(key="pista", horizontal=True, gap=None):
+            for copia in ("a", "b"):
+                with st.container(key=f"tk_copia_{copia}", horizontal=True, gap="small"):
+                    for ficha in datos["fichas"]:
+                        clase = CLASE_TICKER.get(ficha["direccion"], "neutro")
+                        slug = "".join(c if c.isalnum() else "-" for c in ficha["zona"].lower())
+                        precio = "sin dato" if ficha["precio"] is None else f"{ficha['precio']:,.2f}"
+                        cambio = ticker.cambio(ficha)
+                        etiqueta = f"*{ficha['zona']}* **{precio}**" + (f" `{cambio}`" if cambio else "")
+                        st.button(etiqueta, key=f"tk{copia}_{clase}_{slug}", on_click=entrar_solo,
+                                  args=("pnd", ficha["zona"]), help=ticker.descripcion(ficha, dia, previo))
+    st.html(TICKER_JS, unsafe_allow_javascript=True)
+
+
 def conservar_widgets():
     """v0.7.0 · Streamlit borra el estado de un widget que no se dibuja en una corrida. Al pasar a PND (o volver a
     PML) se ocultan pestañas y selectores de la otra modalidad; reescribir su valor lo conserva para el regreso."""
@@ -1960,6 +2075,7 @@ chip.markdown(f'<a class="chip-cambiar" href="#elige-solista">Cambiar {"zona" if
 st.html(ALTO_BARRA_JS, unsafe_allow_javascript=True)
 with barra:
     barra_controles(limites_activos, en_solo, modo_pnd)
+    cinta_pnd()
 # v0.8.3 · «Elige el solista» es el rail IZQUIERDO angosto, fijo al desplazarse; detalle arriba y mercado debajo, en
 # la columna principal (≤ 1024 px el rail pasa al final, ver CSS). El mercado y la lista se dibujan primero en el código: si el detalle se detiene con st.stop() (sin
 # datos, fechas invertidas, enlace con problemas), el tablero, la lista, la metodología y el pie siguen visibles.
