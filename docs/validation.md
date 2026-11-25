@@ -2,7 +2,7 @@
 
 ## 2026-11-25 · v0.8.7 Drill-down del histograma PND (Issue #36)
 
-Servidor local; paquete PML al 2026-11-24 y PND al 2026-11-19; `main` = v0.8.5 (`10abaab`). Rama desde `main`, independiente de #33 (eje de fechas, v0.8.6).
+Servidor local; paquete PML al 2026-11-24 y PND al 2026-11-19; `main` = v0.8.5 (`10abaab`); después se integró `main` con v0.8.6 (eje de fechas, #33).
 
 - **Intervalos idénticos a Vega-Lite:** límites y conteos de `ensemble.intervalos` comparados con los que calcula Vega (vl-convert) en 190 días reales (180 PND y 10 PML) y en casos borde (valor en un límite, máximo en el borde, negativos, un solo valor, valores iguales, decimales): 190/190 iguales.
 - **Conteo = lista (Chromium 1440, PND 2026-11-19):** 400–500 → 10 zonas, 700–800 → 24 y 1,900–2,000 → 1 (Riviera Maya): la altura de cada barra tocada es el número de zonas de su lista. «Ver zonas de un rango» con 500–600 → 13. Tocar Minas abre «PND · Minas» arriba con ENSEMBLE debajo y la selección del histograma se conserva; «Quitar selección» la borra. En iPhone 13 (390 px), lo mismo con el dedo.
@@ -10,6 +10,16 @@ Servidor local; paquete PML al 2026-11-24 y PND al 2026-11-19; `main` = v0.8.5 (
 - **Regresión:** 14/14 enlaces con detalle idéntico a `main` (métricas, textos, avisos, tablas y URL) y 12/12 CSV idénticos (nombre y sha256). La distribución PML y los cálculos no cambian.
 - **Sin desplazamiento horizontal** en 320, 390, 768, 1440 y 1920 px. Capturas en `docs/capturas/v0.8.7-histograma/` (selección, tras tocar una zona y cierre, en 1440 y 390 px).
 - **Rendimiento local** (mediana; entre paréntesis `main`): carga con caché 1.53 s (1.45 s), tablero → detalle 1.04 s (1.00 s), cerrar detalle 0.23 s (0.22 s). Tocar una barra → lista ≈ 0.8 s (una recarga de Streamlit; sin consultas nuevas: usa el ranking del día ya en caché).
+
+## 2026-11-24 · v0.8.6 Eje de fechas por resolución (seguimiento de la revisión de v0.8.2, Issue #19)
+
+Servidor local; paquete PML al 2026-11-24 y PND al 2026-11-19; `main` = v0.8.3 (`95f8872`); actualizado sobre v0.8.5 (`10abaab`, ticker PND) sin cambios de eje.
+
+- **Problema reproducido:** con serie diaria de pocos días el eje X rotulaba horas entre fechas: «12 PM | vie 13 | 12 PM | sáb 14 …» a 900 px (PND y PML 7D, spread y componentes; con 3 días también «06 AM/06 PM»), y en mensual de 3 meses marcaba semanas («ago 23 | ago 30 | sep 06 …»). Los domingos el formato automático decía «nov 15» junto a «vie 13».
+- **Cambio:** `eje_tiempo()` en `app.py` fija las marcas en días enteros (diaria hasta 62 días: cada 1, 2 o 7 días, rótulo «13 nov») o meses enteros (mensual: «sep 2026», cada 1, 2, 3, 6 o 12 meses). Horaria y diaria de más de 62 días (YTD) no cambian. Línea y barras de congestión usan el mismo eje.
+- **Regresión de escalas** (spec real de 10 escenas vía AppTest, renderizado a 900 y 330 px): PND 7D, PML 3D/7D/mes, spread y componentes 7D muestran solo fechas; mensual 3 meses y YTD mensual solo meses; 1D horaria y YTD diaria idénticas a `main`. Fuera de `axis.tickCount`/`axis.format`, los specs y sus datos son idénticos a `main` (solo cambia el nombre interno de la vista, que es un hash del spec).
+- **Pruebas:** 212 passed, 4 skipped. Nuevas en `tests/test_ejes.py` (5): PND 7D sin «12 PM», PML 7D y spread, mes diario cada 2 días, mensual por meses, horaria y YTD sin cambio. Sin el cambio fallan 4 de 5.
+- `data/`, `pnd/`, `scripts/`, rangos, consultas y `exportar.py` no cambian: cifras, avisos y CSV son los mismos. Capturas antes/después (1440 y 390 px) en `docs/capturas/v0.8.4-eje/`.
 
 ## 2026-11-24 · v0.8.5 Ticker PND en la barra fija (Issue #34)
 
