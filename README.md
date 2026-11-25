@@ -10,7 +10,7 @@ Módulo de **Electricity Markets Monitor** para consultar el Precio Marginal Loc
 app.py                     # explorer.py adaptado, misma vista 1
 enlaces.py                 # enlaces compartibles: lee y escribe vista y filtros en la URL
 escena.py                  # v0.8.0: escena inicial ENSEMBLE/SOLO y URL del tablero
-ensemble.py                # v0.8.0: ranking del día por nodo (PML) y por zona (PND), misma fórmula que SOLO
+ensemble.py                # v0.8.0: ranking del día por nodo (PML) y por zona (PND), misma fórmula que SOLO; v0.8.7: intervalos del histograma PND (réplica del bin de Vega-Lite)
 vista1.py                  # consultas validadas + lectura del resumen diario
 requirements.txt
 .streamlit/config.toml

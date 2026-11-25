@@ -75,3 +75,64 @@ def resumen(ranking, total):
             "con_negativos": int((ranking["horas_negativas"] > 0).sum()),
             "caro": ranking.iloc[0] if con_dato else None,
             "barato": ranking.iloc[-1] if con_dato else None}
+
+
+# v0.8.7 · Intervalos de la distribución (Issue #36). Réplica exacta del `bin` de Vega (vega-statistics, el que usa
+# `alt.Bin(maxbins=30)`), para que la gráfica y la lista de zonas de una barra salgan de los MISMOS intervalos: la
+# gráfica dibuja estas barras ya agrupadas, así que el conteo de cada barra es, por construcción, el de su lista.
+# Regla de Vega: cada intervalo es [inicio, fin) salvo el último, que incluye su límite superior.
+EPSILON_BIN = 1e-14  # el mismo margen que usa Vega al asignar un valor a su intervalo
+
+
+def pasos_bin(minimo, maximo, maxbins=30, base=10, divide=(5, 2)):
+    """(inicio, fin, paso) como `bin()` de vega-statistics con nice=True (el valor por omisión de Vega-Lite)."""
+    import math
+    logb = math.log(base)
+    span = (maximo - minimo) or abs(minimo) or 1
+    nivel = math.ceil(math.log(maxbins) / logb)
+    paso = max(0, base ** (round(math.log(span) / logb) - nivel))
+    while math.ceil(span / paso) > maxbins:
+        paso *= base
+    for d in divide:
+        v = paso / d
+        if v >= 0 and span / v <= maxbins:
+            paso = v
+    v = math.log(paso)
+    precision = 0 if v >= 0 else int(-v / logb) + 1
+    eps = base ** (-precision - 1)
+    v = math.floor(minimo / paso + eps) * paso
+    inicio = v - paso if minimo < v else v
+    fin = math.ceil(maximo / paso) * paso
+    return inicio, (inicio + paso if fin == inicio else fin), paso
+
+
+def intervalos(ranking, maxbins=30):
+    """Agrega a cada fila del ranking su intervalo (`bin_ini`, `bin_fin`) con las reglas de Vega.
+
+    No cambia ningún promedio: solo dice en qué barra cae cada uno. Filas sin promedio no se agrupan (sin dato).
+    """
+    import math
+    df = ranking.dropna(subset=["promedio"]).copy()
+    if df.empty:
+        df["bin_ini"], df["bin_fin"] = [], []
+        return df
+    inicio, fin, paso = pasos_bin(float(df["promedio"].min()), float(df["promedio"].max()), maxbins)
+
+    def asignar(x):
+        x = max(inicio, min(float(x), fin - paso))
+        return inicio + paso * math.floor(EPSILON_BIN + (x - inicio) / paso)
+    df["bin_ini"] = df["promedio"].map(asignar).astype(float)
+    df["bin_fin"] = (df["bin_ini"] + paso).astype(float)
+    return df
+
+
+def barras(con_intervalos):
+    """Una fila por barra: inicio, fin y número de elementos (los mismos que lista `miembros`)."""
+    return (con_intervalos.groupby(["bin_ini", "bin_fin"], as_index=False).size().rename(columns={"size": "n"})
+            .sort_values("bin_ini", ignore_index=True))
+
+
+def miembros(con_intervalos, bin_ini):
+    """Elementos de la barra que empieza en `bin_ini`, del promedio más alto al más bajo."""
+    return (con_intervalos[con_intervalos["bin_ini"] == bin_ini]
+            .sort_values(["promedio", "elemento"], ascending=[False, True], ignore_index=True))

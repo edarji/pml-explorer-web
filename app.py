@@ -25,7 +25,7 @@ from vista1 import (DATA_DIR, RESOLUCIONES, UMBRAL_DESCUADRE, DatosNoDisponibles
                     cobertura_horaria, estadisticas, huella_paquete,
                     inspeccionar_paquete, marcar_periodos, metadata, observado, serie)
 
-VERSION_APP = "v0.8.5 beta"  # versión de la aplicación; el esquema de datos y la fecha vienen del paquete
+VERSION_APP = "v0.8.7 beta"  # versión de la aplicación; el esquema de datos y la fecha vienen del paquete
 REPO = "https://github.com/edarji/pml-explorer-web/blob/main"
 COBERTURA_ESCASA = 80  # % de horas con dato bajo el cual se advierte explícitamente
 SITIO_MERCADOS = "https://edarji.net/mercados/"
@@ -314,6 +314,23 @@ button[kind=primary],button[kind=primary] p{color:#000}
 .st-key-pista > [data-testid=stLayoutWrapper]:has(> .st-key-tk_copia_b){display:none}
 [class*=st-key-tka_]{scroll-snap-align:start}
 [class*=st-key-tka_] button{min-height:40px}
+}
+/* v0.8.7 · Drill-down de la distribución PND (Issue #36). */
+.st-key-drill_pnd_ctl{flex-wrap:wrap;row-gap:.3rem;margin-top:-.2rem}
+.st-key-drill_pnd_ctl [data-testid=stWidgetLabel] p{font-size:.78rem}
+.st-key-drill_pnd_ctl [data-baseweb=select] > div{min-height:2.1rem;font-size:.82rem}
+.st-key-quitar_barra_pnd button{min-height:2.1rem;padding:.1rem .7rem}
+.st-key-drill_pnd{background:#F2F6FD;border:1px solid #CFE0FA;border-radius:10px;padding:.6rem .7rem .5rem;gap:.45rem}
+.drill-et{display:flex;flex-wrap:wrap;gap:.1rem .6rem;font-size:.85rem;line-height:1.35}
+.st-key-drill_pnd [data-testid=stMarkdownContainer]{margin-bottom:0}
+.drill-et span{color:#5A5D63;font-size:.76rem}
+.st-key-drill_lista{flex-wrap:wrap;gap:.35rem}
+.st-key-drill_lista [data-testid=stElementContainer]{width:auto !important;flex:0 0 auto}
+[class*=st-key-dz_pnd_] button{min-height:2rem;padding:.1rem .65rem;border-radius:999px}
+[class*=st-key-dz_pnd_] button p{font-size:.8rem;white-space:nowrap;font-variant-numeric:tabular-nums}
+@media (max-width:640px){
+.st-key-drill_pnd_ctl [data-testid=stElementContainer]:has([data-testid=stSelectbox]){width:100% !important}
+[class*=st-key-dz_pnd_] button,.st-key-quitar_barra_pnd button{min-height:40px}
 }
 /* v0.8.3 · Rail izquierdo compacto (Issue #29): «Elige el solista» pasa a la IZQUIERDA con ~la mitad del ancho anterior
    (245 px → 172–200 px; 187 px en 1440) y un solo panel con «Nodos» (PML) y «Zonas» (PND). El área principal gana el
@@ -1760,6 +1777,121 @@ def distribucion(ranking, color, unidad):
                     width="stretch")
 
 
+# v0.8.7 · Drill-down de la distribución PND (Issue #36). Tocar una barra (o elegir su rango en la lista) muestra
+# debajo las zonas de esa barra con su promedio y horas con dato; tocar una zona la pone al frente. Las barras salen
+# de ens.intervalos (réplica exacta del bin de Vega), así que el conteo de la barra y la lista son el mismo conjunto.
+# El estado es (día, inicio del intervalo): si cambia el día de referencia PND, la selección se descarta.
+
+
+def barra_pnd_elegida(dia, tabla):
+    """Inicio del intervalo elegido para `dia`, o None si no hay selección vigente para ese día y esas barras."""
+    elegido = st.session_state.get("pnd_barra")
+    if not elegido or elegido[0] != dia:
+        return None
+    for ini in tabla["bin_ini"]:
+        if abs(float(ini) - float(elegido[1])) < 1e-9:
+            return float(ini)
+    return None
+
+
+def elegir_barra_pnd(clave):
+    """Callback del clic en una barra (o en el fondo, que quita la selección)."""
+    dia = st.session_state.get("pnd_barra_dia")
+    evento = st.session_state.get(clave) or {}
+    puntos = (evento.get("selection") or {}).get("barra_pnd") or []
+    ini = puntos[0].get("bin_ini") if puntos else None
+    st.session_state["pnd_barra"] = (dia, float(ini)) if ini is not None else None
+    st.session_state[f"rango_pnd_{dia}"] = float(ini) if ini is not None else None
+
+
+def elegir_rango_pnd(clave):
+    """Callback de la lista «Ver zonas de un rango» (alternativa accesible al clic en la gráfica)."""
+    dia = st.session_state.get("pnd_barra_dia")
+    ini = st.session_state.get(clave)
+    st.session_state["pnd_barra"] = (dia, float(ini)) if ini is not None else None
+    st.session_state["pnd_barra_n"] = st.session_state.get("pnd_barra_n", 0) + 1  # la gráfica se redibuja limpia
+
+
+def quitar_barra_pnd():
+    dia = st.session_state.get("pnd_barra_dia")
+    st.session_state["pnd_barra"] = None
+    st.session_state[f"rango_pnd_{dia}"] = None
+    st.session_state["pnd_barra_n"] = st.session_state.get("pnd_barra_n", 0) + 1
+
+
+def rango_txt(ini, fin, paso):
+    decimales = 0 if paso >= 1 else 2
+    return f"{ini:,.{decimales}f}–{fin:,.{decimales}f}"
+
+
+def distribucion_pnd(ranking, dia):
+    """Distribución PND con selección de barra y la lista de zonas de la barra elegida."""
+    zonas = ens.intervalos(ranking)
+    tabla = ens.barras(zonas)
+    if tabla.empty:
+        return
+    paso = float(tabla["bin_fin"].iloc[0] - tabla["bin_ini"].iloc[0])
+    st.session_state["pnd_barra_dia"] = dia
+    elegido = barra_pnd_elegida(dia, tabla)
+    if elegido is None and st.session_state.get("pnd_barra"):
+        st.session_state["pnd_barra"] = None  # de otro día o de barras que ya no existen: no se conserva
+    tabla = tabla.assign(rango=[f"{rango_txt(a, b, paso)} MXN/MWh" for a, b in zip(tabla["bin_ini"], tabla["bin_fin"])],
+                         elegida=tabla["bin_ini"] == elegido if elegido is not None else False)
+    barra = alt.selection_point(name="barra_pnd", fields=["bin_ini"], on="click", empty=False)
+    opacidad = (alt.condition("datum.elegida", alt.value(1), alt.value(.35)) if elegido is not None
+                else alt.value(.9))
+    # Sin cornerRadius: con x «binned» la versión de Vega-Lite de Streamlit dibuja las barras con ancho 0.
+    grafica_ = alt.Chart(tabla).mark_bar(color=AZUL, cursor="pointer", binSpacing=1).encode(
+        x=alt.X("bin_ini:Q", bin="binned", title=None,
+                axis=alt.Axis(grid=False, domain=False, tickColor="#C9CBD0", format=",.0f", labelOverlap=True)),
+        x2="bin_fin:Q",
+        y=alt.Y("n:Q", title=None, axis=alt.Axis(orient="right", domain=False, ticks=False, gridColor="#DADCE0",
+                                                 tickCount=3, tickMinStep=1)),
+        opacity=opacidad,
+        stroke=alt.condition("datum.elegida", alt.value("#1C1C1E"), alt.value(None)) if elegido is not None
+        else alt.value(None),
+        tooltip=[alt.Tooltip("rango:N", title="Promedio del día"), alt.Tooltip("n:Q", title="Zonas")],
+    ).add_params(barra)
+    clave = f"dist_pnd_{dia}_{st.session_state.get('pnd_barra_n', 0)}"
+    st.altair_chart(configurar(grafica_.properties(height=ALTO_DISTRIBUCION, background="transparent")),
+                    width="stretch", key=clave, on_select=lambda: elegir_barra_pnd(clave), selection_mode="barra_pnd")
+    clave_rango = f"rango_pnd_{dia}"
+    if st.session_state.get(clave_rango) not in [None, *tabla["bin_ini"]]:
+        st.session_state[clave_rango] = None
+    if elegido is not None:
+        st.session_state[clave_rango] = elegido
+    textos = {float(a): f"{r} · {n} zona{'s' if n != 1 else ''}"
+              for a, r, n in zip(tabla["bin_ini"], tabla["rango"], tabla["n"])}
+    with st.container(key="drill_pnd_ctl", horizontal=True, vertical_alignment="bottom", gap="small"):
+        st.selectbox("Ver zonas de un rango", [None, *map(float, tabla["bin_ini"])], key=clave_rango,
+                     format_func=lambda x: "Toca una barra o elige un rango" if x is None else textos[x],
+                     on_change=elegir_rango_pnd, args=(clave_rango,), width=300,
+                     help="Zonas de carga cuyo PND promedio del día cae en el intervalo [inicio, fin) de la barra; "
+                          "la última barra incluye su límite superior. Mismos intervalos que la gráfica.")
+        if elegido is not None:
+            st.button("Quitar selección", key="quitar_barra_pnd", on_click=quitar_barra_pnd,
+                      icon=":material/close:")
+    if elegido is None:
+        return
+    fila = tabla[tabla["bin_ini"] == elegido].iloc[0]
+    lista = ens.miembros(zonas, elegido)
+    parciales = int((lista["horas"] < 24).sum())
+    with st.container(key="drill_pnd"):
+        st.markdown(f'<div class="drill-et"><b>{fila["rango"]} · {len(lista)} zona{"s" if len(lista) != 1 else ""} '
+                    f'de carga</b><span>PND promedio del {dia} · zonas, no NodosP · de mayor a menor</span></div>',
+                    unsafe_allow_html=True)
+        with st.container(key="drill_lista", horizontal=True, gap="small"):
+            for i, z in enumerate(lista.itertuples()):
+                parcial = f" · {z.horas} h" if z.horas < 24 else ""
+                st.button(f"{z.elemento.title()} · {mxn(z.promedio)}{parcial}", key=f"dz_pnd_{i}",
+                          on_click=entrar_solo, args=("pnd", z.elemento),
+                          type="primary" if solista_actual() == ("pnd", z.elemento) else "secondary",
+                          help=f"Poner al frente {z.elemento}. Promedio de {z.horas} de 24 horas con dato, MXN/MWh.")
+        if parciales:
+            st.caption(f"{parciales} zona{'s' if parciales != 1 else ''} con menos de 24 horas con dato: su promedio "
+                       "usa solo esas horas (sin dato no es cero).")
+
+
 def lista_ranking(titulo, filas, modalidad, clave, etiqueta):
     """Filas del ranking como botones: tocar una abre SOLO de ese nodo o zona."""
     st.markdown(f'<div class="lista-et">{titulo}</div>', unsafe_allow_html=True)
@@ -1828,9 +1960,9 @@ def seccion_pnd(hasta):
               ("Más cara", mxn(r["caro"]["promedio"]), r["caro"]["elemento"].title()),
               ("Más barata", mxn(r["barato"]["promedio"]), r["barato"]["elemento"].title()),
               ("Con alguna hora < 0", f"{r['con_negativos']:,}", "PND horario negativo ese día")])
-        st.markdown('<div class="mini-et">Distribución del PND promedio del día entre zonas de carga (MXN/MWh)</div>',
+        st.markdown('<div class="mini-et">Distribución del PND promedio del día entre zonas de carga (MXN/MWh) · toca una barra para ver sus zonas</div>',
                     unsafe_allow_html=True)
-        distribucion(ranking, AZUL, "Zonas")
+        distribucion_pnd(ranking, dia)
         caras, baratas = st.columns(2, gap="medium")
         with caras:
             lista_ranking("Más caras", ranking.head(RANKING_N), "pnd", "rk_pnd_caras", str.title)
