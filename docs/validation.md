@@ -1,5 +1,15 @@
 # Validaciones y aceptación pendiente
 
+## 2026-11-26 · v0.8.9 Comparar YoY (Issue #27, fase 2)
+
+Servidor local; paquete PML al 2026-11-25 y PND al 2026-11-19; `main` = v0.8.8 (`6b9d1d4`).
+
+- **Cifras (paquete real):** 01AAN-85, 2026-10-25 a 2026-11-24: 908.47 contra 757.03 un año antes, ▲ +151.44 MXN/MWh, cobertura 100 % y 100 %. PND Monterrey, mayo de 2026: 479.91 contra 772.46, −292.55 sin color (parcial: 96.8 % por el 08 de mayo sin dato). PND enero–marzo de 2023: «Sin dato publicado» (el paquete empieza en 2023). Cada promedio es igual a `estadisticas` / `estadisticas_pnd` del periodo (prueba).
+- **Pruebas:** 257 passed, 4 skipped. Nuevas en `tests/test_yoy.py` (14): fechas un año antes y 29 de febrero, curva movida un año sin el 29, solo diaria/mensual, comparable/parcial/sin dato, negativos sin %, enlace `yoy=1` opcional (sin aviso de faltante, valor inválido avisado, solo en histórico y PND), en la app los mismos promedios que las estadísticas, horaria sin curva, PND sin dato un año antes, apagado sin cambios y sin interruptor en spread ni ENSEMBLE.
+- **Navegador (Chromium 1440 y 390):** interruptor en la barra junto a YTD; franja YoY sobre la gráfica; curva gris punteada con «Un año antes» en el recuadro; el hueco del 08 de mayo de 2026 queda en blanco. Apagar el interruptor quita la franja y `yoy` de la URL. Sin desplazamiento horizontal.
+- **Regresión:** 14/14 enlaces con detalle idéntico a `main` y 12/12 CSV idénticos (sin `yoy`, nada cambia).
+- Capturas en `docs/capturas/v0.8.9-yoy/`.
+
 ## 2026-11-25 · v0.8.8 Pulido visual: línea limpia, cabecera con aire, canvas más ancho y sin salto (Issue #31, P0)
 
 Servidor local; paquete PML al 2026-11-24 y PND al 2026-11-19; `main` = v0.8.7 (`bce1112`).

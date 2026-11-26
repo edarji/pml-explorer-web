@@ -15,8 +15,9 @@ import ensemble as ens
 import exportar
 import pnd as pnd_zonas
 import ticker
+import yoy as comparar_yoy
 
-from enlaces import PARAMETROS, VISTAS_URL, construir_enlace, leer_enlace
+from enlaces import OPCIONALES, PARAMETROS, VISTAS_URL, construir_enlace, leer_enlace
 from escena import ENSEMBLE, SOLO, enlace_ensemble, escena_de_enlace
 from rangos import RANGOS_RAPIDOS, rango_rapido
 from vista2 import diferencial, resumen
@@ -25,7 +26,7 @@ from vista1 import (DATA_DIR, RESOLUCIONES, UMBRAL_DESCUADRE, DatosNoDisponibles
                     cobertura_horaria, estadisticas, huella_paquete,
                     inspeccionar_paquete, marcar_periodos, metadata, observado, serie)
 
-VERSION_APP = "v0.8.8 beta"  # versión de la aplicación; el esquema de datos y la fecha vienen del paquete
+VERSION_APP = "v0.8.9 beta"  # versión de la aplicación; el esquema de datos y la fecha vienen del paquete
 REPO = "https://github.com/edarji/pml-explorer-web/blob/main"
 COBERTURA_ESCASA = 80  # % de horas con dato bajo el cual se advierte explícitamente
 SITIO_MERCADOS = "https://edarji.net/mercados/"
@@ -440,6 +441,17 @@ button[kind=primary],button[kind=primary] p{color:#000}
 @media (max-width:400px){
 .st-key-controles{column-gap:.3rem}
 }
+/* v0.8.9 · Comparar YoY (Issue #27): franja con el promedio del periodo, el de un año antes y la diferencia. Rojo ▲ si
+   subió y verde ▼ si bajó (igual que el ticker PND); sin color si alguna cobertura no es completa. */
+.yoy{display:flex;flex-wrap:wrap;align-items:baseline;gap:.25rem 1.1rem;margin:.3rem 0 .8rem;padding:.55rem .8rem;
+  background:#FFFFFF;border:1px solid #D5D7DB;border-left:3px solid #7A7F87;border-radius:.6rem;font-size:.9rem;
+  font-variant-numeric:tabular-nums}
+.yoy .et{flex:1 1 100%;font-size:.78rem;color:#5A5D63}
+.yoy b{font-weight:700;color:#1C1C1E}
+.yoy .cambio{font-weight:700;color:#3A3D42}
+.yoy .cambio.sube{color:#B3261E}.yoy .cambio.baja{color:#1B7F3B}
+.yoy .nota{font-size:.78rem;color:#5A5D63}
+.st-key-controles [data-testid=stCheckbox] label p{font-size:.85rem;font-weight:600}
 </style>"""
 ASSETS = Path(__file__).resolve().parent / "assets"
 NARANJA = "#FFB000"  # v0.6.3: ámbar del logo sax (nombre conservado: es la serie principal en las tres vistas)
@@ -463,6 +475,7 @@ ETIQUETAS_RANGO = {"Último día": "1D", "Últimos 7 días": "7D", "Mes en curso
 ALTO_SOLO = 270        # px de la gráfica principal del solista (v0.8.2: compacta; v0.8.0: 380)
 ALTO_DISTRIBUCION = 150  # px de las gráficas compactas de ENSEMBLE
 ALTO_CONGESTION = 130  # px con título y eje (≈ 90 px de barras) bajo la gráfica del solista (v0.8.0: 150)
+GRIS_YOY = "#7A7F87"   # v0.8.9 · curva del año anterior (gris punteado, contraste ≈4.2:1 sobre la tarjeta clara)
 MEDIO_PERIODO = {"horaria": pd.Timedelta(minutes=30), "diaria": pd.Timedelta(hours=12),
                  "mensual": pd.Timedelta(days=15)}  # medio periodo: margen del eje de tiempo y ancho de las barras
 EJE_Y_ANCHO = 52       # px fijos del eje Y derecho: la línea y las barras comparten el mismo ancho de trazo
@@ -663,8 +676,12 @@ def barras_congestion(df, resolucion, etiqueta, dominio, positivo=AZUL):
               + ("azul" if positivo == AZUL else "grafito") + " > 0, gris < 0")), width="stretch")
 
 
-def grafica(df, y, titulo_y, resolucion, color=None, nodo="", cero=False, titulo_serie=None, congestion=None):
+def grafica(df, y, titulo_y, resolucion, color=None, nodo="", cero=False, titulo_serie=None, congestion=None,
+            anterior=None):
     """Línea limpia (v0.8.8: sin un punto por periodo); los periodos parciales se marcan con ▼.
+
+    v0.8.9 · `anterior`: curva del mismo periodo un año antes (`yoy.curva_anterior`, fechas ya movidas un año), en
+    gris punteado bajo la línea; su valor también aparece en el recuadro del periodo.
 
     v0.5.1: al pasar el mouse cerca de la línea se marca el punto más cercano y aparece un recuadro pequeño
     con nodo, valor, fecha y hora (horaria) u horas con dato (diaria y mensual).
@@ -678,6 +695,12 @@ def grafica(df, y, titulo_y, resolucion, color=None, nodo="", cero=False, titulo
     recuadro.append(alt.Tooltip(f"{y}:Q", title=titulo_y, format=",.2f"))
     if resolucion != "horaria":
         recuadro.append(alt.Tooltip("horas:Q", title="Horas con dato", format=","))
+    hay_anterior = anterior is not None and len(anterior)
+    if hay_anterior:
+        previo = pd.DataFrame({"_p": pd.to_datetime(anterior["periodo"]), "valor_anterior": anterior[y]})
+        df = (df.assign(_p=pd.to_datetime(df["periodo"])).merge(previo, on="_p", how="left")
+              .drop(columns="_p"))
+        recuadro.append(alt.Tooltip("valor_anterior:Q", title="Un año antes", format=",.2f"))
     # v0.8.0 · Con barras de congestión debajo, las dos gráficas comparten el dominio de tiempo y el ancho del eje Y,
     # para que cada barra quede bajo su punto de la línea.
     medio = MEDIO_PERIODO[resolucion]
@@ -701,7 +724,14 @@ def grafica(df, y, titulo_y, resolucion, color=None, nodo="", cero=False, titulo
     linea = base.mark_line(color=color or NARANJA, strokeWidth=2).encode(detail="tramo:N")
     # v0.6.4 · `cero=True` (spread): línea de referencia en 0 para leer el signo de un vistazo.
     capas = [area] + ([alt.Chart(df).mark_rule(color=CERO, strokeWidth=1, strokeDash=[4, 3]).encode(y=alt.datum(0))]
-                      if cero else []) + [linea]
+                      if cero else [])
+    if hay_anterior:  # v0.8.9 · YoY: debajo de la línea actual, partida en tramos igual que ella
+        previo = anterior.sort_values("periodo").reset_index(drop=True)
+        previo["tramo"], _ = tramos(previo["periodo"], resolucion)
+        capas.append(alt.Chart(previo).mark_line(color=GRIS_YOY, strokeWidth=1.6, strokeDash=[5, 3]).encode(
+            x=alt.X("periodo:T", title=None, scale=alt.Scale(domain=dominio), axis=eje_tiempo(df["periodo"], resolucion)),
+            y=alt.Y(f"{y}:Q", title=None, scale=alt.Scale(zero=False), axis=eje_y), detail="tramo:N"))
+    capas.append(linea)
     # v0.8.8 · Sin puntos permanentes: solo un triángulo ▼ discreto en los periodos parciales (diaria y mensual; el
     # aviso de abajo los enumera) y un punto en los periodos aislados entre faltantes.
     if resolucion != "horaria":
@@ -719,6 +749,54 @@ def grafica(df, y, titulo_y, resolucion, color=None, nodo="", cero=False, titulo
                     width="stretch")
     if congestion is not None and len(congestion):
         barras_congestion(congestion, resolucion, nodo, dominio, positivo=GRAFITO if serie == AZUL else AZUL)
+
+
+def yoy_activo():
+    """v0.8.9 · «Comparar YoY» encendido en la barra (solo existe en el detalle de PML histórico y de PND)."""
+    return bool(st.session_state.get("yoy"))
+
+
+def bloque_yoy(e, estadisticas_de, serie_de, inicio, fin, resolucion, columna, precio):
+    """v0.8.9 · Comparación con el mismo periodo un año antes (Issue #27, fase 2). Devuelve la curva del año anterior
+    para la gráfica (diaria o mensual) o None.
+
+    `estadisticas_de(ini, fin)` y `serie_de(ini, fin, resolucion)` son las mismas consultas de la vista: el promedio de
+    cada periodo es el promedio simple de sus horas con dato, igual que el indicador «Promedio horario».
+    """
+    ini_a, fin_a = comparar_yoy.periodo_anterior(inicio, fin)
+    try:
+        anterior = estadisticas_de(ini_a, fin_a).iloc[0]
+    except (DatosNoDisponibles, duckdb.Error, OSError, ValueError):
+        anterior = None
+    c = comparar_yoy.comparacion(e, anterior)
+    et = (f'<span class="et">YoY · {precio} promedio de {inicio} a {fin} contra el mismo periodo un año antes '
+          f'({ini_a} a {fin_a})</span>')
+    if c["estado"] == "sin_anterior":
+        st.markdown(f'<div class="yoy">{et}<span>Sin dato publicado entre {ini_a} y {fin_a}: no se compara '
+                    "(la ausencia de datos no equivale a precio cero).</span></div>", unsafe_allow_html=True)
+        return None
+    flecha = {"sube": "▲ ", "baja": "▼ ", "igual": "= "}.get(c["direccion"], "")
+    clase = c["direccion"] or "parcial"
+    nota = (f"cobertura {c['cobertura']:g} % y {c['cobertura_anterior']:g} %"
+            + ("" if c["estado"] == "comparable" else " · parcial: sin color porque algún periodo no está completo"))
+    st.markdown(f'<div class="yoy">{et}<span>Periodo elegido <b>{mxn(c["actual"])}</b></span>'
+                f'<span>Un año antes <b>{mxn(c["anterior"])}</b></span>'
+                f'<span class="cambio {clase}">{flecha}{c["delta"]:+,.2f} MXN/MWh</span>'
+                f'<span class="nota">{nota}</span></div>', unsafe_allow_html=True)
+    if resolucion not in ("diaria", "mensual"):
+        st.caption("La curva del año anterior se dibuja en resolución diaria o mensual; en horaria solo se compara "
+                   "el promedio.")
+        return None
+    try:
+        return comparar_yoy.curva_anterior(serie_de(ini_a, fin_a, resolucion), columna, resolucion)
+    except (DatosNoDisponibles, duckdb.Error, OSError):
+        return None
+
+
+def leyenda_yoy(curva, inicio, fin):
+    if curva is not None and len(curva):
+        ini_a, fin_a = comparar_yoy.periodo_anterior(inicio, fin)
+        st.caption(f"Gris punteado: {ini_a} a {fin_a} (un año antes), sobre las fechas actuales. Sin interpolar.")
 
 
 def avisos_parciales(df, resolucion):
@@ -866,7 +944,8 @@ def actualizar_url(vista):
     Si el enlace recibido tenía problemas, la vista se detiene aquí sin cifras (y sin tocar la URL original)
     hasta que el usuario cambie un filtro o pulse «Continuar».
     """
-    enlace = construir_enlace({clave: st.session_state.get(clave) for clave in PARAMETROS} | {"vista": vista})
+    enlace = construir_enlace({clave: st.session_state.get(clave) for clave in PARAMETROS + OPCIONALES}
+                              | {"vista": vista})
     problemas, faltantes = st.session_state.get("enlace_avisos", ([], []))
     if problemas or faltantes:
         if enlace != st.session_state.setdefault("enlace_inicial", enlace):
@@ -882,7 +961,7 @@ def actualizar_url(vista):
         st.info(f"El enlace no indicaba: {', '.join(faltantes)}. Se usan los valores predeterminados que ves "
                 "en «Vista y filtros».")
     actual = st.query_params.to_dict()
-    nuevo = {k: v for k, v in actual.items() if k not in PARAMETROS} | enlace  # conserva parámetros ajenos
+    nuevo = {k: v for k, v in actual.items() if k not in PARAMETROS + OPCIONALES} | enlace  # conserva ajenos
     if nuevo != actual:
         st.query_params.from_dict(nuevo)
 
@@ -1146,6 +1225,9 @@ def vista_1(limites, nodos, fechas_nodo, version, panel):
     elif e["cobertura_pct"] < 100:
         st.caption("Hay horas sin dato en el rango; los indicadores usan solo las horas con dato.")
 
+    curva_yoy = (bloque_yoy(e, lambda a, b: consultar_estadisticas(nodo, a, b, str(DATA_DIR), version),
+                            lambda a, b, r: consultar_serie(nodo, a, b, r, str(DATA_DIR), version),
+                            inicio, fin, resolucion, "pml_promedio", "PML") if yoy_activo() else None)
     df = marcar_periodos(df, inicio, fin, resolucion)
     titulo = {"horaria": "PML horario", "diaria": "PML promedio diario",
               "mensual": "PML promedio mensual"}[resolucion]
@@ -1153,8 +1235,9 @@ def vista_1(limites, nodos, fechas_nodo, version, panel):
         izq, der = st.columns([3.2, 1], gap="large")
         with izq:
             st.markdown(f"**{titulo} (MXN/MWh)**")
+            leyenda_yoy(curva_yoy, inicio, fin)
             grafica(df, "pml_promedio", "PML (MXN/MWh)", resolucion, nodo=nodo,
-                    congestion=congestion_pml(nodo, inicio, fin, resolucion, limites, version))
+                    congestion=congestion_pml(nodo, inicio, fin, resolucion, limites, version), anterior=curva_yoy)
         with der, st.container(key="ficha"):
             st.markdown(barra_rango("Rango horario del periodo", e["minimo"], e["maximo"], e["promedio"])
                         + (barra_rango(f"Rango del {hasta_obs}", dia["minimo"], dia["maximo"], dia["promedio"])
@@ -1514,16 +1597,21 @@ def vista_pnd(panel):
     if corregidos:
         st.caption(f"Días corregidos por CENACE después de su primera publicación: {', '.join(map(str, corregidos))}.")
 
+    carpeta = str(pnd_zonas.PND_DIR)
+    curva_yoy = (bloque_yoy(e, lambda a, b: consultar_estadisticas_pnd(zona, a, b, carpeta, version),
+                            lambda a, b, r: consultar_serie_pnd(zona, a, b, r, carpeta, version),
+                            inicio, fin, resolucion, "pnd_promedio", "PND") if yoy_activo() else None)
     df = marcar_periodos(df, inicio, fin, resolucion)
     titulo = {"horaria": "PND horario", "diaria": "PND promedio diario", "mensual": "PND promedio mensual"}[resolucion]
     with st.container(key="tarjeta"):
         izq, der = st.columns([3.2, 1], gap="large")
         with izq:
             st.markdown(f"**{titulo} (MXN/MWh)**")
+            leyenda_yoy(curva_yoy, inicio, fin)
             # v0.8.0 · La congestión del PND es la del propio paquete PND (pz_cng), ya en esta serie: no se toma del PML.
             # v0.8.1 · PND en azul (PML en ámbar), igual que en el tablero ENSEMBLE.
             grafica(df, "pnd_promedio", "PND (MXN/MWh)", resolucion, color=AZUL, nodo=zona.title(), titulo_serie="Zona",
-                    congestion=df[["periodo", "etiqueta", "congestion"]])
+                    congestion=df[["periodo", "etiqueta", "congestion"]], anterior=curva_yoy)
         with der, st.container(key="ficha"):
             st.markdown(barra_rango("Rango horario del periodo", e["minimo"], e["maximo"], e["promedio"]),
                         unsafe_allow_html=True)
@@ -1669,7 +1757,7 @@ def actualizar_url_ensemble():
         st.button("Continuar con la configuración mostrada", on_click=descartar_avisos)
         st.stop()
     actual = st.query_params.to_dict()
-    nuevo = {k: v for k, v in actual.items() if k not in PARAMETROS} | enlace  # conserva parámetros ajenos
+    nuevo = {k: v for k, v in actual.items() if k not in PARAMETROS + OPCIONALES} | enlace  # conserva ajenos
     if nuevo != actual:
         st.query_params.from_dict(nuevo)
 
@@ -2118,6 +2206,10 @@ def barra_controles(limites_activos, en_solo, modo_pnd):
                      help="PML: precio de un nodo (NodoP). PND: precio de una zona de carga, con el que se liquida "
                           "la demanda. No se mezclan.")
         botones_rango(limites_activos)
+        if en_solo and (modo_pnd or st.session_state.get("vista") == VISTAS_URL["historico"]):
+            st.toggle("YoY", key="yoy", help="Comparar con el mismo periodo un año antes (mismas fechas del año "
+                      "anterior): promedio de cada periodo, diferencia en MXN/MWh y, en diaria o mensual, la curva "
+                      "del año anterior en gris. Disponible en PML histórico y en PND.")
         with st.popover("Fechas", icon=":material/calendar_month:", width="content"):
             controles_rango(limites_activos, en_columnas=False)
             st.caption("1D, 7D, Mes y YTD se anclan en el último día publicado del paquete de este precio, nunca "
@@ -2182,7 +2274,7 @@ def cinta_pnd():
 def conservar_widgets():
     """v0.7.0 · Streamlit borra el estado de un widget que no se dibuja en una corrida. Al pasar a PND (o volver a
     PML) se ocultan pestañas y selectores de la otra modalidad; reescribir su valor lo conserva para el regreso."""
-    claves = ["vista", "zona", "zona_region", "nodo_tension", "modalidad", "lista_region", "lista_estado",
+    claves = ["vista", "zona", "zona_region", "nodo_tension", "modalidad", "yoy", "lista_region", "lista_estado",
               "lista_zona", "lista_zona_region"] + [f"{n}{s}" for n in ("nodo", "nodo_a", "nodo_b")
                                                 for s in ("", "_region", "_estado", "_zona")]
     for clave in claves:
