@@ -1,8 +1,9 @@
 """Entrada pública de PML Explorer."""
 import base64
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 import html
 from pathlib import Path
+import re
 from urllib.parse import urlencode
 from zoneinfo import ZoneInfo
 
@@ -14,6 +15,7 @@ import streamlit as st
 import catalogo as cat_nodos
 import ensemble as ens
 import exportar
+import estacional
 import pnd as pnd_zonas
 import ticker
 import yoy as comparar_yoy
@@ -23,11 +25,12 @@ from escena import ENSEMBLE, SOLO, enlace_ensemble, escena_de_enlace
 from rangos import RANGOS_RAPIDOS, rango_rapido, resolucion_tras_rango
 from vista2 import diferencial, resumen
 from vista3 import componentes, resumen_componentes
-from vista1 import (DATA_DIR, RESOLUCIONES, UMBRAL_DESCUADRE, DatosNoDisponibles, actualizado_cdmx, catalogo,
+from vista1 import (DATA_DIR, RESOLUCIONES, UMBRAL_DESCUADRE, DatosNoDisponibles, acumulados_diarios,
+                    actualizado_cdmx, catalogo,
                     cobertura_horaria, estadisticas, huella_paquete,
                     inspeccionar_paquete, marcar_periodos, metadata, observado, serie)
 
-VERSION_APP = "v0.8.10 beta"  # versión de la aplicación; el esquema de datos y la fecha vienen del paquete
+VERSION_APP = "v0.9.0 beta"  # versión de la aplicación; el esquema de datos y la fecha vienen del paquete
 REPO = "https://github.com/edarji/pml-explorer-web/blob/main"
 COBERTURA_ESCASA = 80  # % de horas con dato bajo el cual se advierte explícitamente
 SITIO_MERCADOS = "https://edarji.net/mercados/"
@@ -453,6 +456,11 @@ button[kind=primary],button[kind=primary] p{color:#000}
 .yoy .cambio{font-weight:700;color:#3A3D42}
 .yoy .cambio.sube{color:#B3261E}.yoy .cambio.baja{color:#1B7F3B}
 .yoy .nota{font-size:.78rem;color:#5A5D63}
+/* v0.9.0 · Chaly's Bebop: leyenda con los años reales y la ventana de la banda; selector del año Y. */
+.bebop-leyenda{display:flex;flex-wrap:wrap;gap:.25rem 1rem;font-size:.8rem;color:#5A5D63;margin:.1rem 0 .3rem}
+.bebop-leyenda span{display:inline-flex;align-items:center;gap:.35rem}
+.bebop-leyenda i{display:inline-block;width:18px;border-radius:2px}
+.st-key-bebop_anio [data-testid=stCaptionContainer]{margin:0}
 .st-key-controles [data-testid=stCheckbox] label p{font-size:.85rem;font-weight:600}
 </style>"""
 ASSETS = Path(__file__).resolve().parent / "assets"
@@ -1572,6 +1580,185 @@ def selector_zona(zonas, al_cambiar=None):
     return zona
 
 
+# v0.9.0 · Chaly's Bebop 🎷 (Issue #42): año calendario de un NodoP contra su propia historia. Colores: Y en el ámbar
+# de la app, Y−1 azul apagado y Y−2 gris, tenues; banda Mín–Máx en gris azulado claro. Fuera de banda: una franja
+# angosta bajo la gráfica (rojo arriba, verde abajo, como el ticker), no un punto sobre cada día de la línea.
+BANDA_BEBOP = "#C9D4E1"
+Y1_BEBOP = "#7C97B8"
+Y2_BEBOP = "#A0A6AE"
+ARRIBA_BEBOP, ABAJO_BEBOP = "#B3261E", "#1B7F3B"
+ALTO_BEBOP = 320
+
+
+@st.cache_data(max_entries=32, show_spinner=False)
+def consultar_acumulados(nodo, inicio, fin, data_dir, version):
+    return acumulados_diarios(nodo, inicio, fin, data_dir)
+
+
+def texto_precio(valor):
+    return "—" if pd.isna(valor) else f"{valor:,.2f}"
+
+
+def grafica_bebop(t, anio):
+    """Banda Mín–Máx (n ≥ 2), Y−2 y Y−1 tenues, Y fuerte; recuadro por fecha de calendario con todos los valores."""
+    t = t.copy()
+    t["fecha_txt"] = t["eje"].dt.day.astype(str) + " " + t["eje"].dt.month.map(
+        dict(enumerate(LOCALE_ES["time"]["shortMonths"], start=1)))
+    for columna in ("y", "y_1", "y_2", "banda_min", "banda_max"):
+        t[f"{columna}_txt"] = t[columna].map(texto_precio)
+    t["n_txt"] = [f"{n} ({a})" if n else "0" for n, a in zip(t["n"], t["anios_banda"])]
+    t["horas_txt"] = [("—" if pd.isna(h) else f"{int(h)}/24" + ("" if h >= 24 else " · día parcial"))
+                      for h in t["horas_y"]]
+    t["fuera_txt"] = t["fuera"].map({"arriba": "por encima del máximo", "abajo": "por debajo del mínimo"}).fillna("—")
+    eje_x = alt.X("eje:T", title=None, scale=alt.Scale(domain=[t["eje"].min().isoformat(), t["eje"].max().isoformat()]),
+                  axis=alt.Axis(grid=False, domain=False, tickColor=EJE, format="%b",
+                                tickCount={"interval": "month", "step": 1}))
+    eje_y = alt.Axis(orient="right", domain=False, ticks=False, gridColor=REJILLA, tickCount=5,
+                     minExtent=EJE_Y_ANCHO, maxExtent=EJE_Y_ANCHO)
+    capas = []
+    banda = t.assign(tramo=estacional.tramos(t, "banda_min")).dropna(subset=["banda_min"])
+    if len(banda):
+        capas.append(alt.Chart(banda).mark_area(color=BANDA_BEBOP, opacity=.75).encode(
+            x=eje_x, y=alt.Y("banda_min:Q", title=None, scale=alt.Scale(zero=False), axis=eje_y),
+            y2="banda_max:Q", detail="tramo:N"))
+    for columna, color, ancho, opacidad in (("y_2", Y2_BEBOP, 1.3, .85), ("y_1", Y1_BEBOP, 1.4, .9),
+                                            ("y", NARANJA, 2.75, 1)):
+        serie = t.assign(tramo=estacional.tramos(t, columna)).dropna(subset=[columna])
+        if len(serie):
+            capas.append(alt.Chart(serie).mark_line(color=color, strokeWidth=ancho, opacity=opacidad).encode(
+                x=eje_x, y=alt.Y(f"{columna}:Q", title=None, scale=alt.Scale(zero=False), axis=eje_y),
+                detail="tramo:N"))
+    if t[["y", "y_1", "y_2", "banda_min"]].min().min() < 0:  # con negativos, el cero ayuda a leer el signo
+        capas.append(alt.Chart(t).mark_rule(color=CERO, strokeWidth=1, strokeDash=[4, 3]).encode(y=alt.datum(0)))
+    # Títulos con texto (no solo el año): Vega ordena primero las claves numéricas del recuadro.
+    recuadro = [alt.Tooltip("fecha_txt:N", title="Fecha"), alt.Tooltip("y_txt:N", title=f"Y · {anio}"),
+                alt.Tooltip("horas_txt:N", title=f"Horas con dato {anio}"),
+                alt.Tooltip("y_1_txt:N", title=f"Y−1 · {anio - 1}"), alt.Tooltip("y_2_txt:N", title=f"Y−2 · {anio - 2}"),
+                alt.Tooltip("banda_min_txt:N", title="Mínimo de la banda"),
+                alt.Tooltip("banda_max_txt:N", title="Máximo de la banda"),
+                alt.Tooltip("n_txt:N", title="Años en la banda"), alt.Tooltip("fuera_txt:N", title=f"{anio} fuera de banda")]
+    cerca = alt.selection_point(on="pointerover", nearest=True, fields=["eje"], empty=False, clear="pointerout")
+    capas.append(alt.Chart(t).mark_rule(color=TEXTO_CLARO_2, strokeWidth=1).encode(
+        x=eje_x, opacity=alt.condition(cerca, alt.value(.5), alt.value(0)), tooltip=recuadro).add_params(cerca))
+    capas.append(alt.Chart(t.dropna(subset=["y"])).mark_point(size=60, filled=True, color=NARANJA, stroke=FONDO,
+                                                              strokeWidth=1.5).encode(
+        x=eje_x, y=alt.Y("y:Q", title=None, scale=alt.Scale(zero=False), axis=eje_y),
+        opacity=alt.condition(cerca, alt.value(1), alt.value(0))))
+    st.altair_chart(configurar(alt.layer(*capas).properties(background="transparent", height=ALTO_BEBOP)),
+                    width="stretch")
+    # Fuera de banda: una franja angosta debajo, con el mismo eje de fechas (una marca por día, sin tapar las líneas):
+    # arriba rojo (por encima del máximo), abajo verde (por debajo del mínimo).
+    fuera = t.dropna(subset=["fuera"])
+    if len(fuera):
+        x_franja = alt.X("eje:T", title=None, axis=None,
+                         scale=alt.Scale(domain=[t["eje"].min().isoformat(), t["eje"].max().isoformat()]))
+        recuadro_f = [alt.Tooltip("fecha_txt:N", title="Fecha"), alt.Tooltip("y_txt:N", title=f"Y · {anio}"),
+                      alt.Tooltip("banda_min_txt:N", title="Mínimo de la banda"),
+                      alt.Tooltip("banda_max_txt:N", title="Máximo de la banda"),
+                      alt.Tooltip("fuera_txt:N", title="Fuera de banda")]
+        franjas = [alt.Chart(fuera[fuera["fuera"] == lado]).mark_rule(color=color, strokeWidth=2).encode(
+            x=x_franja, y=alt.value(arriba), y2=alt.value(arriba + 12), tooltip=recuadro_f)
+            for lado, color, arriba in (("arriba", ARRIBA_BEBOP, 2), ("abajo", ABAJO_BEBOP, 18))
+            if (fuera["fuera"] == lado).any()]
+        fondo = alt.Chart(pd.DataFrame({"y": [0]})).mark_rule(opacity=0).encode(y=alt.value(0))  # fija el alto
+        st.altair_chart(configurar(alt.layer(fondo, *franjas).properties(background="transparent", height=32)
+                                   .configure_view(stroke=None).properties(padding={"left": 5, "right": EJE_Y_ANCHO + 3})),
+                        width="stretch")
+        st.caption(f"{anio} fuera de banda, día por día: rojo arriba si el promedio diario superó el máximo de los años "
+                   "anteriores en esa fecha; verde abajo si quedó bajo el mínimo.")
+
+
+def leyenda_bebop(anio, referencia, n_max, t):
+    muestra = lambda color, alto, texto: (f'<span><i style="background:{color};height:{alto}px"></i>{texto}</span>')
+    ventana = f"{anio - estacional.VENTANA}–{anio - 1}"
+    banda = (f"Banda Mín–Máx {ventana}: {n_max} de {estacional.VENTANA} años con dato ({', '.join(map(str, referencia))})"
+             if n_max >= estacional.MIN_ANIOS_BANDA else
+             f"Sin banda: {'un año' if n_max == 1 else 'ningún año'} de {ventana} con dato (hacen falta 2)")
+    st.markdown('<div class="bebop-leyenda">' + muestra(NARANJA, 3, f"<b>{anio}</b> (Y)")
+                + muestra(Y1_BEBOP, 2, f"{anio - 1}" + ("" if t["y_1"].notna().any() else " sin dato"))
+                + muestra(Y2_BEBOP, 2, f"{anio - 2}" + ("" if t["y_2"].notna().any() else " sin dato"))
+                + muestra(BANDA_BEBOP, 9, banda) + '</div>', unsafe_allow_html=True)
+
+
+def vista_4(limites, nodos, fechas_nodo, version, panel):
+    """v0.9.0 · Vista 4, Chaly's Bebop: el año Y de un nodo sobre la banda Mín–Máx de sus 5 años anteriores."""
+    with panel:
+        st.caption(SIN_RESULTADOS)
+        nodo = selector_nodo(nodos, "Nodo · clave o nombre", "nodo", "01AAN-85")
+        primera, ultima = fechas_nodo.get(nodo, (None, None))
+        if primera:
+            st.caption(f"{nodo} tiene datos del {primera} al {ultima}.")
+    anios = estacional.anios_disponibles(pd.Timestamp(primera).date() if primera else None,
+                                         pd.Timestamp(ultima).date() if ultima else None)
+    if anios and st.session_state.get("anio") not in anios:
+        st.session_state["anio"] = anios[0]  # otro nodo sin ese año: el más reciente con dato
+    actualizar_url(st.session_state["vista"])
+    solista_pml(nodo)
+    if not anios:
+        st.warning(f"Sin observaciones para {nodo} en el paquete público. La ausencia de datos no equivale a precio "
+                   "cero.")
+        st.stop()
+    with st.container(key="bebop_anio", horizontal=True, vertical_alignment="center", gap="small"):
+        anio = st.radio("Año (Y)", anios, key="anio", horizontal=True, width="content",
+                        help="El año que se compara. La banda usa los 5 años anteriores (Y−5 a Y−1), nunca Y.")
+        st.caption("Año calendario completo: 1D, 7D, Mes, YTD y «Fechas» no cambian esta vista.")
+    inicio, fin = estacional.rango_consulta(anio, limites)
+    try:
+        acumulados = consultar_acumulados(nodo, inicio, fin, str(DATA_DIR), version)
+    except (DatosNoDisponibles, duckdb.Error):
+        st.error("No se puede consultar el paquete diario público. Es necesario revisar sus particiones y esquema.")
+        st.stop()
+    t = estacional.tabla(acumulados, anio)
+    r = estacional.resumen(t, acumulados, anio)
+    st.subheader(f"Chaly's Bebop · {nodo} · {anio}")
+    parcial = r["ultimo_dia"] and r["ultimo_dia"] < date(anio, 12, 31)
+    st.markdown(f"PML promedio diario (MXN/MWh) por fecha de calendario · MDA · SIN · CENACE | **{anio}:** "
+                f"{r['dias_y']} días con dato" + (f", año en curso hasta el {r['ultimo_dia']} (último día de "
+                                                  f"operación publicado)" if parcial else ""))
+    with st.container(key="tarjeta"):
+        izq, der = st.columns([3.2, 1], gap="large")
+        with izq:
+            leyenda_bebop(anio, r["anios_referencia"], r["n_max"], t)
+            grafica_bebop(t, anio)
+        with der, st.container(key="ficha"):
+            st.metric("Días sobre la banda", f"{r['arriba']:,}",
+                      help="Promedio diario por encima del máximo de los años anteriores en esa fecha. Solo cuenta "
+                           "fechas con banda (2 o más años con dato).")
+            st.metric("Días bajo la banda", f"{r['abajo']:,}",
+                      help="Promedio diario por debajo del mínimo de los años anteriores en esa fecha.")
+            st.metric("Años en la banda", f"{r['n_max']} de {estacional.VENTANA}",
+                      help="Años de Y−5 a Y−1 con dato publicado. El paquete público empieza el "
+                           f"{limites['desde']}: no hay años anteriores que sumar.")
+            cambio = (None if r["promedio_y"] is None else round(r["promedio_y"] - r["promedio_y_1"], 2))
+            st.metric(f"Promedio {anio} vs {anio - 1}", mxn(r["promedio_y"]),
+                      None if cambio is None else f"{cambio:+,.2f} vs {mxn(r['promedio_y_1'])}",
+                      delta_color="inverse",
+                      help=f"Promedio ponderado por horas sobre las {r['dias_comunes']} fechas de calendario con dato "
+                           f"en {anio} y en {anio - 1} (mismas fechas en los dos años). No promedia promedios.")
+            st.markdown(fila("Fechas con banda", f"{r['dias_con_banda']} de {r['dias_y']}"), unsafe_allow_html=True)
+    if r["n_max"] < estacional.VENTANA:
+        st.caption(f"Banda histórica: hasta {r['n_max']} de {estacional.VENTANA} años disponibles. Cada fecha usa solo "
+                   "los años con dato ese día (su número aparece en el recuadro); no se inventan años anteriores al "
+                   "paquete público.")
+    st.caption("La banda son el mínimo y el máximo de los promedios diarios de los años anteriores en cada fecha "
+               "(no extremos horarios ni un intervalo de confianza). El 29 de febrero no se muestra: no tiene par en "
+               "los años no bisiestos; las demás vistas lo conservan. Sin datos no hay línea: nada se interpola.")
+    tabla_csv = estacional.tabla_csv(t, anio)
+    with st.container(key="descarga", horizontal=True, vertical_alignment="center", gap="small"):
+        nombre = f"pml_bebop_{re.sub(r'[^A-Za-z0-9.-]', '_', nodo)}_{anio}.csv"
+        st.download_button("Descargar CSV", data=exportar.a_csv(tabla_csv), file_name=nombre, mime="text/csv",
+                           on_click="ignore", icon=":material/download:", key="csv_estacional",
+                           help="Una fila por fecha de calendario: Y, Y−1 y Y−2 con sus años, mínimo, máximo, número y "
+                                "años de la banda, y si Y quedó fuera.")
+        with st.popover("Enlace de esta consulta"):
+            enlace = construir_enlace({clave: st.session_state.get(clave) for clave in PARAMETROS + OPCIONALES}
+                                      | {"vista": st.session_state["vista"]})
+            st.code(URL_APP + "?" + urlencode(enlace), language=None, wrap_lines=True)
+            st.caption("Abre esta misma vista con este nodo y este año.")
+    st.caption(f"{nombre} · 365 filas (sin 29 de febrero) · precios en MXN/MWh · una celda vacía es «sin dato», "
+               "nunca cero.")
+
+
 def vista_pnd(panel):
     """v0.7.0 · Precio de zona de carga (PND) histórico de una zona. Carril separado: no usa ningún dato PML."""
     limites, fechas_zona, version = PND["limites"], PND["zonas"], PND["version"]
@@ -2317,7 +2504,7 @@ def cinta_pnd():
 def conservar_widgets():
     """v0.7.0 · Streamlit borra el estado de un widget que no se dibuja en una corrida. Al pasar a PND (o volver a
     PML) se ocultan pestañas y selectores de la otra modalidad; reescribir su valor lo conserva para el regreso."""
-    claves = ["vista", "zona", "zona_region", "nodo_tension", "modalidad", "yoy", "lista_region", "lista_estado",
+    claves = ["vista", "zona", "zona_region", "nodo_tension", "modalidad", "yoy", "anio", "lista_region", "lista_estado",
               "lista_zona", "lista_zona_region"] + [f"{n}{s}" for n in ("nodo", "nodo_a", "nodo_b")
                                                 for s in ("", "_region", "_estado", "_zona")]
     for clave in claves:
@@ -2374,7 +2561,8 @@ if (pnd_zonas.PND_DIR / "metadata.json").is_file():
         PND.clear()
 
 
-VISTAS = {VISTAS_URL["historico"]: vista_1, VISTAS_URL["comparacion"]: vista_2, VISTAS_URL["componentes"]: vista_3}
+VISTAS = {VISTAS_URL["historico"]: vista_1, VISTAS_URL["comparacion"]: vista_2, VISTAS_URL["componentes"]: vista_3,
+          VISTAS_URL["estacional"]: vista_4}
 # v0.5.1: un enlace compartido elige vista y filtros antes de que se dibujen (ver enlaces.py).
 leer_url(nodos, limites)
 # H07: vista y filtros en un panel con texto visible dentro del contenido, cerrado al iniciar, en vez de la

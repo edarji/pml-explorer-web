@@ -16,15 +16,18 @@ from datetime import date
 # pestaña no rompe los enlaces ya compartidos.
 VISTAS_URL = {"historico": "1. PML histórico",
               "comparacion": "2. Comparar nodos (spread)",
-              "componentes": "3. Componentes del PML"}
-NODOS_DE_VISTA = {"historico": ("nodo",), "comparacion": ("nodo_a", "nodo_b"), "componentes": ("nodo",)}
+              "componentes": "3. Componentes del PML",
+              "estacional": "4. Chaly's Bebop"}  # v0.9.0 · vista estacional (Issue #42)
+NODOS_DE_VISTA = {"historico": ("nodo",), "comparacion": ("nodo_a", "nodo_b"), "componentes": ("nodo",),
+                  "estacional": ("nodo",)}
 RESOLUCIONES_URL = ("horaria", "diaria", "mensual")
 PARAMETROS = ("vista", "nodo", "nodo_a", "nodo_b", "desde", "hasta", "resolucion", "modalidad", "zona")
 MODALIDADES_URL = ("pnd",)  # sin el parámetro: PML
 # v0.8.9 · Parámetros opcionales: solo van en la URL cuando están activos, y si faltan no se avisa (el valor
 # predeterminado es «apagado»). `yoy=1`: comparar con el mismo periodo del año anterior (PML histórico y PND).
-OPCIONALES = ("yoy",)
+OPCIONALES = ("yoy", "anio")
 VISTAS_CON_YOY = ("historico",)
+# v0.9.0 · `anio=AAAA`: año Y de la vista estacional (Chaly's Bebop). Sin él, el año más reciente con dato.
 
 
 def leer_enlace(parametros, nodos, limites, zonas=None, limites_pnd=None):
@@ -118,6 +121,16 @@ def leer_enlace(parametros, nodos, limites, zonas=None, limites_pnd=None):
         else:
             problemas.append("El parámetro «yoy» solo admite el valor 1 (comparar con el mismo periodo del año "
                              "anterior), una sola vez.")
+    if estado.get("vista") == VISTAS_URL["estacional"]:  # usa el año calendario: fechas y resolución no le faltan
+        faltantes = [f for f in faltantes if f not in ("desde", "hasta", "resolucion")]
+    if "anio" in parametros:  # opcional, solo lo escribe la vista estacional
+        anio = parametros["anio"]
+        if (len(anio) == 1 and anio[0].isdigit() and len(anio[0]) == 4
+                and limites["desde"].year <= int(anio[0]) <= limites["hasta"].year):
+            estado["anio"] = int(anio[0])
+        else:
+            problemas.append(f"El año «{', '.join(anio)}» no es válido: debe ser un año entre "
+                             f"{limites['desde'].year} y {limites['hasta'].year}, una sola vez.")
     return estado, problemas, faltantes
 
 
@@ -138,4 +151,6 @@ def construir_enlace(estado):
     enlace["resolucion"] = estado["resolucion"]
     if estado.get("yoy") and (estado.get("modalidad") == "pnd" or enlace.get("vista") in VISTAS_CON_YOY):
         enlace["yoy"] = "1"
+    if enlace.get("vista") == "estacional" and estado.get("anio"):
+        enlace["anio"] = str(estado["anio"])
     return enlace
