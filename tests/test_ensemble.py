@@ -151,10 +151,11 @@ class EscenasApp(unittest.TestCase):
 
     def test_solo_fechas_abre_ensemble_con_esas_fechas(self):  # AC-G01
         hasta = v.metadata()["diario_hasta"]
-        app = self.abrir(desde=hasta, hasta=hasta, resolucion="diaria")
+        desde = str(date.fromisoformat(hasta) - timedelta(days=6))  # v0.9.1: con un día solo hay horaria
+        app = self.abrir(desde=desde, hasta=hasta, resolucion="diaria")
         self.assertEqual(app.session_state["escena"], "ensemble")
-        self.assertEqual(app.radio(key="resolucion").value, "diaria")
-        self.assertEqual(dict(app.query_params), {"desde": hasta, "hasta": hasta, "resolucion": "diaria"})
+        self.assertEqual(app.session_state["resolucion"], "diaria")
+        self.assertEqual(dict(app.query_params), {"desde": desde, "hasta": hasta, "resolucion": "diaria"})
 
     def test_enlace_con_nodo_abre_solo(self):  # AC-G02
         app = self.abrir(vista="historico", nodo="01AGU-230")
@@ -165,7 +166,6 @@ class EscenasApp(unittest.TestCase):
 
     def test_ranking_abre_solo_y_volver_conserva_filtros(self):  # AC-G04, AC-G05, AC-G06
         app = self.abrir()
-        app.radio(key="resolucion").set_value("diaria").run()
         filtros = {k: app.query_params[k] for k in ("desde", "hasta", "resolucion")}
         boton = self.boton(app, "rk_pml_caros_0")
         nodo, valor = boton.label.split(" · ")[:2]
@@ -254,7 +254,6 @@ class SolistaAlFrente(unittest.TestCase):
 
     def test_cambiar_de_solista_conserva_filtros_y_mercado(self):  # A3
         app = self.abrir(vista="historico", nodo="01AGU-230")
-        app.radio(key="resolucion").set_value("diaria").run()
         filtros = {k: app.query_params[k] for k in ("desde", "hasta", "resolucion")}
         boton = self.boton(app, "rk_pml_baratos_0")
         nodo, valor = boton.label.split(" · ")[:2]
@@ -309,7 +308,8 @@ class TerminalPersistente(unittest.TestCase):
             with self.subTest(parametros=parametros):
                 app = self.abrir(**parametros)
                 self.assertEqual([d.key for d in app.date_input], ["desde", "hasta"])
-                self.assertEqual([r.key for r in app.radio].count("resolucion"), 1)
+                granularidad = [b.key for b in app.button if b.key.startswith("gran_")]  # v0.9.1
+                self.assertEqual(granularidad, ["gran_horaria", "gran_diaria", "gran_mensual"])
                 rangos = [b.key for b in app.button if b.key.startswith("rango_")]
                 self.assertEqual(rangos, [f"rango_{o}" for o in ("Último día", "Últimos 7 días", "Mes en curso",
                                                                    "Año en curso")])
@@ -322,7 +322,7 @@ class TerminalPersistente(unittest.TestCase):
         self.assertFalse(app.exception, app.exception)
         esperado = {"desde": str(max(hasta.replace(month=1, day=1),
                                      date.fromisoformat(v.metadata()["diario_desde"]))),
-                    "hasta": str(hasta), "resolucion": "diaria"}  # YTD en horaria pasa a diaria
+                    "hasta": str(hasta), "resolucion": "horaria"}  # v0.9.1: cada rango abre en horaria
         self.assertEqual({k: app.query_params[k] for k in esperado}, esperado)
         self.assertEqual(app.button(key="rango_Año en curso").proto.type, "primary")
         enlace = self.abrir(**dict(app.query_params))  # el enlace abre el mismo análisis

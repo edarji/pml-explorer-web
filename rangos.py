@@ -31,12 +31,18 @@ def rango_rapido(opcion, limites):
     return max(inicio, limites["desde"]), fin
 
 
-# v0.8.10 · Resolución tras un rango rápido (Issue #40). Sigue siendo lógica pura, sin Streamlit ni datos.
+# v0.9.1 · Granularidad según el rango (pedido de Eduardo, 2026-11-27). Lógica pura, sin Streamlit ni datos.
 #
-# YTD en horaria serían miles de puntos: la gráfica pasa sola a diaria (v0.8.2). Ese cambio automático queda
-# anotado como «pendiente» para que 1D, 7D o Mes devuelvan la horaria, siempre que el nuevo rango la admita.
-# Una diaria o mensual elegida por el usuario (antes de YTD o en «Fechas» después) no se toca: elegir la
-# resolución a mano borra lo pendiente (eso lo hace la app en el on_change del selector).
+# - 1 día: solo horaria (una gráfica diaria o mensual de un día sería un solo punto).
+# - 2 a 7 días: horaria o diaria.
+# - Más de 7 días (Mes, YTD o fechas a mano): horaria, diaria o mensual.
+# La horaria además debe caber en la horaria publicada (PML: ventana `horario_desde` a `horario_hasta`; PND: hasta
+# `max_dias` días). Si no cabe, se ofrece lo demás y, si no queda nada (1 día fuera de la ventana horaria), diaria.
+# Al pulsar 1D, 7D, Mes o YTD la gráfica vuelve a la primera permitida: horaria siempre que se pueda.
+# Reemplaza la restauración de v0.8.10 (#40): ya no hay cambio automático a diaria que recordar.
+
+GRANULARIDADES = ("horaria", "diaria", "mensual")
+
 
 def admite_horaria(inicio, fin, limites, max_dias=None):
     """¿El rango cabe en la resolución horaria del paquete activo?
@@ -49,20 +55,28 @@ def admite_horaria(inicio, fin, limites, max_dias=None):
     return max_dias is None or (fin - inicio).days + 1 <= max_dias
 
 
-def resolucion_tras_rango(opcion, inicio, fin, resolucion, pendiente, limites, max_dias=None):
-    """Devuelve (resolución, pendiente, aviso) después de pulsar un rango rápido ya aplicado a (inicio, fin).
+def resoluciones_permitidas(inicio, fin, limites, max_dias=None):
+    """Resoluciones que admite el rango, en orden (la primera es la predeterminada)."""
+    dias = (fin - inicio).days + 1
+    if dias < 1:  # fechas invertidas: la vista ya muestra su aviso; no se restringe nada
+        return GRANULARIDADES
+    por_rango = ("horaria",) if dias == 1 else ("horaria", "diaria") if dias <= 7 else GRANULARIDADES
+    if not admite_horaria(inicio, fin, limites, max_dias):
+        por_rango = tuple(r for r in por_rango if r != "horaria") or ("diaria",)
+    return por_rango
 
-    - YTD en horaria: pasa a diaria y deja «horaria» pendiente; aviso "auto".
-    - 1D, 7D o Mes con «horaria» pendiente: la recupera si el rango la admite; si no, sigue en la resolución
-      actual, conserva lo pendiente y avisa "sin_horaria" (nunca se dibuja una horaria sin datos).
-    - Cualquier otro caso: no cambia la resolución.
-    """
-    if opcion == "Año en curso":
-        if resolucion == "horaria":
-            return "diaria", "horaria", "auto"
-        return resolucion, pendiente, "auto" if pendiente else None
-    if pendiente == "horaria":
-        if admite_horaria(inicio, fin, limites, max_dias):
-            return "horaria", None, None
-        return resolucion, pendiente, "sin_horaria"
-    return resolucion, None, None
+
+def motivo_no_permitida(resolucion, inicio, fin, limites, max_dias=None):
+    """Frase corta de por qué `resolucion` no está disponible para el rango (o None si lo está)."""
+    if resolucion in resoluciones_permitidas(inicio, fin, limites, max_dias):
+        return None
+    dias = (fin - inicio).days + 1
+    if resolucion == "horaria":
+        if "horario_desde" in limites:
+            return (f"La horaria cubre del {limites['horario_desde']} al {limites['horario_hasta']}; "
+                    "este rango no cabe completo.")
+        return f"La horaria admite hasta {max_dias} días."
+    if dias == 1:
+        return ("Con un día solo hay resolución horaria." if admite_horaria(inicio, fin, limites, max_dias)
+                else "Un día fuera de la ventana horaria solo tiene resolución diaria.")
+    return "Con 7 días o menos: horaria o diaria."

@@ -24,7 +24,7 @@ class InterfazPublica(unittest.TestCase):
         app.selectbox(key="nodo").set_value(nodo)
         app.date_input(key="desde").set_value(desde)
         app.date_input(key="hasta").set_value(hasta)
-        app.radio(key="resolucion").set_value(resolucion)
+        app.session_state["resolucion"] = resolucion  # v0.9.1: botones de granularidad, sin radio
         app.run()
         self.assertFalse(app.exception)
         return app
@@ -42,8 +42,8 @@ class InterfazPublica(unittest.TestCase):
         self.assertIn(f"Rango con observaciones:** {primera}", self.textos(app))
 
     def test_mes_parcial_se_marca(self):
-        app = self.correr("01AAN-85", date(2026, 10, 29), date(2026, 10, 30), "mensual")
-        self.assertIn("oct 2026 (29–30 oct: 2 de 31 días)", self.textos(app))
+        app = self.correr("01AAN-85", date(2026, 10, 20), date(2026, 10, 30), "mensual")  # v0.9.1: mensual, 8+ días
+        self.assertIn("oct 2026 (20–30 oct: 11 de 31 días)", self.textos(app))
 
     def test_kpi_explicitan_base_horaria_y_dos_decimales(self):
         app = self.correr("01AAN-85", date(2023, 1, 1), v.metadata()["diario_hasta"], "diaria")
@@ -61,10 +61,12 @@ class InterfazPublica(unittest.TestCase):
         self.assertEqual(len(app.metric), 0)
         self.assertIn("no equivale a precio cero", app.warning[0].value)
 
-    def test_horaria_fuera_de_ventana_se_bloquea(self):
+    def test_horaria_fuera_de_ventana_pasa_a_diaria(self):
+        """v0.9.1: fuera de la ventana horaria el botón Horaria se desactiva y la gráfica pasa a diaria (con aviso)."""
         app = self.correr("01AAN-85", date(2023, 1, 1), date(2023, 1, 5), "horaria")
-        self.assertEqual(len(app.metric), 0)
-        self.assertIn("resolución horaria requiere", app.warning[0].value)
+        self.assertEqual(app.session_state["resolucion"], "diaria")
+        self.assertTrue(app.button(key="gran_horaria").disabled)
+        self.assertNotIn("resolución horaria requiere", " ".join(w.value for w in app.warning))
 
 
 @unittest.skipUnless((v.DATA_DIR / "metadata.json").is_file(), "Sin paquete público en data/")
@@ -117,7 +119,7 @@ class AuditoriaUxV03(unittest.TestCase):
         app = self.abrir()
         self.assertEqual(app.date_input(key="desde").value, esperado)
         self.assertEqual(app.date_input(key="hasta").value, esperado)
-        self.assertEqual(app.radio(key="resolucion").value, "horaria")
+        self.assertEqual(app.session_state["resolucion"], "horaria")
 
 
     def test_fechas_invertidas_avisan_sin_cifras(self):
@@ -147,8 +149,10 @@ class RangosRapidosApp(unittest.TestCase):
         app.run()
         app.radio(key="vista").set_value(vista).run()
         app.selectbox(key=clave_nodo).set_value("01AGU-230" if clave_nodo == "nodo" else "01AAN-85")
-        app.radio(key="resolucion").set_value(resolucion).run()
         app.button(key=f"rango_{opcion}").click().run()
+        self.assertEqual(app.session_state["resolucion"], "horaria")  # v0.9.1: cada rango abre en horaria
+        if resolucion != "horaria":
+            app.button(key=f"gran_{resolucion}").click().run()
         self.assertFalse(app.exception)
         return app
 
@@ -156,11 +160,11 @@ class RangosRapidosApp(unittest.TestCase):
         for vista, clave in self.VISTAS:
             for opcion, (inicio, fin) in self.esperado.items():
                 with self.subTest(vista=vista, opcion=opcion):
-                    app = self.pulsar(vista, clave, opcion, "diaria")
+                    app = self.pulsar(vista, clave, opcion, "horaria" if opcion == "Último día" else "diaria")
                     self.assertEqual(app.date_input(key="desde").value, inicio)
                     self.assertEqual(app.date_input(key="hasta").value, fin)
                     self.assertEqual(app.radio(key="vista").value, vista)
-                    self.assertEqual(app.radio(key="resolucion").value, "diaria")
+                    self.assertEqual(app.session_state["resolucion"], "horaria" if opcion == "Último día" else "diaria")
                     nodo = "01AGU-230" if clave == "nodo" else "01AAN-85"
                     self.assertEqual(app.selectbox(key=clave).value, nodo)
                     self.assertEqual(len(app.error), 0)
@@ -192,7 +196,8 @@ class RangosRapidosApp(unittest.TestCase):
         manual.selectbox(key="nodo").set_value("01AGU-230")
         manual.date_input(key="desde").set_value(inicio)
         manual.date_input(key="hasta").set_value(fin)
-        manual.radio(key="resolucion").set_value("diaria").run()
+        manual.session_state["resolucion"] = "diaria"
+        manual.run()
         self.assertEqual([m.value for m in rapido.metric], [m.value for m in manual.metric])
 
 
@@ -227,7 +232,7 @@ class EnlacesCompartibles(unittest.TestCase):
         self.assertEqual(app.radio(key="vista").value, "1. PML histórico")
         self.assertEqual(app.selectbox(key="nodo").value, "01AGU-230")
         self.assertEqual((app.date_input(key="desde").value, app.date_input(key="hasta").value), (self.desde, self.hasta))
-        self.assertEqual(app.radio(key="resolucion").value, "diaria")
+        self.assertEqual(app.session_state["resolucion"], "diaria")
         self.assertEqual(app.subheader[0].value, f"01AGU-230: {self.desde} a {self.hasta}")
         self.assertEqual(dict(app.query_params), enlace)
 
@@ -240,11 +245,13 @@ class EnlacesCompartibles(unittest.TestCase):
         self.assertEqual(dict(app.query_params), enlace)
 
     def test_componentes_restaura_todo(self):  # AC-03
-        enlace = {"vista": "componentes", "nodo": "01AGU-230", **self.fechas(), "resolucion": "mensual"}
+        desde = self.hasta - timedelta(days=30)  # v0.9.1: mensual pide más de 7 días
+        enlace = {"vista": "componentes", "nodo": "01AGU-230", "desde": str(desde), "hasta": str(self.hasta),
+                  "resolucion": "mensual"}
         app = self.abrir(**enlace)
         self.assertEqual(app.radio(key="vista").value, "3. Componentes del PML")
-        self.assertIn(f"01AGU-230: componentes del PML, {self.desde} a {self.hasta}", app.subheader[0].value)
-        self.assertEqual(app.radio(key="resolucion").value, "mensual")
+        self.assertIn(f"01AGU-230: componentes del PML, {desde} a {self.hasta}", app.subheader[0].value)
+        self.assertEqual(app.session_state["resolucion"], "mensual")
 
     def test_cambiar_filtros_actualiza_la_url(self):  # AC-05
         app = self.abrir()
@@ -266,7 +273,8 @@ class EnlacesCompartibles(unittest.TestCase):
         manual.selectbox(key="nodo").set_value("01AGU-230")
         manual.date_input(key="desde").set_value(self.desde)
         manual.date_input(key="hasta").set_value(self.hasta)
-        manual.radio(key="resolucion").set_value("diaria").run()
+        manual.session_state["resolucion"] = "diaria"
+        manual.run()
         self.assertEqual([m.value for m in enlazado.metric], [m.value for m in manual.metric])
 
     def test_nodo_inexistente_avisa_y_no_muestra_cifras(self):  # AC-07
@@ -294,7 +302,7 @@ class EnlacesCompartibles(unittest.TestCase):
     def test_version_esquema_y_fecha_separados(self):  # AC-12
         app = self.abrir()
         pie = " ".join(c.value for c in app.caption)
-        self.assertIn(f"PML Explorer v0.9.0 beta · Datos: esquema v{self.esquema}", pie)
+        self.assertIn(f"PML Explorer v0.9.1 beta · Datos: esquema v{self.esquema}", pie)
         self.assertIn("Actualización del paquete:", pie)
 
 
@@ -333,7 +341,8 @@ class RecuadroGrafica(unittest.TestCase):
 
     def test_spread_nombra_a_menos_b(self):
         hasta = v.metadata()["diario_hasta"]
-        specs, _ = self.specs(vista="comparacion", nodo_a="01AGU-230", nodo_b="01AAN-85", desde=hasta, hasta=hasta,
+        desde = str(date.fromisoformat(hasta) - timedelta(days=6))  # v0.9.1: diaria pide más de un día
+        specs, _ = self.specs(vista="comparacion", nodo_a="01AGU-230", nodo_b="01AAN-85", desde=desde, hasta=hasta,
                               resolucion="diaria")
         titulos, datos = self.campos(specs[0])
         self.assertEqual(titulos, ["Nodos", "Fecha", "Spread A − B (MXN/MWh)", "Horas con dato"])

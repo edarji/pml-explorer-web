@@ -1,7 +1,6 @@
 """Entrada pública de PML Explorer."""
 import base64
 from datetime import date, datetime, timedelta
-import html
 from pathlib import Path
 import re
 from urllib.parse import urlencode
@@ -22,7 +21,7 @@ import yoy as comparar_yoy
 
 from enlaces import OPCIONALES, PARAMETROS, VISTAS_URL, construir_enlace, leer_enlace
 from escena import ENSEMBLE, SOLO, enlace_ensemble, escena_de_enlace
-from rangos import RANGOS_RAPIDOS, rango_rapido, resolucion_tras_rango
+from rangos import RANGOS_RAPIDOS, motivo_no_permitida, rango_rapido, resoluciones_permitidas
 from vista2 import diferencial, resumen
 from vista3 import componentes, resumen_componentes
 from vista1 import (DATA_DIR, RESOLUCIONES, UMBRAL_DESCUADRE, DatosNoDisponibles, acumulados_diarios,
@@ -30,7 +29,7 @@ from vista1 import (DATA_DIR, RESOLUCIONES, UMBRAL_DESCUADRE, DatosNoDisponibles
                     cobertura_horaria, estadisticas, huella_paquete,
                     inspeccionar_paquete, marcar_periodos, metadata, observado, serie)
 
-VERSION_APP = "v0.9.0 beta"  # versión de la aplicación; el esquema de datos y la fecha vienen del paquete
+VERSION_APP = "v0.9.1 beta"  # versión de la aplicación; el esquema de datos y la fecha vienen del paquete
 REPO = "https://github.com/edarji/pml-explorer-web/blob/main"
 COBERTURA_ESCASA = 80  # % de horas con dato bajo el cual se advierte explícitamente
 SITIO_MERCADOS = "https://edarji.net/mercados/"
@@ -260,7 +259,6 @@ button[kind=primary],button[kind=primary] p{color:#000}
   border:1px solid #C9CBD0;background:#F7F7F8}
 .estado-barra{display:flex;flex-wrap:wrap;gap:.1rem .7rem;font-size:.76rem;color:#5A5D63;line-height:1.35}
 .estado-barra .activo{font-weight:700;color:#1C1C1E}
-.estado-barra .res-auto{color:#8A5A00;font-weight:600}
 .chip-cambiar{display:none;align-items:center;min-height:2rem;padding:.15rem .8rem;border-radius:999px;
   background:#FFB000;color:#000 !important;font-weight:600;font-size:.85rem;text-decoration:none !important}
 #elige-solista{scroll-margin-top:calc(var(--alto-st) + var(--alto-barra) + 1.1rem)}
@@ -461,6 +459,19 @@ button[kind=primary],button[kind=primary] p{color:#000}
 .bebop-leyenda span{display:inline-flex;align-items:center;gap:.35rem}
 .bebop-leyenda i{display:inline-block;width:18px;border-radius:2px}
 .st-key-bebop_anio [data-testid=stCaptionContainer]{margin:0}
+/* v0.9.1 · Granularidad arriba de los rangos: grupo segmentado compacto; la activa en grafito, las que el rango no
+   admite en gris (el motivo aparece al pasar el mouse). */
+.st-key-periodo{row-gap:.3rem}
+.st-key-granularidad{gap:0 !important;border:1px solid #C9CBD0;border-radius:999px;background:#F7F7F8;padding:1px}
+.st-key-granularidad button{min-height:1.65rem;padding:0 .8rem;border:0;border-radius:999px;background:transparent;
+  color:#1C1C1E}
+.st-key-granularidad button p{font-size:.78rem;font-weight:600}
+.st-key-granularidad button[kind=primary],.st-key-granularidad button[kind=primary]:hover{background:#1C1C1E;color:#FFFFFF}
+.st-key-granularidad button[kind=primary] p{color:#FFFFFF}
+.st-key-granularidad button:disabled{background:transparent;color:#8E9198;opacity:1}
+.st-key-granularidad button:disabled p{color:#8E9198}
+.st-key-granularidad button:focus-visible{outline:2px solid #FFB000;outline-offset:1px}
+@media (max-width:640px){.st-key-granularidad button{min-height:36px;padding:0 .7rem}}
 .st-key-controles [data-testid=stCheckbox] label p{font-size:.85rem;font-weight:600}
 </style>"""
 ASSETS = Path(__file__).resolve().parent / "assets"
@@ -878,42 +889,44 @@ def dia_de_consulta(limites):
     return min(max(hoy, limites["desde"]), limites["hasta"])
 
 
+def max_dias_horaria():
+    """Tope de días de la horaria: PND lo tiene (la serie cubre todo su paquete); PML lo da su ventana horaria."""
+    return PND_HORARIA_MAX_DIAS if st.session_state.get("modalidad") == "pnd" else None
+
+
 def aplicar_rango(opcion, limites):
     """Callback de los botones: Streamlit lo ejecuta antes de volver a dibujar la página.
 
-    v0.8.2 · YTD en resolución horaria serían miles de puntos: pasa a diaria (los indicadores siguen siendo horarios).
-    v0.8.10 · Ese cambio automático queda pendiente: 1D, 7D o Mes devuelven la horaria si el rango la admite (#40).
+    v0.9.1 · Cada rango vuelve a la granularidad predeterminada: horaria si el rango la admite (si no, diaria).
+    Reemplaza el cambio automático de YTD a diaria (v0.8.2) y su restauración (v0.8.10).
     """
     estado = st.session_state
     estado["desde"], estado["hasta"] = rango_rapido(opcion, limites)
-    max_dias = PND_HORARIA_MAX_DIAS if estado.get("modalidad") == "pnd" else None
-    estado["resolucion"], pendiente, aviso = resolucion_tras_rango(
-        opcion, estado["desde"], estado["hasta"], estado.get("resolucion", "horaria"),
-        estado.get("resolucion_pendiente"), limites, max_dias)
-    for clave, valor in (("resolucion_pendiente", pendiente), ("resolucion_aviso", aviso)):
-        if valor is None:
-            estado.pop(clave, None)
-        else:
-            estado[clave] = valor
+    estado["resolucion"] = resoluciones_permitidas(estado["desde"], estado["hasta"], limites, max_dias_horaria())[0]
 
 
-def resolucion_elegida():
-    """v0.8.10 · Callback del selector «Resolución»: una elección a mano manda, y ya no hay horaria que recuperar."""
-    for clave in ("resolucion_pendiente", "resolucion_aviso"):
-        st.session_state.pop(clave, None)
+def elegir_resolucion(resolucion):
+    """v0.9.1 · Callback de las pastillas Horaria · Diaria · Mensual."""
+    st.session_state["resolucion"] = resolucion
 
 
-def nota_resolucion(limites):
-    """v0.8.10 · Texto breve de por qué la gráfica no está en la resolución elegida, o None (#40)."""
-    aviso = st.session_state.get("resolucion_aviso")
-    if aviso == "auto":
-        return "Diaria automática por YTD; 1D, 7D o Mes vuelven a horaria."
-    if aviso == "sin_horaria":
-        if "horario_desde" in limites:
-            return (f"Sigue en diaria: la horaria solo cubre {limites['horario_desde']} a {limites['horario_hasta']} "
-                    "y este rango no cabe completo.")
-        return f"Sigue en diaria: la horaria admite hasta {PND_HORARIA_MAX_DIAS} días."
-    return None
+def ajustar_resolucion(limites):
+    """v0.9.1 · Antes de dibujar la barra: valores iniciales y una resolución que el rango admita.
+
+    Fechas puestas a mano, un enlace o el cambio de PML a PND pueden dejar una combinación que el rango no admite
+    (por ejemplo, 1 día en mensual). Entonces la gráfica pasa a la primera permitida y se avisa una vez.
+    """
+    estado = st.session_state
+    dia = dia_de_consulta(limites)
+    estado.setdefault("desde", dia)
+    estado.setdefault("hasta", dia)
+    estado.setdefault("resolucion", "horaria")
+    permitidas = resoluciones_permitidas(estado["desde"], estado["hasta"], limites, max_dias_horaria())
+    if estado["resolucion"] not in permitidas:
+        motivo = motivo_no_permitida(estado["resolucion"], estado["desde"], estado["hasta"], limites,
+                                     max_dias_horaria())
+        estado["resolucion"] = permitidas[0]
+        st.toast(f"Gráfica en resolución {permitidas[0]}. {motivo}", icon=":material/info:")
 
 
 def fechas_elegidas():
@@ -923,7 +936,7 @@ def fechas_elegidas():
 
 
 def controles_rango(limites, en_columnas=True):
-    """Fechas y resolución, compartidas entre vistas. Por defecto, el día de la consulta en resolución horaria.
+    """Fechas compartidas entre vistas. Por defecto, el día de la consulta en resolución horaria.
 
     v0.8.0: `en_columnas=False` las apila (panel derecho de ENSEMBLE, angosto). Mismas claves y valores.
     """
@@ -934,16 +947,31 @@ def controles_rango(limites, en_columnas=True):
     # «valor por defecto y Session State a la vez» cuando un botón de rango rápido cambia las fechas.
     st.session_state.setdefault("desde", dia)
     st.session_state.setdefault("hasta", dia)
-    c1, c2, c3 = st.columns(3) if en_columnas else (st.container(), st.container(), st.container())
+    c1, c2 = st.columns(2) if en_columnas else (st.container(), st.container())
     inicio = c1.date_input("Desde", min_value=limites["desde"], max_value=limites["hasta"], key="desde")
     fin = c2.date_input("Hasta", min_value=limites["desde"], max_value=limites["hasta"], key="hasta")
-    resolucion = c3.radio("Resolución de la gráfica", list(RESOLUCIONES), index=0, key="resolucion", horizontal=True,
-                          on_change=resolucion_elegida,
-                          help="Solo cambia la gráfica. Los indicadores siempre son horarios.")
-    nota = nota_resolucion(limites)
-    if nota:
-        c3.caption(nota)
-    return inicio, fin, resolucion
+    # v0.9.1 · La resolución ya no va aquí: son las pastillas Horaria · Diaria · Mensual de la barra.
+    return inicio, fin, st.session_state["resolucion"]
+
+
+ETIQUETAS_GRANULARIDAD = {"horaria": "Horaria", "diaria": "Diaria", "mensual": "Mensual"}
+AYUDA_GRANULARIDAD = {"horaria": "Un punto por hora.", "diaria": "Un punto por día: promedio de sus horas con dato.",
+                      "mensual": "Un punto por mes: promedio de sus horas con dato."}
+
+
+def botones_granularidad(limites):
+    """v0.9.1 · Pastillas Horaria · Diaria · Mensual sobre los rangos. Las que el rango no admite van desactivadas,
+    con el motivo al pasar el mouse. Solo cambian la gráfica: los indicadores siempre son horarios."""
+    estado = st.session_state
+    inicio, fin = estado["desde"], estado["hasta"]
+    with st.container(key="granularidad", horizontal=True, horizontal_alignment="left", gap="small", width="content"):
+        for resolucion in RESOLUCIONES:
+            motivo = motivo_no_permitida(resolucion, inicio, fin, limites, max_dias_horaria())
+            st.button(ETIQUETAS_GRANULARIDAD[resolucion], key=f"gran_{resolucion}", on_click=elegir_resolucion,
+                      args=(resolucion,), disabled=motivo is not None,
+                      type="primary" if estado["resolucion"] == resolucion else "secondary",
+                      help=motivo or f"{AYUDA_GRANULARIDAD[resolucion]} Solo cambia la gráfica; los indicadores "
+                                     "siempre son horarios.")
 
 
 def botones_rango(limites):
@@ -2415,27 +2443,22 @@ def texto_solista(en_solo, modo_pnd):
     return f"PML · {estado.get('nodo') or '—'}"
 
 
-def marca_resolucion(limites):
-    """v0.8.10 · Marca discreta en la barra cuando la resolución la cambió la app y no el usuario (#40)."""
-    nota = nota_resolucion(limites)
-    if not nota:
-        return ""
-    corto = "automática (YTD)" if st.session_state.get("resolucion_aviso") == "auto" else "sin horaria en este rango"
-    return f' <span class="res-auto" title="{html.escape(nota)}">· {corto}</span>'
-
-
 def barra_controles(limites_activos, en_solo, modo_pnd):
     """v0.8.2 · Segunda parte de la barra superior fija: precio, solista activo, rangos, fechas y estado del paquete.
 
     Los selectores de fechas y resolución viven solo aquí (en un popover): las vistas leen su valor.
+    v0.9.1 · Granularidad (Horaria · Diaria · Mensual) arriba de los rangos, según lo que admite el rango.
     """
+    ajustar_resolucion(limites_activos)
     with st.container(key="controles", horizontal=True, vertical_alignment="center", gap="small"):
         if PND:
             st.radio("Precio", list(MODALIDADES), key="modalidad", horizontal=True, format_func=MODALIDADES_CORTAS.get,
                      on_change=ajustar_fechas_modalidad, label_visibility="collapsed", width="content",
                      help="PML: precio de un nodo (NodoP). PND: precio de una zona de carga, con el que se liquida "
                           "la demanda. No se mezclan.")
-        botones_rango(limites_activos)
+        with st.container(key="periodo", gap="small", width="content"):
+            botones_granularidad(limites_activos)
+            botones_rango(limites_activos)
         if en_solo and (modo_pnd or st.session_state.get("vista") == VISTAS_URL["historico"]):
             st.toggle("YoY", key="yoy", help="Comparar con el mismo periodo un año antes (mismas fechas del año "
                       "anterior): promedio de cada periodo, diferencia en MXN/MWh y, en diaria o mensual, la curva "
@@ -2443,10 +2466,11 @@ def barra_controles(limites_activos, en_solo, modo_pnd):
         with st.popover("Fechas", icon=":material/calendar_month:", width="content"):
             controles_rango(limites_activos, en_columnas=False)
             st.caption("1D, 7D, Mes y YTD se anclan en el último día publicado del paquete de este precio, nunca "
-                       "en el reloj. YTD: del 1 de enero de ese año a ese día.")
+                       "en el reloj. YTD: del 1 de enero de ese año a ese día. Resolución de la gráfica (arriba de "
+                       "los rangos): con 1 día, horaria; hasta 7 días, horaria o diaria; con más, también mensual.")
         estado = st.session_state
         st.markdown(f'<div class="estado-barra"><span class="activo">{texto_solista(en_solo, modo_pnd)}</span>'
-                    f'<span>{estado["desde"]} → {estado["hasta"]} · {estado["resolucion"]}{marca_resolucion(limites_activos)}</span>'
+                    f'<span>{estado["desde"]} → {estado["hasta"]} · {estado["resolucion"]}</span>'
                     f'<span>MDA · último día publicado {limites_activos["hasta"]}</span></div>', unsafe_allow_html=True)
 
 

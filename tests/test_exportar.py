@@ -212,7 +212,7 @@ class BotonEnLaInterfaz(unittest.TestCase):
             app.selectbox(key="nodo").set_value(nodo)
             app.date_input(key="desde").set_value(desde)
             app.date_input(key="hasta").set_value(hasta)
-            app.radio(key="resolucion").set_value(resolucion)
+            app.session_state["resolucion"] = resolucion
             app.run()
         self.assertFalse(app.exception)
         return app
