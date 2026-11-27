@@ -164,7 +164,7 @@ if e["horas_cero_o_negativas"]:
     st.caption(f"{e['horas_cero_o_negativas']} horas con POE ≤ 0 en el rango (se muestran tal cual).")
 
 s = gd.serie(H, inicio, fin, resolucion)
-st.altair_chart(grafica(s, resolucion), use_container_width=True)
+st.altair_chart(grafica(s, resolucion), width="stretch")
 st.caption("Hora = inicio del intervalo (00:00–01:00 … 23:00–24:00, America/Guatemala, UTC−6). "
            "Promedios diarios y mensuales: simples sobre las horas con dato, sin ponderar por demanda.")
 

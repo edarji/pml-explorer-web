@@ -172,6 +172,8 @@ class App(unittest.TestCase):
         escribir_paquete(self.tmp, horario(dias))
         self.p = mock.patch.object(gd, "GT_DIR", self.tmp)
         self.p.start()
+        import streamlit as st
+        st.cache_data.clear()   # la caché vive en el proceso: cada prueba parte de cero
 
     def tearDown(self):
         self.p.stop()
@@ -203,6 +205,7 @@ class App(unittest.TestCase):
                          (date(2026, 3, 1), date(2026, 3, 31), "diaria"))
 
     def test_paquete_danado_sin_cifras(self):
+        # Un archivo dañado con la misma metadata: al iniciar el proceso (caché vacía) no se muestra ninguna cifra.
         (self.tmp / "poe_horario.parquet").write_bytes(b"x")
         at = self.app()
         self.assertTrue(any("no pasó la validación" in e.value for e in at.error))
