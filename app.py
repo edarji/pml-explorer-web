@@ -1,6 +1,7 @@
 """Entrada pública de PML Explorer."""
 import base64
 from datetime import datetime, timedelta
+import html
 from pathlib import Path
 from urllib.parse import urlencode
 from zoneinfo import ZoneInfo
@@ -19,14 +20,14 @@ import yoy as comparar_yoy
 
 from enlaces import OPCIONALES, PARAMETROS, VISTAS_URL, construir_enlace, leer_enlace
 from escena import ENSEMBLE, SOLO, enlace_ensemble, escena_de_enlace
-from rangos import RANGOS_RAPIDOS, rango_rapido
+from rangos import RANGOS_RAPIDOS, rango_rapido, resolucion_tras_rango
 from vista2 import diferencial, resumen
 from vista3 import componentes, resumen_componentes
 from vista1 import (DATA_DIR, RESOLUCIONES, UMBRAL_DESCUADRE, DatosNoDisponibles, actualizado_cdmx, catalogo,
                     cobertura_horaria, estadisticas, huella_paquete,
                     inspeccionar_paquete, marcar_periodos, metadata, observado, serie)
 
-VERSION_APP = "v0.8.9 beta"  # versión de la aplicación; el esquema de datos y la fecha vienen del paquete
+VERSION_APP = "v0.8.10 beta"  # versión de la aplicación; el esquema de datos y la fecha vienen del paquete
 REPO = "https://github.com/edarji/pml-explorer-web/blob/main"
 COBERTURA_ESCASA = 80  # % de horas con dato bajo el cual se advierte explícitamente
 SITIO_MERCADOS = "https://edarji.net/mercados/"
@@ -256,6 +257,7 @@ button[kind=primary],button[kind=primary] p{color:#000}
   border:1px solid #C9CBD0;background:#F7F7F8}
 .estado-barra{display:flex;flex-wrap:wrap;gap:.1rem .7rem;font-size:.76rem;color:#5A5D63;line-height:1.35}
 .estado-barra .activo{font-weight:700;color:#1C1C1E}
+.estado-barra .res-auto{color:#8A5A00;font-weight:600}
 .chip-cambiar{display:none;align-items:center;min-height:2rem;padding:.15rem .8rem;border-radius:999px;
   background:#FFB000;color:#000 !important;font-weight:600;font-size:.85rem;text-decoration:none !important}
 #elige-solista{scroll-margin-top:calc(var(--alto-st) + var(--alto-barra) + 1.1rem)}
@@ -872,10 +874,38 @@ def aplicar_rango(opcion, limites):
     """Callback de los botones: Streamlit lo ejecuta antes de volver a dibujar la página.
 
     v0.8.2 · YTD en resolución horaria serían miles de puntos: pasa a diaria (los indicadores siguen siendo horarios).
+    v0.8.10 · Ese cambio automático queda pendiente: 1D, 7D o Mes devuelven la horaria si el rango la admite (#40).
     """
-    st.session_state["desde"], st.session_state["hasta"] = rango_rapido(opcion, limites)
-    if opcion == "Año en curso" and st.session_state.get("resolucion") == "horaria":
-        st.session_state["resolucion"] = "diaria"
+    estado = st.session_state
+    estado["desde"], estado["hasta"] = rango_rapido(opcion, limites)
+    max_dias = PND_HORARIA_MAX_DIAS if estado.get("modalidad") == "pnd" else None
+    estado["resolucion"], pendiente, aviso = resolucion_tras_rango(
+        opcion, estado["desde"], estado["hasta"], estado.get("resolucion", "horaria"),
+        estado.get("resolucion_pendiente"), limites, max_dias)
+    for clave, valor in (("resolucion_pendiente", pendiente), ("resolucion_aviso", aviso)):
+        if valor is None:
+            estado.pop(clave, None)
+        else:
+            estado[clave] = valor
+
+
+def resolucion_elegida():
+    """v0.8.10 · Callback del selector «Resolución»: una elección a mano manda, y ya no hay horaria que recuperar."""
+    for clave in ("resolucion_pendiente", "resolucion_aviso"):
+        st.session_state.pop(clave, None)
+
+
+def nota_resolucion(limites):
+    """v0.8.10 · Texto breve de por qué la gráfica no está en la resolución elegida, o None (#40)."""
+    aviso = st.session_state.get("resolucion_aviso")
+    if aviso == "auto":
+        return "Diaria automática por YTD; 1D, 7D o Mes vuelven a horaria."
+    if aviso == "sin_horaria":
+        if "horario_desde" in limites:
+            return (f"Sigue en diaria: la horaria solo cubre {limites['horario_desde']} a {limites['horario_hasta']} "
+                    "y este rango no cabe completo.")
+        return f"Sigue en diaria: la horaria admite hasta {PND_HORARIA_MAX_DIAS} días."
+    return None
 
 
 def fechas_elegidas():
@@ -900,7 +930,11 @@ def controles_rango(limites, en_columnas=True):
     inicio = c1.date_input("Desde", min_value=limites["desde"], max_value=limites["hasta"], key="desde")
     fin = c2.date_input("Hasta", min_value=limites["desde"], max_value=limites["hasta"], key="hasta")
     resolucion = c3.radio("Resolución de la gráfica", list(RESOLUCIONES), index=0, key="resolucion", horizontal=True,
+                          on_change=resolucion_elegida,
                           help="Solo cambia la gráfica. Los indicadores siempre son horarios.")
+    nota = nota_resolucion(limites)
+    if nota:
+        c3.caption(nota)
     return inicio, fin, resolucion
 
 
@@ -2194,6 +2228,15 @@ def texto_solista(en_solo, modo_pnd):
     return f"PML · {estado.get('nodo') or '—'}"
 
 
+def marca_resolucion(limites):
+    """v0.8.10 · Marca discreta en la barra cuando la resolución la cambió la app y no el usuario (#40)."""
+    nota = nota_resolucion(limites)
+    if not nota:
+        return ""
+    corto = "automática (YTD)" if st.session_state.get("resolucion_aviso") == "auto" else "sin horaria en este rango"
+    return f' <span class="res-auto" title="{html.escape(nota)}">· {corto}</span>'
+
+
 def barra_controles(limites_activos, en_solo, modo_pnd):
     """v0.8.2 · Segunda parte de la barra superior fija: precio, solista activo, rangos, fechas y estado del paquete.
 
@@ -2216,7 +2259,7 @@ def barra_controles(limites_activos, en_solo, modo_pnd):
                        "en el reloj. YTD: del 1 de enero de ese año a ese día.")
         estado = st.session_state
         st.markdown(f'<div class="estado-barra"><span class="activo">{texto_solista(en_solo, modo_pnd)}</span>'
-                    f'<span>{estado["desde"]} → {estado["hasta"]} · {estado["resolucion"]}</span>'
+                    f'<span>{estado["desde"]} → {estado["hasta"]} · {estado["resolucion"]}{marca_resolucion(limites_activos)}</span>'
                     f'<span>MDA · último día publicado {limites_activos["hasta"]}</span></div>', unsafe_allow_html=True)
 
 
