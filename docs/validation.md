@@ -1,5 +1,17 @@
 # Validaciones y aceptación pendiente
 
+## 2026-11-27 · v0.9.2 Chaly's Bebop PND por zona de carga (Issue #46)
+
+Servidor local; paquete PND del 2023-01-01 al 2026-11-19 (101 zonas, 1,418 archivos horarios); `main` = v0.9.1 (`2c92ceb`).
+
+- **Rendimiento primero (plan A, lectura directa):** una consulta DuckDB de una zona sobre los 1,418 archivos tarda 0.13 a 0.39 s la primera vez en el proceso y 0.10 s la siguiente, con 170 MB de memoria máxima del proceso (4 núcleos). Queda en `st.cache_data` por zona, año y huella del paquete. No hace falta el plan B (paquete derivado diario PND) ni tocar el pipeline.
+- **Reconciliación:** `acumulados_diarios_pnd` contra `serie_pnd(..., "diaria")` en Monterrey, VDM Centro, Riviera Maya y Caborca, todas las fechas del paquete: 0 diferencias de precio y de horas. Con suma ÷ horas redondeado habría 19 diferencias de un centavo en Monterrey por el redondeo; por eso se usa la misma fórmula `ROUND(AVG(pnd), 2)`.
+- Casos: hueco del 2026-05-08 (sin cero ni copia del 7 o del 9, línea partida), 29 de febrero de 2024 fuera con el 1 de marzo en su lugar, 2023 sin banda ni Y−1/Y−2, negativos, zonas con 0 o 1 años previos (sin banda). 17 pruebas nuevas en `tests/test_estacional_pnd.py`.
+- **Regresión contra `main`:** 17 enlaces (los 14 de siempre, 2 Chaly's Bebop PML y 1 PND con YoY) dan las mismas cifras, tablas, avisos y URL; solo cambia en PND el rótulo «histórico por zona», que ahora son las pestañas Histórico · Chaly's Bebop. Los 12 CSV son idénticos byte a byte y los CSV y promedios del Bebop PML también.
+- Navegador: la página de Monterrey 2026 carga completa en unos 3.1 s a 1440, 1920 y 390 px, sin desplazamiento horizontal.
+- Pruebas: 307 pasan, 4 omitidas (suite completa).
+- Capturas en `docs/capturas/v0.9.2-bebop-pnd/`.
+
 ## 2026-11-27 · v0.9.1 Granularidad Horaria · Diaria · Mensual sobre los rangos (Issue #40, seguimiento)
 
 Servidor local; paquete PML del 2023-01-01 al 2026-11-27; `main` = v0.9.0 (`56a3910`).

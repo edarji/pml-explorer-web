@@ -245,6 +245,26 @@ def serie_pnd(zona, inicio, fin, resolucion, carpeta=PND_DIR):
     """, [archivos, zona, inicio, fin])
 
 
+def acumulados_diarios_pnd(zona, inicio, fin, carpeta=PND_DIR):
+    """v0.9.2 · Chaly's Bebop PND (Issue #46): por día de la zona, suma y horas con dato, y el promedio diario con la
+    misma fórmula que `serie_pnd(..., "diaria")` (ROUND(AVG(pnd), 2)), para que los dos den exactamente lo mismo.
+
+    Una sola lectura de los archivos horarios del rango (hasta 6 años, unos 2,200 archivos); se mide en
+    docs/validation.md. Un día sin archivo o sin horas de la zona no tiene fila (hueco, nunca cero).
+    """
+    inicio, fin = _rango(inicio, fin)
+    archivos = _archivos(inicio, fin, carpeta)
+    if not archivos:
+        return _consulta("SELECT NULL::DATE fecha, NULL::DOUBLE suma_pnd, 0::BIGINT horas_validas, "
+                         "NULL::DOUBLE promedio WHERE FALSE", [])
+    return _consulta("""
+        SELECT fecha, SUM(pnd) AS suma_pnd, COUNT(pnd)::BIGINT AS horas_validas, ROUND(AVG(pnd), 2) AS promedio
+        FROM read_parquet(?)
+        WHERE zona_carga = ? AND fecha BETWEEN ? AND ? AND pnd IS NOT NULL
+        GROUP BY fecha ORDER BY fecha
+    """, [archivos, zona, inicio, fin])
+
+
 def estadisticas_pnd(zona, inicio, fin, carpeta=PND_DIR):
     """Indicadores sobre las horas con dato del rango; la cobertura es horas con dato ÷ (24 × días)."""
     inicio, fin = _rango(inicio, fin)

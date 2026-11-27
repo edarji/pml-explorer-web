@@ -12,6 +12,10 @@ Funciones puras (sin Streamlit ni DuckDB), como `yoy.py` y `rangos.py`. Reciben 
   y las fechas posteriores de un año bisiesto no se desplazan. Las demás vistas y sus CSV lo conservan.
 - **Fuera de banda**: Y por encima del máximo o por debajo del mínimo, solo donde la banda existe (n ≥ 2).
 - Nada se interpola ni se extrapola: Y termina en el último día publicado.
+
+v0.9.2 · También PND por zona de carga (Issue #46). Los acumuladores pueden traer `suma_pml` (PML) o `suma_pnd` (PND);
+con una columna `promedio` (PND: `ROUND(AVG(pnd), 2)`, la misma fórmula que `pnd.serie_pnd` diaria) ese es el precio
+del día. Sin ella (PML) el precio es `suma / horas_validas` redondeado, como siempre: los resultados PML no cambian.
 """
 from datetime import date, timedelta
 
@@ -42,15 +46,29 @@ def anios_disponibles(primera, ultima):
     return list(range(ultima.year, primera.year - 1, -1))
 
 
+def suma(acumulados):
+    """La suma diaria de precios: `suma_pml` (PML) o `suma_pnd` (PND)."""
+    return acumulados["suma_pml"] if "suma_pml" in acumulados else acumulados["suma_pnd"]
+
+
+def precio_diario(acumulados):
+    """Promedio diario publicado: la columna `promedio` si viene (PND), si no suma ÷ horas redondeado (PML)."""
+    if "promedio" in acumulados:
+        return acumulados["promedio"]
+    return (suma(acumulados) / acumulados["horas_validas"]).round(2)
+
+
 def promedios_diarios(acumulados):
-    """DataFrame (fecha, anio, mes_dia, pml, horas) desde los acumuladores diarios; sin 29 de febrero."""
+    """DataFrame (fecha, anio, mes_dia, pml, horas) desde los acumuladores diarios; sin 29 de febrero.
+
+    La columna se llama `pml` por historia; en PND es el PND promedio del día."""
     df = acumulados[acumulados["horas_validas"] > 0].copy()
     fechas = pd.to_datetime(df["fecha"])
     df = df[~((fechas.dt.month == 2) & (fechas.dt.day == 29))]
     fechas = pd.to_datetime(df["fecha"])
     return pd.DataFrame({"fecha": fechas.dt.date, "anio": fechas.dt.year.astype(int),
                          "mes_dia": fechas.dt.strftime("%m-%d"),
-                         "pml": (df["suma_pml"] / df["horas_validas"]).round(2).to_numpy(),
+                         "pml": precio_diario(df).to_numpy(),
                          "horas": df["horas_validas"].astype(int).to_numpy()}).reset_index(drop=True)
 
 
@@ -94,13 +112,13 @@ def resumen(t, acumulados, anio):
     fechas = pd.to_datetime(diarios["fecha"])
     diarios = diarios[~((fechas.dt.month == 2) & (fechas.dt.day == 29))]
     fechas = pd.to_datetime(diarios["fecha"])
-    diarios = diarios.assign(anio=fechas.dt.year, mes_dia=fechas.dt.strftime("%m-%d"))
+    diarios = diarios.assign(anio=fechas.dt.year, mes_dia=fechas.dt.strftime("%m-%d"), suma=suma(diarios))
     actual = diarios[diarios["anio"] == anio].set_index("mes_dia")
     previo = diarios[diarios["anio"] == anio - 1].set_index("mes_dia")
     comunes = actual.index.intersection(previo.index)
     def promedio(d):
         horas = d.loc[comunes, "horas_validas"].sum()
-        return round(float(d.loc[comunes, "suma_pml"].sum() / horas), 2) if horas else None
+        return round(float(d.loc[comunes, "suma"].sum() / horas), 2) if horas else None
     referencia = sorted({int(a) for texto in t["anios_banda"] if texto for a in texto.split(", ")})
     return {
         "dias_y": int(t["y"].notna().sum()),
@@ -123,12 +141,14 @@ def tramos(t, columna):
     return (hay != hay.shift(fill_value=False)).cumsum().where(hay)
 
 
-def tabla_csv(t, anio):
-    """CSV propio de la vista: fecha de calendario, Y, Y−1, Y−2 con sus años reales, banda, n y años de la banda."""
+def tabla_csv(t, anio, precio="pml"):
+    """CSV propio de la vista: fecha de calendario, Y, Y−1, Y−2 con sus años reales, banda, n y años de la banda.
+
+    `precio`: prefijo de las columnas de precio, «pml» o «pnd»."""
     return pd.DataFrame({
         "fecha_calendario": t["mes_dia"],
-        f"pml_{anio}": t["y"], f"horas_{anio}": t["horas_y"].astype("Int64"),
-        f"pml_{anio - 1}": t["y_1"], f"pml_{anio - 2}": t["y_2"],
+        f"{precio}_{anio}": t["y"], f"horas_{anio}": t["horas_y"].astype("Int64"),
+        f"{precio}_{anio - 1}": t["y_1"], f"{precio}_{anio - 2}": t["y_2"],
         "banda_min": t["banda_min"], "banda_max": t["banda_max"],
         "banda_n_anios": t["n"].astype(int), "banda_anios": t["anios_banda"],
         "fuera_de_banda": t["fuera"].fillna(""),

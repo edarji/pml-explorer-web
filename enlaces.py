@@ -23,6 +23,9 @@ NODOS_DE_VISTA = {"historico": ("nodo",), "comparacion": ("nodo_a", "nodo_b"), "
 RESOLUCIONES_URL = ("horaria", "diaria", "mensual")
 PARAMETROS = ("vista", "nodo", "nodo_a", "nodo_b", "desde", "hasta", "resolucion", "modalidad", "zona")
 MODALIDADES_URL = ("pnd",)  # sin el parámetro: PML
+# v0.9.2 · Vistas PND (Issue #46). Sin `vista` un enlace PND es el histórico, como desde v0.7.0; `vista=estacional`
+# abre Chaly's Bebop de la zona. La clave de estado es `vista_pnd`, aparte de la `vista` PML.
+VISTAS_PND = {"historico": "Histórico", "estacional": "Chaly's Bebop"}
 # v0.8.9 · Parámetros opcionales: solo van en la URL cuando están activos, y si faltan no se avisa (el valor
 # predeterminado es «apagado»). `yoy=1`: comparar con el mismo periodo del año anterior (PML histórico y PND).
 OPCIONALES = ("yoy", "anio")
@@ -66,6 +69,13 @@ def leer_enlace(parametros, nodos, limites, zonas=None, limites_pnd=None):
             problemas.append("Este enlace es de precios de zona de carga (PND), que no están en esta publicación.")
             return estado, problemas, faltantes
         estado["modalidad"] = modalidad
+        if "vista" in parametros:  # opcional en PND: si falta, histórico
+            vista = valor("vista")
+            if vista in VISTAS_PND:
+                estado["vista_pnd"] = VISTAS_PND[vista]
+            elif vista is not None:
+                problemas.append(f"La vista «{vista}» no existe para zonas de carga. Opciones: "
+                                 f"{', '.join(VISTAS_PND)}.")
         zona = valor("zona")
         if zona is not None:
             if zona in zonas:
@@ -121,7 +131,8 @@ def leer_enlace(parametros, nodos, limites, zonas=None, limites_pnd=None):
         else:
             problemas.append("El parámetro «yoy» solo admite el valor 1 (comparar con el mismo periodo del año "
                              "anterior), una sola vez.")
-    if estado.get("vista") == VISTAS_URL["estacional"]:  # usa el año calendario: fechas y resolución no le faltan
+    if estado.get("vista") == VISTAS_URL["estacional"] or estado.get("vista_pnd") == VISTAS_PND["estacional"]:
+        # usa el año calendario: fechas y resolución no le faltan
         faltantes = [f for f in faltantes if f not in ("desde", "hasta", "resolucion")]
     if "anio" in parametros:  # opcional, solo lo escribe la vista estacional
         anio = parametros["anio"]
@@ -141,6 +152,8 @@ def construir_enlace(estado):
     """
     if estado.get("modalidad") == "pnd":  # v0.7.0: zona de carga; la vista PML no va en el enlace
         enlace = {"modalidad": "pnd", "zona": estado["zona"]}
+        if estado.get("vista_pnd") == VISTAS_PND["estacional"]:
+            enlace["vista"] = "estacional"
     else:
         vista = next(nombre for nombre, etiqueta in VISTAS_URL.items() if etiqueta == estado["vista"])
         enlace = {"vista": vista}
@@ -149,7 +162,7 @@ def construir_enlace(estado):
     enlace["desde"] = estado["desde"].isoformat()
     enlace["hasta"] = estado["hasta"].isoformat()
     enlace["resolucion"] = estado["resolucion"]
-    if estado.get("yoy") and (estado.get("modalidad") == "pnd" or enlace.get("vista") in VISTAS_CON_YOY):
+    if estado.get("yoy") and (enlace.get("vista", "historico") in VISTAS_CON_YOY):  # PND sin vista: histórico
         enlace["yoy"] = "1"
     if enlace.get("vista") == "estacional" and estado.get("anio"):
         enlace["anio"] = str(estado["anio"])

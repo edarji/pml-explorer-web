@@ -302,7 +302,7 @@ class EnlacesCompartibles(unittest.TestCase):
     def test_version_esquema_y_fecha_separados(self):  # AC-12
         app = self.abrir()
         pie = " ".join(c.value for c in app.caption)
-        self.assertIn(f"PML Explorer v0.9.1 beta · Datos: esquema v{self.esquema}", pie)
+        self.assertIn(f"PML Explorer v0.9.2 beta · Datos: esquema v{self.esquema}", pie)
         self.assertIn("Actualización del paquete:", pie)
 
 

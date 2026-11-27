@@ -1,6 +1,6 @@
 # Metodología — PML Explorer
 
-Documento revisado: **2026-11-27** (v0.9.0 · Chaly's Bebop, vista estacional). Describe el comportamiento de la aplicación pública vigente. La fecha de este documento no es un corte de precios.
+Documento revisado: **2026-11-27** (v0.9.2 · Chaly's Bebop también para zonas de carga PND). Describe el comportamiento de la aplicación pública vigente. La fecha de este documento no es un corte de precios.
 
 | Concepto | Valor vigente | Dónde se comprueba |
 | --- | --- | --- |
@@ -160,6 +160,12 @@ La aplicación está publicada en Streamlit Community Cloud (https://pml-explore
   - Un día sin dato no tiene fila ni cifra y no cuenta como cero.
   - Si el rango elegido solo contiene días sin dato, la app responde «sin datos».
 - **Resolución horaria.** Se permite hasta 366 días por rango. No hay ventana horaria: el paquete PND es horario desde 2023.
+- **Chaly's Bebop PND (v0.9.2, Issue #46).** Pestaña junto al histórico de la zona, con las mismas reglas que la vista estacional PML (sección «Chaly's Bebop»): año Y contra la banda Mín–Máx de **Y−5 a Y−1** (nunca Y), Y−1 y Y−2 tenues, banda solo con 2 o más años con dato en la fecha, 29 de febrero fuera de esta vista, sin interpolar.
+  - **Precio del día:** el PND promedio diario de la zona con la misma fórmula del histórico diario (`ROUND(AVG(pnd), 2)` sobre las horas con dato); coincide exactamente con `serie_pnd(..., "diaria")` en todas las fechas y zonas probadas. Nunca usa datos PML ni otras zonas.
+  - **Historia real:** el paquete empieza el 2023-01-01, así que para Y = 2026 la banda usa a lo sumo 2023–2025 (3 de 5 años). El 2026-05-08 (sin dato en la consulta verificada) es un hueco y se dice.
+  - **Colores:** Y en el azul PND; Y−1 y Y−2 en grises, banda gris neutra. Nada en ámbar PML.
+  - **Lectura:** una consulta DuckDB de la zona sobre los archivos horarios de Y−5 a Y (unos 1,400 hoy), en caché por zona, año y huella del paquete. Sin paquete derivado ni cambios al pipeline.
+  - **Enlace:** `?modalidad=pnd&zona=…&vista=estacional&anio=AAAA`. Un enlace PND sin `vista` sigue abriendo el histórico. **CSV:** `pnd_bebop_<zona>_<año>.csv`, con las mismas columnas que el PML (`pnd_<año>` en lugar de `pml_<año>`).
 - **Pendiente (no forma parte de esta entrega).**
   - AC-03: registrado el 2026-11-20 contra los reportes oficiales de CENACE del 17 al 19 de noviembre de 2026: 29,088 valores, 0 diferencias ([validación](validation.md)).
   - AC-13: la medición local con el paquete real ya está hecha ([validación](validation.md), 2026-11-20). Falta medir en Community Cloud, después de un despliegue aprobado.
