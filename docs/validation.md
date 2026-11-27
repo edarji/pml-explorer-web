@@ -1,5 +1,15 @@
 # Validaciones y aceptación pendiente
 
+## 2026-11-27 · v0.8.10 YTD ya no deja la gráfica atrapada en diaria (Issue #40)
+
+Servidor local; paquete PML al 2026-11-27 y PND al 2026-11-19; `main` = v0.8.9 (`215a67c`).
+
+- **Bug reproducido en `main`:** horaria → YTD (pasa a diaria) → 1D se quedaba en diaria (CSV «resolución diaria, 1 filas»). Con el arreglo, 1D vuelve a horaria: 24 puntos en la gráfica y CSV «resolución horaria, 24 filas».
+- **Pruebas:** 268 passed, 4 skipped. Nuevas en `tests/test_resolucion.py` (11). Transiciones puras: horaria→YTD→1D/Mes/7D; YTD dos veces; diaria o mensual explícitas se respetan; ventana horaria PML fuera de rango (sigue en diaria con aviso); tope de 366 días en PND. En la app (AppTest): PML histórico, spread, componentes y PND vuelven a tener un punto por hora (no solo la radio); mensual elegida durante YTD se mantiene al pulsar 1D; un enlace nuevo con `resolucion=diaria` no se cambia. Las pruebas de la app fallan en `main` y pasan en la rama.
+- **Navegador (Chromium 1440 y 390):** marca «automática (YTD)» en la línea de estado de la barra (escritorio) y nota en «Fechas» (también en móvil); desaparece al volver a horaria. Sin desplazamiento horizontal.
+- **Regresión:** 14/14 enlaces con detalle idéntico a `main` y 12/12 CSV idénticos (sha256): un enlace abierto no cambia.
+- Capturas antes/después en `docs/capturas/v0.8.10-resolucion/`.
+
 ## 2026-11-26 · v0.8.9 Comparar YoY (Issue #27, fase 2)
 
 Servidor local; paquete PML al 2026-11-25 y PND al 2026-11-19; `main` = v0.8.8 (`6b9d1d4`).
