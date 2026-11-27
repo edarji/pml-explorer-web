@@ -1,8 +1,13 @@
-"""v0.8.10 · Issue #40: YTD pasa a diaria y 1D, 7D o Mes devuelven la horaria (si el usuario no eligió otra).
+"""v0.9.1 · Selector de granularidad (Horaria · Diaria · Mensual) sobre los rangos 1D · 7D · Mes · YTD.
 
-- Lógica pura (`rangos.resolucion_tras_rango`, `rangos.admite_horaria`): transiciones, preferencia explícita,
-  ventana horaria de PML y tope de días de PND.
-- En la app (AppTest con el paquete público): la gráfica vuelve a tener un punto por hora, no solo la radio.
+Reglas (Lalo, 2026-11-27), por la longitud del rango:
+- 1 día: solo horaria (diaria y mensual desactivadas).
+- 2 a 7 días: horaria o diaria (mensual desactivada).
+- 8 días o más (Mes, YTD, fechas a mano): horaria, diaria o mensual.
+- Cada botón de rango abre en horaria. Si la horaria no cabe (fuera de la ventana horaria de PML o más días que el
+  tope de PND), la primera permitida.
+
+Corrige el bug de #40: YTD o YoY y regreso a 1D ya no deja un solo punto diario; 1D siempre dibuja 24 horas.
 """
 from datetime import date, timedelta
 import io
@@ -13,53 +18,67 @@ import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import pnd
 import vista1 as v
-from rangos import admite_horaria, rango_rapido, resolucion_tras_rango
+from rangos import admite_horaria, motivo_no_permitida, rango_rapido, resoluciones_permitidas
 
 APP = str(Path(v.__file__).with_name("app.py"))
 HAY_PML = (v.DATA_DIR / "metadata.json").is_file()
 HAY_PND = (pnd.PND_DIR / "metadata.json").is_file()
 YTD, D1, D7, MES = "Año en curso", "Último día", "Últimos 7 días", "Mes en curso"
+TODAS = ("horaria", "diaria", "mensual")
 
 PML = {"desde": date(2023, 1, 1), "hasta": date(2026, 11, 27),
        "horario_desde": date(2025, 11, 28), "horario_hasta": date(2026, 11, 27)}
+PND = {"desde": date(2023, 1, 1), "hasta": date(2026, 11, 19)}  # sin ventana horaria, solo tope de días
 
 
-def pulsar(opcion, resolucion, pendiente, limites=PML, max_dias=None):
-    inicio, fin = rango_rapido(opcion, limites)
-    return resolucion_tras_rango(opcion, inicio, fin, resolucion, pendiente, limites, max_dias)
+def permitidas(opcion, limites=PML, max_dias=None):
+    return resoluciones_permitidas(*rango_rapido(opcion, limites), limites, max_dias)
 
 
-class Transiciones(unittest.TestCase):
-    def test_horaria_ytd_vuelve_con_1d_mes_y_7d(self):
-        res, pend, aviso = pulsar(YTD, "horaria", None)
-        self.assertEqual((res, pend, aviso), ("diaria", "horaria", "auto"))
-        for opcion in (D1, MES, D7):
+class Reglas(unittest.TestCase):
+    def test_por_boton_de_rango(self):
+        self.assertEqual(permitidas(D1), ("horaria",))
+        self.assertEqual(permitidas(D7), ("horaria", "diaria"))
+        self.assertEqual(permitidas(MES), TODAS)  # 27 días (anclado al 27 de noviembre)
+        self.assertEqual(permitidas(YTD), TODAS)
+
+    def test_horaria_siempre_es_la_primera(self):
+        """La primera permitida es la que abre cada botón de rango."""
+        for opcion in (D1, D7, MES, YTD):
             with self.subTest(opcion=opcion):
-                self.assertEqual(pulsar(opcion, res, pend), ("horaria", None, None))
+                self.assertEqual(permitidas(opcion)[0], "horaria")
 
-    def test_ytd_dos_veces_conserva_lo_pendiente(self):
-        self.assertEqual(pulsar(YTD, "diaria", "horaria"), ("diaria", "horaria", "auto"))
+    def test_por_longitud_con_fechas_a_mano(self):
+        fin = date(2026, 11, 27)
+        for dias, esperado in ((1, ("horaria",)), (2, ("horaria", "diaria")), (7, ("horaria", "diaria")),
+                               (8, TODAS), (365, TODAS)):
+            with self.subTest(dias=dias):
+                self.assertEqual(resoluciones_permitidas(fin - timedelta(days=dias - 1), fin, PML), esperado)
 
-    def test_preferencia_explicita_no_se_toca(self):
-        for res in ("diaria", "mensual"):
-            with self.subTest(res=res):
-                self.assertEqual(pulsar(YTD, res, None), (res, None, None))
-                for opcion in (D1, D7, MES):
-                    self.assertEqual(pulsar(opcion, res, None), (res, None, None))
-
-    def test_fuera_de_la_ventana_horaria_sigue_en_diaria(self):
-        """Paquete con la ventana horaria terminada antes del último día diario: 1D no cabe."""
-        viejo = PML | {"horario_desde": date(2025, 1, 1), "horario_hasta": date(2025, 12, 31)}
-        self.assertEqual(pulsar(D1, "diaria", "horaria", viejo), ("diaria", "horaria", "sin_horaria"))
-        self.assertFalse(admite_horaria(date(2026, 11, 27), date(2026, 11, 27), viejo))
-        self.assertTrue(admite_horaria(date(2025, 12, 1), date(2025, 12, 31), viejo))
+    def test_fuera_de_la_ventana_horaria(self):
+        fin = date(2025, 6, 30)
+        self.assertEqual(resoluciones_permitidas(fin, fin, PML), ("diaria",))  # un día sin horaria: su promedio
+        self.assertEqual(resoluciones_permitidas(fin - timedelta(days=6), fin, PML), ("diaria",))
+        self.assertEqual(resoluciones_permitidas(date(2025, 1, 1), fin, PML), ("diaria", "mensual"))
+        self.assertEqual(resoluciones_permitidas(date(2025, 1, 1), date(2026, 11, 27), PML), ("diaria", "mensual"))
+        self.assertFalse(admite_horaria(fin, fin, PML))
+        self.assertTrue(admite_horaria(date(2025, 12, 1), date(2025, 12, 31), PML))
 
     def test_pnd_tope_de_dias(self):
-        L = {"desde": date(2023, 1, 1), "hasta": date(2026, 11, 19)}  # PND: sin ventana horaria, solo tope
-        self.assertEqual(pulsar(D7, "diaria", "horaria", L, max_dias=366), ("horaria", None, None))
-        self.assertEqual(pulsar(D7, "diaria", "horaria", L, max_dias=5), ("diaria", "horaria", "sin_horaria"))
-        self.assertTrue(admite_horaria(date(2025, 11, 19), date(2026, 11, 19), L, 366))
-        self.assertFalse(admite_horaria(date(2025, 1, 1), date(2026, 11, 19), L, 366))
+        self.assertEqual(permitidas(YTD, PND, 366), TODAS)
+        self.assertEqual(resoluciones_permitidas(date(2025, 1, 1), date(2026, 11, 19), PND, 366), ("diaria", "mensual"))
+        self.assertTrue(admite_horaria(date(2025, 11, 19), date(2026, 11, 19), PND, 366))
+        self.assertFalse(admite_horaria(date(2025, 1, 1), date(2026, 11, 19), PND, 366))
+
+    def test_motivos(self):
+        dia = date(2026, 11, 27)
+        self.assertIsNone(motivo_no_permitida("horaria", dia, dia, PML))
+        self.assertEqual(motivo_no_permitida("diaria", dia, dia, PML), "Con un día solo hay resolución horaria.")
+        self.assertEqual(motivo_no_permitida("mensual", dia - timedelta(days=6), dia, PML),
+                         "Con 7 días o menos: horaria o diaria.")
+        self.assertIn("2025-11-28", motivo_no_permitida("horaria", date(2025, 1, 1), dia, PML))
+        self.assertEqual(motivo_no_permitida("horaria", date(2025, 1, 1), date(2026, 11, 19), PND, 366),
+                         "La horaria admite hasta 366 días.")
 
 
 def abrir(**parametros):
@@ -72,8 +91,8 @@ def abrir(**parametros):
     return app
 
 
-def pulsar_app(app, opcion):
-    app.button(key=f"rango_{opcion}").click().run()
+def pulsar(app, clave):
+    app.button(key=clave).click().run()
     assert not app.exception, app.exception
     return app
 
@@ -86,50 +105,77 @@ def puntos(app):
     return max(tamanos)
 
 
+def activos(app):
+    """Botones de granularidad: {resolución: (activo, seleccionado)}."""
+    return {r: (not app.button(key=f"gran_{r}").disabled, app.button(key=f"gran_{r}").proto.type == "primary")
+            for r in TODAS}
+
+
 @unittest.skipUnless(HAY_PML and HAY_PND, "Sin paquete público en data/ o pnd/")
 class EnLaApp(unittest.TestCase):
     def estado(self, app):
         return app.session_state["resolucion"], app.query_params["resolucion"]
 
-    def test_pml_horaria_ytd_1d_mes_7d(self):
+    def test_botones_por_rango(self):
         hasta = date.fromisoformat(v.metadata()["diario_hasta"])
         app = abrir(vista="historico", nodo="01AAN-85", desde=str(hasta), hasta=str(hasta), resolucion="horaria")
-        self.assertEqual(puntos(app), 24)
-        pulsar_app(app, YTD)
-        self.assertEqual(self.estado(app), ("diaria", "diaria"))
-        self.assertIn("automática (YTD)", app.markdown[[i for i, m in enumerate(app.markdown)
-                                                         if "estado-barra" in m.value][0]].value)
-        self.assertTrue(any("1D, 7D o Mes vuelven a horaria" in c.value for c in app.caption))
-        pulsar_app(app, D1)
-        self.assertEqual(self.estado(app), ("horaria", "horaria"))
-        self.assertEqual(puntos(app), 24)  # vuelve el precio por hora, no solo la radio
-        self.assertTrue(any("resolución horaria, 24 filas" in c.value for c in app.caption))  # CSV horario
-        self.assertFalse(any("res-auto" in m.value for m in app.markdown))
-        pulsar_app(app, YTD)
-        pulsar_app(app, MES)
-        self.assertEqual(self.estado(app), ("horaria", "horaria"))
-        self.assertEqual(puntos(app), 24 * hasta.day)
-        pulsar_app(app, YTD)
-        pulsar_app(app, D7)
-        self.assertEqual(self.estado(app), ("horaria", "horaria"))
-        self.assertEqual(puntos(app), 24 * 7)
+        self.assertEqual(activos(app), {"horaria": (True, True), "diaria": (False, False), "mensual": (False, False)})
+        pulsar(app, f"rango_{D7}")
+        self.assertEqual(activos(app), {"horaria": (True, True), "diaria": (True, False), "mensual": (False, False)})
+        for opcion in (MES, YTD):
+            with self.subTest(opcion=opcion):
+                pulsar(app, f"rango_{opcion}")
+                self.assertEqual({r: a for r, (a, _) in activos(app).items()},
+                                 {"horaria": True, "diaria": True, "mensual": hasta.day >= 8 or opcion == YTD})
+                self.assertEqual(self.estado(app), ("horaria", "horaria"))
 
-    def test_mensual_elegida_durante_ytd_se_respeta(self):
+    def test_ytd_diaria_y_regreso_a_1d_es_horaria(self):
+        """El bug de Lalo: YTD (o YoY) en diaria o mensual y regreso a 1D dejaba un solo punto."""
         hasta = date.fromisoformat(v.metadata()["diario_hasta"])
-        app = abrir(vista="historico", nodo="01AAN-85", desde=str(hasta), hasta=str(hasta), resolucion="horaria")
-        pulsar_app(app, YTD)
-        app.radio(key="resolucion").set_value("mensual").run()
-        pulsar_app(app, D1)
-        self.assertEqual(self.estado(app), ("mensual", "mensual"))
-
-    def test_diaria_y_mensual_explicitas(self):
-        hasta = date.fromisoformat(v.metadata()["diario_hasta"])
-        for res, regreso in (("diaria", D1), ("mensual", MES)):
+        for res in ("diaria", "mensual"):
             with self.subTest(res=res):
-                app = abrir(vista="historico", nodo="01AAN-85", desde=str(hasta), hasta=str(hasta), resolucion=res)
-                pulsar_app(app, YTD)
-                pulsar_app(app, regreso)
+                app = abrir(vista="historico", nodo="01AAN-85", desde=str(hasta), hasta=str(hasta),
+                            resolucion="horaria")
+                pulsar(app, f"rango_{YTD}")
+                self.assertEqual(self.estado(app), ("horaria", "horaria"))
+                pulsar(app, f"gran_{res}")
                 self.assertEqual(self.estado(app), (res, res))
+                pulsar(app, f"rango_{D1}")
+                self.assertEqual(self.estado(app), ("horaria", "horaria"))
+                self.assertEqual(puntos(app), 24)
+                self.assertTrue(any("resolución horaria, 24 filas" in c.value for c in app.caption))  # CSV horario
+
+    def test_ytd_yoy_y_regreso(self):
+        hasta = date.fromisoformat(v.metadata()["diario_hasta"])
+        app = abrir(vista="historico", nodo="01AAN-85", desde=str(hasta), hasta=str(hasta), resolucion="horaria",
+                    yoy="1")
+        pulsar(app, f"rango_{YTD}")
+        pulsar(app, "gran_diaria")
+        pulsar(app, f"rango_{D1}")
+        self.assertEqual(self.estado(app), ("horaria", "horaria"))
+
+    def test_7d_diaria_y_mensual_desactivada(self):
+        hasta = date.fromisoformat(v.metadata()["diario_hasta"])
+        app = abrir(vista="historico", nodo="01AAN-85", desde=str(hasta), hasta=str(hasta), resolucion="horaria")
+        pulsar(app, f"rango_{D7}")
+        self.assertEqual(puntos(app), 24 * 7)
+        pulsar(app, "gran_diaria")
+        self.assertEqual(self.estado(app), ("diaria", "diaria"))
+        self.assertEqual(puntos(app), 7)
+
+    def test_enlace_de_un_dia_en_mensual_abre_en_horaria(self):
+        """Enlaces viejos: 1 día con diaria o mensual se dibuja en horaria (la única que admite) y se avisa."""
+        hasta = date.fromisoformat(v.metadata()["diario_hasta"])
+        app = abrir(vista="historico", nodo="01AAN-85", desde=str(hasta), hasta=str(hasta), resolucion="mensual")
+        self.assertEqual(self.estado(app), ("horaria", "horaria"))
+        self.assertTrue(any("Con un día solo hay resolución horaria" in t.proto.body for t in app.toast))
+
+    def test_enlace_valido_se_respeta(self):
+        hasta = date.fromisoformat(v.metadata()["diario_hasta"])
+        app = abrir(vista="historico", nodo="01AAN-85", desde=str(hasta - timedelta(days=30)), hasta=str(hasta),
+                    resolucion="diaria")
+        self.assertEqual(self.estado(app), ("diaria", "diaria"))
+        self.assertEqual(len(app.toast), 0)
 
     def test_spread_y_componentes(self):
         hasta = date.fromisoformat(v.metadata()["diario_hasta"])
@@ -137,28 +183,21 @@ class EnLaApp(unittest.TestCase):
             with self.subTest(vista=vista):
                 app = abrir(vista=vista, nodo="01AAN-85", nodo_a="01AAN-85", nodo_b="01AGU-230", desde=str(hasta),
                             hasta=str(hasta), resolucion="horaria")
-                pulsar_app(app, YTD)
-                self.assertEqual(self.estado(app), ("diaria", "diaria"))
-                pulsar_app(app, D7)
+                pulsar(app, f"rango_{YTD}")
+                pulsar(app, "gran_mensual")
+                pulsar(app, f"rango_{D7}")
                 self.assertEqual(self.estado(app), ("horaria", "horaria"))
                 self.assertEqual(puntos(app), 24 * 7 * series)
 
     def test_pnd(self):
         hasta = date.fromisoformat(pnd.metadata_pnd()["hasta"])
         app = abrir(modalidad="pnd", zona="MONTERREY", desde=str(hasta), hasta=str(hasta), resolucion="horaria")
-        pulsar_app(app, YTD)
-        self.assertEqual(self.estado(app), ("diaria", "diaria"))
-        pulsar_app(app, D1)
+        self.assertEqual(activos(app)["diaria"], (False, False))
+        pulsar(app, f"rango_{YTD}")
+        pulsar(app, "gran_diaria")
+        pulsar(app, f"rango_{D1}")
         self.assertEqual(self.estado(app), ("horaria", "horaria"))
         self.assertEqual(puntos(app), 24)
-
-    def test_enlace_nuevo_no_arrastra_pendiente(self):
-        """Un enlace con resolucion=diaria abre una sesión nueva: 1D no la cambia a horaria."""
-        hasta = date.fromisoformat(v.metadata()["diario_hasta"])
-        app = abrir(vista="historico", nodo="01AAN-85", desde=str(hasta - timedelta(days=30)), hasta=str(hasta),
-                    resolucion="diaria")
-        pulsar_app(app, D1)
-        self.assertEqual(self.estado(app), ("diaria", "diaria"))
 
 
 if __name__ == "__main__":

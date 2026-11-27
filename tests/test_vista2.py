@@ -92,7 +92,7 @@ class Spread(unittest.TestCase):
         app.selectbox(key="nodo_a").set_value(A)
         app.selectbox(key="nodo_b").set_value(B)
         app.date_input(key="desde").set_value(date(2023, 1, 1))
-        app.radio(key="resolucion").set_value("mensual")
+        app.session_state["resolucion"] = "mensual"
         app.run()
         self.assertFalse(app.exception)
         self.assertEqual(app.metric[0].label, "Spread promedio")
@@ -101,12 +101,12 @@ class Spread(unittest.TestCase):
         # Nodo igual: se bloquea
         app.selectbox(key="nodo_b").set_value(A).run()
         self.assertIn("dos nodos distintos", app.error[0].value)
-        # Horaria fuera de ventana: bloqueada
-        app.selectbox(key="nodo_b").set_value(B)
-        app.radio(key="resolucion").set_value("horaria").run()
-        self.assertIn("resolución horaria requiere", app.warning[0].value)
+        # Horaria fuera de ventana: el botón está desactivado (v0.9.1) y la vista no la pide
+        app.selectbox(key="nodo_b").set_value(B).run()
+        self.assertTrue(app.button(key="gran_horaria").disabled)
+        self.assertEqual(app.session_state["resolucion"], "mensual")
         # Sin horas comunes
-        app.radio(key="resolucion").set_value("diaria")
+        app.session_state["resolucion"] = "diaria"
         app.date_input(key="hasta").set_value(date(2023, 1, 31)).run()
         self.assertEqual(len(app.metric), 0)
         self.assertIn("no tienen horas con dato en común", app.warning[0].value)

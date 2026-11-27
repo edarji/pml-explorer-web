@@ -1,5 +1,17 @@
 # Validaciones y aceptación pendiente
 
+## 2026-11-27 · v0.9.1 Granularidad Horaria · Diaria · Mensual sobre los rangos (Issue #40, seguimiento)
+
+Servidor local; paquete PML del 2023-01-01 al 2026-11-27; `main` = v0.9.0 (`56a3910`).
+
+- Bug de Lalo: con diaria o mensual elegida (en YTD o YoY) y regreso a 1D, la gráfica quedaba en un solo punto. Ahora 1D solo admite horaria: YTD → Diaria o Mensual → 1D vuelve a 24 horas (AppTest, PML histórico, spread, componentes y PND; también con YoY encendido).
+- Reglas por rango en `rangos.resoluciones_permitidas`: 1 día → horaria; 2–7 días → horaria o diaria; 8+ días → las tres; la horaria se desactiva fuera de la ventana horaria PML o por encima de 366 días en PND. Cada botón de rango abre en horaria. `tests/test_resolucion.py` reescrito (14 pruebas).
+- Enlaces viejos: un enlace de 1 día con `resolucion=diaria` o `mensual` abre en horaria con un aviso; un enlace válido se respeta sin aviso.
+- Regresión contra `main`: los 14 enlaces de referencia dan las mismas cifras, tablas, textos y URL (AppTest, procesos separados) y los 12 CSV son idénticos byte a byte (nombre y sha256).
+- Navegador (1440 y 390 px): YTD en horaria tarda unos 3.8 s del clic al dibujo; Mensual → 1D deja `resolucion=horaria`; sin desplazamiento horizontal.
+- Pruebas: 290 pasan, 4 omitidas (suite completa).
+- Capturas antes/después en `docs/capturas/v0.9.1-granularidad/`.
+
 ## 2026-11-27 · v0.9.0 Chaly's Bebop 🎷, vista estacional PML (Issue #42)
 
 Servidor local; paquete PML del 2023-01-01 al 2026-11-27; `main` = v0.8.10 (`63b7021`).
