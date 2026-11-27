@@ -51,3 +51,11 @@ pnd/**
 !pnd/hourly/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9].parquet
 !pnd/zonas.parquet
 !pnd/metadata.json
+
+# GT v0.1 · Guatemala (edarji/edarji.net#8): paquete gt-1 del POE del AMM generado por power-market-lab
+# (scripts/gt_publico.py). Solo los cuatro archivos del contrato; ningún otro Parquet.
+gt/**
+!gt/poe_horario.parquet
+!gt/poe_diario.parquet
+!gt/poe_mensual.parquet
+!gt/metadata.json
