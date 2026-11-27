@@ -21,6 +21,10 @@ NODOS_DE_VISTA = {"historico": ("nodo",), "comparacion": ("nodo_a", "nodo_b"), "
 RESOLUCIONES_URL = ("horaria", "diaria", "mensual")
 PARAMETROS = ("vista", "nodo", "nodo_a", "nodo_b", "desde", "hasta", "resolucion", "modalidad", "zona")
 MODALIDADES_URL = ("pnd",)  # sin el parámetro: PML
+# v0.8.9 · Parámetros opcionales: solo van en la URL cuando están activos, y si faltan no se avisa (el valor
+# predeterminado es «apagado»). `yoy=1`: comparar con el mismo periodo del año anterior (PML histórico y PND).
+OPCIONALES = ("yoy",)
+VISTAS_CON_YOY = ("historico",)
 
 
 def leer_enlace(parametros, nodos, limites, zonas=None, limites_pnd=None):
@@ -107,6 +111,13 @@ def leer_enlace(parametros, nodos, limites, zonas=None, limites_pnd=None):
             estado["resolucion"] = resolucion
         else:
             problemas.append(f"La resolución «{resolucion}» no existe. Opciones: {', '.join(RESOLUCIONES_URL)}.")
+    if "yoy" in parametros:  # opcional: si falta no se anota como faltante
+        yoy = parametros["yoy"]
+        if yoy == ["1"]:
+            estado["yoy"] = True
+        else:
+            problemas.append("El parámetro «yoy» solo admite el valor 1 (comparar con el mismo periodo del año "
+                             "anterior), una sola vez.")
     return estado, problemas, faltantes
 
 
@@ -125,4 +136,6 @@ def construir_enlace(estado):
     enlace["desde"] = estado["desde"].isoformat()
     enlace["hasta"] = estado["hasta"].isoformat()
     enlace["resolucion"] = estado["resolucion"]
+    if estado.get("yoy") and (estado.get("modalidad") == "pnd" or enlace.get("vista") in VISTAS_CON_YOY):
+        enlace["yoy"] = "1"
     return enlace
