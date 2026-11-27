@@ -1,6 +1,6 @@
 # Metodología — PML Explorer
 
-Documento revisado: **2026-11-27** (v0.8.10 · resolución tras YTD). Describe el comportamiento de la aplicación pública vigente. La fecha de este documento no es un corte de precios.
+Documento revisado: **2026-11-27** (v0.9.0 · Chaly's Bebop, vista estacional). Describe el comportamiento de la aplicación pública vigente. La fecha de este documento no es un corte de precios.
 
 | Concepto | Valor vigente | Dónde se comprueba |
 | --- | --- | --- |
@@ -63,6 +63,35 @@ Spread = **PML_A − PML_B**, hora por hora, solo en las horas en que los dos no
 ## Componentes del PML (vista 3)
 
 PML = energía + pérdidas + congestión, con los signos publicados por CENACE (pérdidas y congestión pueden ser negativas). Todos los componentes se promedian sobre las mismas horas que el PML. El descuadre es |PML − (energía + pérdidas + congestión)| por hora; viene del redondeo de CENACE y se avisa cuando supera 0.02 MXN/MWh.
+
+## Chaly's Bebop · vista estacional (vista 4, v0.9.0)
+
+Un año calendario (Y) de un NodoP frente a su propia historia. Solo PML y solo el paquete **diario** (`data/daily`): una lectura de Y−5 a Y del nodo, recortada al inicio del paquete.
+
+- **Precio de cada día:** promedio diario `suma_pml / horas_validas` (días con `horas_validas > 0`), redondeado a 2 decimales, igual que la serie diaria de la vista 1. Un día sin dato queda vacío: no es cero y la línea no lo cruza.
+- **Líneas:**
+  - Y en ámbar, hasta el último día de operación publicado; no se completa el resto del año.
+  - Y−1 en azul apagado y Y−2 en gris, ambas tenues.
+- **Banda Mín–Máx 5Y:** por fecha de calendario (mes-día), el mínimo y el máximo de los **promedios diarios** de Y−5 a Y−1 de ese nodo.
+  - Nunca incluye Y.
+  - No es un intervalo de confianza ni usa extremos horarios.
+  - Cada fecha usa solo los años con dato ese día; el recuadro dice cuántos y cuáles.
+  - Con menos de 2 años no se dibuja banda, porque una sola observación no es un rango.
+  - El paquete empieza el 2023-01-01: para Y = 2026 la banda tiene hasta 3 de 5 años (2023 a 2025) y la vista lo rotula así. No se inventan años anteriores.
+- **29 de febrero:** no aparece en esta vista, porque no tiene par en los años no bisiestos.
+  - El calendario tiene 365 fechas y el 1 de marzo de un año bisiesto sigue siendo el 1 de marzo.
+  - Las demás vistas y sus CSV lo conservan.
+- **Fuera de banda:** una franja angosta bajo la gráfica marca cada día de Y por encima del máximo (rojo) o por debajo del mínimo (verde). Solo cuentan las fechas con banda.
+- **Resumen:**
+  - Días sobre y bajo la banda, y años en la banda.
+  - Promedio de Y frente a Y−1, ponderado por horas (acumuladores) sobre las fechas de calendario con dato en los dos años. No promedia promedios.
+- **Controles:**
+  - El año Y se elige en la vista; si el nodo no tiene ese año, se toma el más reciente con dato.
+  - 1D, 7D, Mes, YTD y «Fechas» no cambian esta vista.
+- **Enlace y CSV:**
+  - Enlace: `?vista=estacional&nodo=…&anio=AAAA`.
+  - CSV propio `pml_bebop_<nodo>_<año>.csv`, con una fila por fecha de calendario: `fecha_calendario`, `pml_<Y>`, `horas_<Y>`, `pml_<Y−1>`, `pml_<Y−2>`, `banda_min`, `banda_max`, `banda_n_anios`, `banda_anios`, `fuera_de_banda`.
+  - Una celda vacía es «sin dato».
 
 ## Uso de la interfaz
 

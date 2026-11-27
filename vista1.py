@@ -256,6 +256,20 @@ def serie_diaria(nodo, inicio, fin, resolucion, data_dir=DATA_DIR):
     """, [_archivos("daily", inicio, fin, data_dir), nodo, inicio, fin])
 
 
+def acumulados_diarios(nodo, inicio, fin, data_dir=DATA_DIR):
+    """v0.9.0 · Chaly's Bebop: acumuladores diarios publicados de un nodo (fecha, suma_pml, horas_validas).
+
+    Una sola lectura del paquete diario; la vista estacional calcula ahí los promedios (estacional.py).
+    """
+    inicio, fin = _rango(inicio, fin)
+    return _consulta("""
+        SELECT fecha, suma_pml, horas_validas::BIGINT AS horas_validas
+        FROM read_parquet(?)
+        WHERE nodo = ? AND fecha BETWEEN ? AND ? AND horas_validas > 0
+        ORDER BY fecha
+    """, [_archivos("daily", inicio, fin, data_dir), nodo, inicio, fin])
+
+
 def estadisticas_diarias(nodo, inicio, fin, data_dir=DATA_DIR):
     """Mismos estadísticos reconstruibles; cuantiles horarios no disponibles."""
     df = _consulta(f"""

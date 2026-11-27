@@ -1,5 +1,30 @@
 # Validaciones y aceptación pendiente
 
+## 2026-11-27 · v0.9.0 Chaly's Bebop 🎷, vista estacional PML (Issue #42)
+
+Servidor local; paquete PML del 2023-01-01 al 2026-11-27; `main` = v0.8.10 (`63b7021`).
+
+- **Historia disponible:** para Y = 2026, 2,400 nodos tienen 3 años de referencia (2023 a 2025), 23 tienen 2, 16 tienen 1 y los nodos nuevos de 2026 ninguno. No hay días parciales en el paquete.
+- **01LCP-400, Y = 2026:**
+  - Banda con 2023, 2024 y 2025, rotulada «3 de 5 años», sin 2021 ni 2022.
+  - Y llega hasta el 27 de noviembre.
+  - 83 días sobre la banda y 130 bajo ella.
+  - Promedio 2026: 801.92 contra 788.75 de 2025 en las mismas 331 fechas.
+  - El promedio diario de cada fecha es igual al de la serie diaria de la vista 1 (prueba).
+- **Pruebas:** 287 passed, 4 skipped. Nuevas en `tests/test_estacional.py` (19):
+  - mínimo y máximo exactos por mes-día con negativos y extremos;
+  - Y fuera de su banda; Y−1 y Y−2;
+  - 365 fechas sin 29 de febrero, sin desplazar el 1 de marzo;
+  - n < 2 sin banda; día parcial; huecos sin unir;
+  - promedio ponderado por horas en fechas comunes; CSV con años reales;
+  - enlace con `anio` (ida y vuelta, inválido, opcional);
+  - en la app: banda solo con años publicados, Y hasta el último día, cambio de año, nodo con un año de historia y año ausente que pasa al más reciente;
+  - las otras vistas no cambian.
+- **Tiempos:** una lectura de 47 archivos mensuales en 1.5 s la primera vez (0.04 s con el sistema de archivos ya leído) y 0.07 s de cálculo; después, en caché por nodo, año y paquete. Página completa en Chromium local: unos 5 s.
+- **Navegador (Chromium 1440, 1920 y 390):** sin desplazamiento horizontal. El recuadro muestra Y, Y−1 y Y−2 con sus años, mínimo, máximo, número de años y día parcial.
+- **Regresión:** 14/14 enlaces con detalle idéntico a `main` y 12/12 CSV idénticos (sha256).
+- Capturas en `docs/capturas/v0.9.0-bebop/`.
+
 ## 2026-11-27 · v0.8.10 YTD ya no deja la gráfica atrapada en diaria (Issue #40)
 
 Servidor local; paquete PML al 2026-11-27 y PND al 2026-11-19; `main` = v0.8.9 (`215a67c`).
