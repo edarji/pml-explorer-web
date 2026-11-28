@@ -1,0 +1,29 @@
+{
+ "contrato": "demanda v1",
+ "fuente": "https://www.cenace.gob.mx/graficademanda.aspx",
+ "aviso": "Lectura de la Gráfica de Demanda pública del CENACE: información indicativa de la operación, no para liquidación. MW por hora CENACE (1–24, hora final). SIN no incluye BCA ni BCS; SEN = SIN + BCA + BCS solo donde las tres tienen dato. La demanda real se revisa durante el día: cada archivo es la última lectura.",
+ "unidad": "MW",
+ "gerencias": [
+  "SIN",
+  "BCA",
+  "BCS",
+  "CENTRAL",
+  "NORESTE",
+  "NOROESTE",
+  "NORTE",
+  "OCCIDENTAL",
+  "ORIENTAL",
+  "PENINSULAR"
+ ],
+ "estados": {
+  "ok": "demanda publicada",
+  "pendiente": "la hora aún no termina",
+  "sin_dato": "hora terminada sin demanda (o un 0, que no es demanda real)"
+ },
+ "dias": [
+  "2026-11-27",
+  "2026-11-28"
+ ],
+ "ultima_lectura": "2026-11-28T12:10:05Z",
+ "generado_utc": "2026-11-28T12:10:28Z"
+}
