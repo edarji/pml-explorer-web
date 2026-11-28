@@ -1,5 +1,18 @@
 # Validaciones y aceptación pendiente
 
+## 2026-11-28 · v0.10.0 Operación · Demanda, panel derecho (Issue #32)
+
+Servidor local leyendo la publicación real de la rama `datos-demanda` copiada a `tests/fixtures/demanda` (2026-11-28 06:10 CDMX: el 27 completo y el 28 hasta la hora 6, 10 gerencias); `main` = v0.9.2 (`5abe459`).
+
+- **Cifras contra los archivos:** el SIN a la hora 6 da 31,190 MW real y 31,432 MW pronóstico (desvío −242 MW, −0.8 %), con máxima real 34,475 MW en h1 y máxima pronosticada 37,564 MW en h19, igual que el CSV. El SEN a la hora 6 es la suma exacta de SIN + BCA + BCS (32,959 MW). NORTE y PENINSULAR, que iban una hora atrás, muestran su propia última hora (h5).
+- **Contrato:** con columnas cambiadas, un 0 marcado como demanda, un estado sin demanda, una gerencia desconocida, horas repetidas, metadata ilegible o sin publicación, el panel no muestra ninguna cifra y deja el enlace al CENACE.
+- **Frescura:** marca la lectura como atrasada pasados 90 minutos, y si el último día publicado no es hoy en Ciudad de México lo dice.
+- **Ancho medido en Chromium:** a 1440 px el rail mide 187 px, el centro 909 px y el panel 245 px; a 1920 px, 200, 1,077 y 264 px. A 1280 px el panel pasa al final, a lo ancho del contenido, con el botón «Demanda» en la barra. A 390 px queda al final, después de la lista. Ningún ancho tiene desplazamiento horizontal.
+- **Sin cambios de precios:** el panel es una columna nueva. Paquetes, cálculos, enlaces y CSV no cambian; la suite anterior pasa completa.
+- **Pruebas:** 322 pasan y 4 se omiten (suite completa). Hay 13 pruebas nuevas en `tests/test_demanda.py`. `tests/conftest.py` apunta la demanda a los archivos de ejemplo, así que las pruebas no usan la red.
+- **Capturas** en `docs/capturas/v0.10.0-demanda/`.
+- **Pendiente para la revisión en vivo:** en Streamlit Cloud, confirmar que `raw.githubusercontent.com` responde. Si no responde, el panel dice «no disponible» y el resto de la app no cambia.
+
 ## 2026-11-27 · v0.9.2 Chaly's Bebop PND por zona de carga (Issue #46)
 
 Servidor local; paquete PND del 2023-01-01 al 2026-11-19 (101 zonas, 1,418 archivos horarios); `main` = v0.9.1 (`2c92ceb`).

@@ -1,6 +1,6 @@
 # Metodología — PML Explorer
 
-Documento revisado: **2026-11-27** (v0.9.2 · Chaly's Bebop también para zonas de carga PND). Describe el comportamiento de la aplicación pública vigente. La fecha de este documento no es un corte de precios.
+Documento revisado: **2026-11-28** (v0.10.0 · Operación · Demanda, panel derecho con la demanda del día por región). Describe el comportamiento de la aplicación pública vigente. La fecha de este documento no es un corte de precios.
 
 | Concepto | Valor vigente | Dónde se comprueba |
 | --- | --- | --- |
@@ -169,3 +169,21 @@ La aplicación está publicada en Streamlit Community Cloud (https://pml-explore
 - **Pendiente (no forma parte de esta entrega).**
   - AC-03: registrado el 2026-11-20 contra los reportes oficiales de CENACE del 17 al 19 de noviembre de 2026: 29,088 valores, 0 diferencias ([validación](validation.md)).
   - AC-13: la medición local con el paquete real ya está hecha ([validación](validation.md), 2026-11-20). Falta medir en Community Cloud, después de un despliegue aprobado.
+
+## Operación · Demanda (v0.10.0, Issue #32)
+
+- **Fuente.** La [Gráfica de Demanda](https://www.cenace.gob.mx/graficademanda.aspx) pública del CENACE. El Mac mini del proyecto la lee cada hora (a los :10, de la 1 a las 23, y a las 23:55) y publica la última lectura en la rama `datos-demanda` de este repositorio: un CSV por día y `metadata.json` (contrato «demanda v1», en `power-market-lab/docs/demanda-contrato.md`). **La app nunca consulta al CENACE.** Solo lee esa publicación desde `raw.githubusercontent.com`, con caché de 10 minutos y 8 s de espera máxima por archivo.
+- **Otra línea de tiempo.** Es la operación del **día en curso**, en MW. No es el MDA ni corresponde a las fechas del gráfico de precios, y el panel lo dice.
+- **Qué muestra, por región** (SIN por omisión; SEN, BCA, BCS y las 7 regiones del SIN):
+  - **Demanda real · hora N:** la última hora con demanda real de esa región. El pronóstico y el desvío (real − pronóstico, en MW y en % del pronóstico) son de **esa misma hora**. No se compara con la máxima pronosticada.
+  - **Máxima real:** la mayor demanda real del día hasta esa lectura, con su hora. **Máxima pronosticada:** el mayor pronóstico de las 24 horas, con su hora. Las dos vienen de la misma gráfica, en la misma unidad.
+  - **Horas con dato** y una gráfica de 24 horas con la demanda real (línea continua, solo horas con dato) y el pronóstico (punteado). No se interpola ni se proyecta.
+- **Hora CENACE.** 1–24, hora final (la 1 es 00:00–01:00), Ciudad de México.
+- **SEN = SIN + BCA + BCS.** El SIN no incluye Baja California ni Baja California Sur. El SEN se suma por hora **solo** cuando las tres tienen el valor; si falta una, esa hora queda sin SEN.
+- **Faltantes.** Una celda vacía es «sin dato», nunca 0; un 0 publicado no es demanda real. «Pendiente» = la hora aún no termina.
+- **Frescura.** El panel siempre dice la hora de la última lectura y cuánto hace. Si pasó más de 90 minutos, la marca como atrasada. Si el último día publicado no es hoy (en Ciudad de México), avisa que no hay lectura de hoy y muestra el día publicado con su fecha.
+- **Si la publicación falla o no cumple el contrato** (columnas, estados, gerencias, horas, un 0 marcado como demanda), el panel no muestra ninguna cifra y deja el enlace a la gráfica oficial.
+- **Revisiones.** El CENACE revisa la demanda real durante el día; cada lectura reemplaza a la anterior.
+- **Aviso.** Información indicativa de la operación, no para liquidación.
+- **Diseño.** En escritorio ancho (1360 px o más) es la tercera columna, de 228 a 264 px y fija al desplazarse; el centro conserva al menos 850 px (909 px a 1440). Por debajo de 1360 px no hay tres columnas: el panel queda al final, debajo del contenido, y el botón «Demanda» de la barra lleva a él. Nunca tapa la gráfica ni la selección.
+

@@ -155,3 +155,12 @@ Reglas:
 - **Días corregidos.** Son los días que CENACE cambió después de la primera descarga. El paquete trae la versión nueva y el laboratorio conserva el crudo anterior.
 - **URL.** `?modalidad=pnd&zona=<ZONA>&desde=&hasta=&resolucion=`. Un enlace sin `modalidad` es PML, como siempre.
 - **CSV.** El archivo es `pnd_historico_<zona>_<desde>[_<hasta>]_<resolución>.csv` con las columnas de tiempo, `zona_carga`, `pnd`, `energia`, `perdidas` y `congestion`. Un periodo sin dato no tiene fila.
+
+## Demanda · contrato demanda v1 (v0.10.0, Issue #32)
+
+- **Dónde:** rama `datos-demanda` de este repositorio, carpeta `demanda/`. Es una rama solo de datos: no tiene la app y Streamlit Cloud no la despliega. La publica `pml-bot` desde el Mac mini cada hora.
+- **Archivos:** `demanda/AAAA-MM-DD.csv` (un día, 10 gerencias × 24 horas) y `demanda/metadata.json` (`contrato`, `dias`, `ultima_lectura`, `generado_utc`, gerencias, estados, fuente y aviso). La app lee el último día de `dias`.
+- **Columnas:** `fecha`, `gerencia`, `hora` (1–24), `demanda_mw`, `pronostico_mw`, `generacion_mw`, `enlace_mw`, `estado_demanda` (`ok` · `pendiente` · `sin_dato`), `consultado_utc`. Celda vacía = sin dato, nunca 0.
+- **Validación en la app (`demanda.py`):** contrato «demanda v1», columnas exactas, un solo día, gerencias y estados del contrato, horas 1–24 sin repetir, y `demanda_mw` presente si y solo si `estado_demanda = ok` (nunca ≤ 0). Si algo falla, no se muestra ninguna cifra.
+- **Contrato completo y colector:** `edarji/power-market-lab`, `docs/demanda-contrato.md` y `scripts/descargar_demanda.py`.
+

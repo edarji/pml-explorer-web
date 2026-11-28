@@ -12,6 +12,7 @@ import pandas as pd
 import streamlit as st
 
 import catalogo as cat_nodos
+import demanda as dem
 import ensemble as ens
 import exportar
 import estacional
@@ -29,7 +30,7 @@ from vista1 import (DATA_DIR, RESOLUCIONES, UMBRAL_DESCUADRE, DatosNoDisponibles
                     cobertura_horaria, estadisticas, huella_paquete,
                     inspeccionar_paquete, marcar_periodos, metadata, observado, serie)
 
-VERSION_APP = "v0.9.2 beta"  # versión de la aplicación; el esquema de datos y la fecha vienen del paquete
+VERSION_APP = "v0.10.0 beta"  # versión de la aplicación; el esquema de datos y la fecha vienen del paquete
 REPO = "https://github.com/edarji/pml-explorer-web/blob/main"
 COBERTURA_ESCASA = 80  # % de horas con dato bajo el cual se advierte explícitamente
 SITIO_MERCADOS = "https://edarji.net/mercados/"
@@ -348,7 +349,7 @@ button[kind=primary],button[kind=primary] p{color:#000}
   top:calc(var(--alto-st) + var(--alto-barra) + var(--aire));align-self:flex-start;
   max-height:calc(100dvh - var(--alto-st) - var(--alto-barra) - var(--aire) - .6rem);overflow-y:auto;
   overscroll-behavior:contain;scrollbar-width:thin}
-.st-key-shell [data-testid=stColumn]:not(:has(.st-key-atril)){flex:1 1 0 !important;width:auto !important;min-width:0}
+.st-key-shell [data-testid=stColumn]:not(:has(.st-key-atril)):not(:has(.st-key-demanda)){flex:1 1 0 !important;width:auto !important;min-width:0}
 .st-key-atril{padding:.65rem .6rem .5rem;gap:.8rem}
 .st-key-atril .atril-et,.st-key-atril .lista-et{padding-bottom:.35rem}
 .atril-et{font-weight:700;font-size:.95rem;line-height:1.25}
@@ -378,7 +379,7 @@ button[kind=primary],button[kind=primary] p{color:#000}
 [data-testid=stSelectboxVirtualDropdown] [role=listbox] > [role=presentation] > [role=presentation]{width:100% !important}
 @media (max-width:1024px){
 .st-key-shell > div > [data-testid=stHorizontalBlock],.st-key-shell > [data-testid=stHorizontalBlock]{flex-direction:column-reverse;gap:1rem}
-.st-key-shell [data-testid=stColumn],.st-key-shell [data-testid=stColumn]:not(:has(.st-key-atril)){width:100% !important;flex:1 1 100% !important}
+.st-key-shell [data-testid=stColumn],.st-key-shell [data-testid=stColumn]:not(:has(.st-key-atril)):not(:has(.st-key-demanda)){width:100% !important;flex:1 1 100% !important}
 .st-key-shell [data-testid=stColumn]:has(.st-key-atril){flex:1 1 100% !important;width:100% !important;position:static;
   max-height:none;overflow:visible}
 .st-key-atril{padding:.8rem .9rem .6rem}
@@ -474,6 +475,61 @@ button[kind=primary],button[kind=primary] p{color:#000}
 .st-key-granularidad button:focus-visible{outline:2px solid #FFB000;outline-offset:1px}
 @media (max-width:640px){.st-key-granularidad button{min-height:36px;padding:0 .7rem}}
 .st-key-controles [data-testid=stCheckbox] label p{font-size:.85rem;font-weight:600}
+/* v0.10.0 · Operación · Demanda (Issue #32): panel derecho con la última lectura de la Gráfica de Demanda del CENACE
+   que publica el Mac mini (rama datos-demanda). En escritorio ancho (≥ 1360 px) es la tercera columna, angosta y fija al
+   desplazarse como el rail; el centro conserva ≥ 850 px. Por debajo de 1360 px no hay tres columnas: el panel pasa al
+   final, debajo del contenido principal (sin tapar la gráfica), y la barra muestra el botón «Demanda» que lleva a él. */
+:root{--ancho-demanda:clamp(228px,17vw,264px)}
+.st-key-shell [data-testid=stColumn]:has(.st-key-demanda){flex:0 0 var(--ancho-demanda) !important;
+  width:var(--ancho-demanda) !important;min-width:0;position:sticky;
+  top:calc(var(--alto-st) + var(--alto-barra) + var(--aire));align-self:flex-start;
+  max-height:calc(100dvh - var(--alto-st) - var(--alto-barra) - var(--aire) - .6rem);overflow-y:auto;
+  overscroll-behavior:contain;scrollbar-width:thin}
+.st-key-demanda{background:#F7F7F8;border:1px solid #D5D7DB;border-radius:.8rem;padding:.65rem .7rem .55rem;gap:.55rem}
+.dem-et{display:flex;flex-direction:column;gap:.05rem;line-height:1.25}
+.dem-et b{font-size:.95rem}.dem-et span{font-size:.72rem;color:#5A5D63}
+.dem-et .marca{display:inline-block;width:.55rem;height:.55rem;border-radius:2px;background:#1C1C1E;margin-right:.35rem}
+.st-key-demanda [data-testid=stMarkdownContainer]{margin-bottom:0}
+.st-key-demanda [data-testid=stWidgetLabel] p{font-size:.78rem}
+.st-key-demanda [data-testid=stSelectbox] [data-baseweb=select] > div{min-height:2.1rem;font-size:.8rem}
+.dem-cifra{display:flex;flex-direction:column;gap:.05rem;padding:.45rem .55rem;background:#FFFFFF;border:1px solid #DADCE0;
+  border-radius:.55rem}
+.dem-cifra .et{font-size:.72rem;color:#5A5D63;line-height:1.3}
+.dem-cifra .v{font-size:1.3rem;font-weight:700;color:#111720;font-variant-numeric:tabular-nums;line-height:1.25}
+.dem-cifra .v small{font-size:.75rem;font-weight:600;color:#5A5D63;margin-left:.2rem}
+.dem-cifra .nota{font-size:.72rem;color:#3A3D42;font-variant-numeric:tabular-nums;line-height:1.35}
+.dem-filas{display:flex;flex-direction:column;gap:.2rem;font-size:.76rem;font-variant-numeric:tabular-nums}
+.dem-filas div{display:flex;justify-content:space-between;gap:.5rem;border-bottom:1px solid #E3E5E9;padding-bottom:.2rem}
+.dem-filas div span:first-child{color:#5A5D63;white-space:nowrap}.dem-filas div span:last-child{text-align:right;color:#1C1C1E}
+.dem-ley{display:flex;gap:.8rem;font-size:.72rem;color:#3A3D42;align-items:center}
+.dem-ley i{display:inline-block;width:1rem;height:0;border-top:2px solid #1C1C1E;margin-right:.3rem;vertical-align:middle}
+.dem-ley i.pron{border-top:2px dashed #7A7F87}
+.dem-aviso{font-size:.74rem;line-height:1.35;padding:.35rem .5rem;border-radius:.45rem;background:#FFF4D6;color:#3A2E00}
+.dem-pie{font-size:.7rem;line-height:1.4;color:#5A5D63}
+.dem-pie a{color:#0A5FC2}
+#demanda-sen{scroll-margin-top:calc(var(--alto-st) + var(--alto-barra) + 1.1rem)}
+.chip-demanda{display:none;align-items:center;min-height:2rem;padding:.15rem .8rem;border-radius:999px;
+  background:#F7F7F8;border:1px solid #C9CBD0;color:#1C1C1E !important;font-weight:600;font-size:.85rem;
+  text-decoration:none !important;white-space:nowrap}
+.chips{display:flex;gap:.4rem;justify-content:flex-end}
+@media (max-width:1359px){
+.st-key-shell > div > [data-testid=stHorizontalBlock],.st-key-shell > [data-testid=stHorizontalBlock]{flex-wrap:wrap}
+.st-key-shell [data-testid=stColumn]:has(.st-key-demanda){order:3;flex:1 1 100% !important;
+  width:calc(100% - var(--ancho-rail) - 1.1rem) !important;margin-left:calc(var(--ancho-rail) + 1.1rem);
+  position:static;max-height:none;overflow:visible}
+.st-key-demanda{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));align-items:start}
+.chip-demanda{display:inline-flex}
+}
+@media (max-width:1024px){
+.st-key-shell > div > [data-testid=stHorizontalBlock],.st-key-shell > [data-testid=stHorizontalBlock]{flex-direction:column}
+.st-key-shell [data-testid=stColumn]:not(:has(.st-key-atril)):not(:has(.st-key-demanda)){order:1}
+.st-key-shell [data-testid=stColumn]:has(.st-key-atril){order:2}
+.st-key-shell [data-testid=stColumn]:has(.st-key-demanda){order:3;width:100% !important;margin-left:0}
+}
+@media (max-width:640px){
+.chip-demanda{padding:.15rem .6rem;font-size:.8rem}
+.st-key-demanda{display:flex}
+}
 </style>"""
 ASSETS = Path(__file__).resolve().parent / "assets"
 NARANJA = "#FFB000"  # v0.6.3: ámbar del logo sax (nombre conservado: es la serie principal en las tres vistas)
@@ -2478,6 +2534,126 @@ def vista_ensemble(limites, nodos, version, con_detalle=False):
             st.caption("PND por zona de carga no está en esta publicación; el tablero muestra solo PML.")
 
 
+# v0.10.0 · Operación · Demanda (Issue #32). Otra línea de tiempo: la operación del día en curso (Gráfica de Demanda
+# del CENACE, leída cada hora por el Mac mini), no el MDA del gráfico. La app solo lee los archivos publicados en la
+# rama datos-demanda, con caché de 10 min; nunca consulta al CENACE. Ver demanda.py y docs/metodologia.md.
+@st.cache_data(ttl=600, show_spinner=False)
+def cargar_demanda(url_base):
+    try:
+        metadata, tabla = dem.leer(*dem.descargar(url_base))
+    except (OSError, ValueError, KeyError, dem.DemandaInvalida) as error:  # URLError y timeout son OSError
+        return {"error": f"{type(error).__name__}: {error}"}
+    return {"error": None, "metadata": metadata, "tabla": dem.con_sen(tabla)}
+
+
+def mw(valor):
+    return "—" if valor is None or pd.isna(valor) else f"{valor:,.0f}"
+
+
+def signo(valor, formato):
+    """Diferencia con signo tipográfico: +120 / −242 (menos, no guion)."""
+    return f"{valor:+{formato}}".replace("-", "−")
+
+
+def grafica_demanda(df, gerencia):
+    datos = dem.serie(df, gerencia)
+    if datos.empty:
+        return
+    datos["intervalo"] = datos["hora"].map(dem.tramo)
+    # Como en las demás gráficas: la línea se corta en cada hora sin dato (nunca une huecos) y el punto aparece solo
+    # bajo el cursor, con su recuadro.
+    datos["tramo"] = datos.groupby("serie")["hora"].transform(lambda h: (h.diff().fillna(1) != 1).cumsum())
+    dominio = ["Real", "Pronóstico"]
+    x = alt.X("hora:Q", scale=alt.Scale(domain=[1, 24], nice=False), title=None,
+              axis=alt.Axis(values=[1, 6, 12, 18, 24], labelFontSize=10, grid=False, tickColor=EJE))
+    y = alt.Y("mw:Q", scale=alt.Scale(zero=False), title=None,
+              axis=alt.Axis(labelFontSize=10, tickCount=3, format="~s", gridColor=REJILLA, domain=False))
+    color = alt.Color("serie:N", scale=alt.Scale(domain=dominio, range=["#1C1C1E", GRIS_YOY]), legend=None)
+    recuadro = [alt.Tooltip("serie:N", title="Serie"), alt.Tooltip("hora:Q", title="Hora CENACE"),
+                alt.Tooltip("intervalo:N", title="Intervalo"), alt.Tooltip("mw:Q", title="MW", format=",.0f")]
+    linea = alt.Chart(datos).mark_line(strokeWidth=1.8).encode(
+        x=x, y=y, color=color, detail="tramo:N",
+        strokeDash=alt.StrokeDash("serie:N", scale=alt.Scale(domain=dominio, range=[[1, 0], [4, 3]]), legend=None))
+    cerca = alt.selection_point(on="pointerover", nearest=True, fields=["hora", "serie"], empty=False,
+                                clear="pointerout")
+    punto = (alt.Chart(datos).mark_point(size=45, filled=True)
+             .encode(x=x, y=y, color=color, opacity=alt.condition(cerca, alt.value(1), alt.value(0)), tooltip=recuadro)
+             .add_params(cerca))
+    st.altair_chart(configurar((linea + punto).properties(height=120, background="transparent")), width="stretch")
+
+
+def panel_demanda():
+    """Panel derecho: la última hora con demanda real de la gerencia elegida, su pronóstico y los máximos del día."""
+    with st.container(key="demanda"):
+        st.markdown('<div class="dem-et" id="demanda-sen"><b><span class="marca"></span>Operación · Demanda</b>'
+                    '<span>día en curso · Gráfica de Demanda del CENACE · MW</span></div>', unsafe_allow_html=True)
+        datos = cargar_demanda(dem.URL_BASE)
+        if datos["error"]:
+            st.markdown('<div class="dem-aviso">La demanda no está disponible en este momento. No se muestra ninguna '
+                        'cifra.</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="dem-pie"><a href="{dem.FUENTE}" target="_blank" rel="noopener">Ver la gráfica '
+                        'oficial del CENACE</a></div>', unsafe_allow_html=True)
+            return
+        tabla, m = datos["tabla"], datos["metadata"]
+        presentes = [g for g in dem.OPCIONES if g in set(tabla["gerencia"])]
+        if st.session_state.get("dem_gerencia") not in presentes:
+            st.session_state["dem_gerencia"] = "SIN" if "SIN" in presentes else presentes[0]
+        gerencia = st.selectbox("Región", presentes, key="dem_gerencia", format_func=dem.NOMBRES.get,
+                                help="SIN no incluye Baja California ni Baja California Sur. SEN = SIN + BCA + BCS, "
+                                     "solo en las horas en que las tres tienen dato.")
+        r = dem.resumen(tabla, gerencia)
+        f = dem.frescura(m["ultima_lectura"], r["fecha"])
+        lectura = f"{f['lectura_cdmx']:%H:%M} del {f['lectura_cdmx']:%d/%m}"
+        if f["estado"] == "otro_dia":
+            st.markdown(f'<div class="dem-aviso">Todavía no hay lectura de hoy. Se muestra el {r["fecha"]:%d/%m/%Y} '
+                        f'(última lectura {lectura}, {dem.hace(f["minutos"])}).</div>', unsafe_allow_html=True)
+        elif f["estado"] == "atrasada":
+            st.markdown(f'<div class="dem-aviso">Lectura atrasada: la última es de las {lectura} '
+                        f'({dem.hace(f["minutos"])}).</div>', unsafe_allow_html=True)
+        if r["hora"] is None:
+            real = (f'<div class="dem-cifra"><span class="et">Demanda real</span><span class="v">—</span>'
+                    f'<span class="nota">Sin horas con dato todavía.</span></div>')
+        else:
+            if r["desvio_mw"] is None:
+                desvio = "Sin pronóstico para esa hora."
+            else:
+                pct = f" · {signo(r['desvio_pct'], '.1f')} %" if r["desvio_pct"] is not None else ""
+                desvio = f"Pronóstico {mw(r['pronostico'])} MW · desvío {signo(r['desvio_mw'], ',.0f')} MW{pct}"
+            real = (f'<div class="dem-cifra"><span class="et">Demanda real · hora {r["hora"]} '
+                    f'({dem.tramo(r["hora"])})</span><span class="v">{mw(r["demanda"])}<small>MW</small></span>'
+                    f'<span class="nota">{desvio}</span></div>')
+        st.markdown(real, unsafe_allow_html=True)
+        maximo = (f'{mw(r["max_real"])} MW · h{r["hora_max_real"]}' if r["max_real"] is not None else "—")
+        pron_max = (f'{mw(r["max_pronostico"])} MW · h{r["hora_max_pronostico"]}'
+                    if r["max_pronostico"] is not None else "—")
+        st.markdown('<div class="dem-filas">'
+                    f'<div><span>Máxima real</span><span>{maximo}</span></div>'
+                    f'<div><span>Máx. pronosticada</span><span>{pron_max}</span></div>'
+                    f'<div><span>Horas con dato</span><span>{r["horas_ok"]} de 24</span></div></div>',
+                    unsafe_allow_html=True)
+        st.markdown('<div class="dem-ley"><span><i></i>Real</span><span><i class="pron"></i>Pronóstico</span></div>',
+                    unsafe_allow_html=True)
+        grafica_demanda(tabla, gerencia)
+        sin_dato = f" · {r['horas_sin_dato']} h sin dato" if r["horas_sin_dato"] else ""
+        st.markdown(f'<div class="dem-pie">Día de operación {r["fecha"]:%d/%m/%Y} · hora CENACE (la 1 es 00:00–01:00)'
+                    f'{sin_dato}. Última lectura del CENACE: {lectura} ({dem.hace(f["minutos"])}), Ciudad de México. '
+                    'La demanda real se revisa durante el día. Indicativo, no para liquidación; no corresponde a las '
+                    f'fechas MDA del gráfico. <a href="{dem.FUENTE}" target="_blank" rel="noopener">Gráfica oficial del '
+                    'CENACE</a></div>', unsafe_allow_html=True)
+
+
+def metodologia_demanda():
+    with st.expander("Metodología · Operación · Demanda"):
+        st.markdown("""
+- **Fuente:** la [Gráfica de Demanda](https://www.cenace.gob.mx/graficademanda.aspx) pública del CENACE. El servidor del proyecto la lee cada hora (a los :10 y a las 23:55) y publica la última lectura del día. La app solo lee esa publicación, con caché de 10 minutos; nunca consulta al CENACE.
+- **Qué es:** demanda real y pronóstico por hora, en **MW**, del **día en curso** (operación). Es otra línea de tiempo: no es el MDA ni las fechas del gráfico de precios.
+- **Hora CENACE:** 1–24, hora final (la 1 es 00:00–01:00), Ciudad de México. «Demanda real · hora N» es la última hora con dato; el pronóstico y el desvío son de esa misma hora.
+- **Regiones:** SIN no incluye Baja California (BCA) ni Baja California Sur (BCS). **SEN = SIN + BCA + BCS**, solo en las horas en que las tres tienen el valor; si falta una, no se suma.
+- **Faltantes:** una hora sin demanda queda vacía, nunca en 0 (un 0 publicado no es demanda real). «Pendiente» = la hora aún no termina.
+- **Revisiones:** el CENACE revisa la demanda real durante el día; cada lectura reemplaza a la anterior.
+- **Aviso:** información indicativa de la operación, no para liquidación.
+""")
+
 def metodologia_ensemble():
     with st.expander("Metodología · Ensemble"):
         st.markdown("""
@@ -2673,7 +2849,8 @@ else:
     subtitulo.caption("Mercado del Día en Adelanto · SIN (CENACE) · MXN/MWh · PML por nodo y PND por zona de carga, "
                       "por separado · datos diarios publicados, no en tiempo real")
 limites_activos = PND["limites"] if modo_pnd else limites
-chip.markdown(f'<a class="chip-cambiar" href="#elige-solista">Cambiar {"zona" if modo_pnd else "nodo"}</a>',
+chip.markdown(f'<div class="chips"><a class="chip-demanda" href="#demanda-sen">Demanda</a>'
+              f'<a class="chip-cambiar" href="#elige-solista">Cambiar {"zona" if modo_pnd else "nodo"}</a></div>',
               unsafe_allow_html=True)
 st.html(ALTO_BARRA_JS, unsafe_allow_javascript=True)
 with barra:
@@ -2686,12 +2863,14 @@ with barra:
 # y Streamlit no vuelve a montar sus gráficas.
 enfocar_detalle(st.empty())
 with st.container(key="shell"):
-    rail, principal = st.columns([1, 5], gap="small")  # anchos reales en CSS: rail 172–200 px, principal el resto
+    # v0.10.0 · Tercera columna: Operación · Demanda (228–264 px; bajo 1360 px pasa al final, ver CSS).
+    rail, principal, lateral = st.columns([1, 5, 1.3], gap="small")  # anchos reales en CSS: rail 172–200 px, principal el resto
 with principal:
     detalle = st.container(key=f"detalle_{'pnd' if modo_pnd else 'pml'}") if en_solo else st.empty()
     mercado = st.container()
 metodologia_ensemble()
 metodologia()
+metodologia_demanda()
 if PND:
     metodologia_pnd()
 if PND and not en_solo:
@@ -2716,6 +2895,8 @@ with mercado:
     vista_ensemble(limites, nodos, version, con_detalle=en_solo)
 with rail:
     atril(nodos, limites, version, con_detalle=en_solo)
+with lateral:
+    panel_demanda()
 if en_solo:
     with detalle:
         with st.container(key="cierre", horizontal=True, gap="medium", vertical_alignment="center"):
